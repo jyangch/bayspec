@@ -1,0 +1,46 @@
+# Ignore Python bytecode cache directories
+__pycache__/
+
+# Ignore Visual Studio Code directories and settings
+.vscode/
+
+# Ignore JetBrains IDE project files
+.idea/
+
+# Environment variables file
+.env
+
+# Python virtual environments
+venv/
+env/
+.venv/
+.pyenv/
+
+# Byte-compiled Python files
+*.py[cod]
+
+# Log files
+*.log
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# macOS Finder metadata files
+.DS_Store
+
+# macOS resource fork files
+.AppleDouble
+.LSOverride
+
+# Icon file
+Icon?
+
+# Thumbnails
+._*
+
+# Files that might appear on external disk drives
+.Spotlight-V100
+.Trashes
+
+# macOS-specific temp files
+*.swp
