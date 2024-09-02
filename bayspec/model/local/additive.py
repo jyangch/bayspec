@@ -20,13 +20,13 @@ class pl(Additive):
         self.comment = 'power law model'
         
         self.params = OrderedDict()
-        self.params['$\\alpha$'] = Par(-1, unif(-8, 5))
-        self.params['log$A$'] = Par(-1, unif(-10, 8))
+        self.params[r'$\alpha$'] = Par(-1, unif(-8, 5))
+        self.params[r'log$A$'] = Par(-1, unif(-10, 8))
 
 
     def func(self, E, T=None, O=None):
-        alpha = self.params['$\\alpha$'].value
-        logA = self.params['log$A$'].value
+        alpha = self.params[r'$\alpha$'].value
+        logA = self.params[r'log$A$'].value
         
         Amp = 10 ** logA
         
@@ -49,13 +49,13 @@ class bb(Additive):
         self.comment = 'black-body model'
 
         self.params = OrderedDict()
-        self.params['log$kT$'] = Par(2, unif(0, 3))
-        self.params['log$A$'] = Par(-1, unif(-6, 5))
+        self.params[r'log$kT$'] = Par(2, unif(0, 3))
+        self.params[r'log$A$'] = Par(-1, unif(-6, 5))
 
 
     def func(self, E, T=None, O=None):
-        logKT = self.params['log$kT$'].value
-        logA = self.params['log$A$'].value
+        logKT = self.params[r'log$kT$'].value
+        logA = self.params[r'log$A$'].value
 
         kT = 10 ** logKT
         Amp = 10 ** logA
@@ -79,15 +79,15 @@ class cpl(Additive):
         self.comment = 'cutoff power law model'
 
         self.params = OrderedDict()
-        self.params['$\\alpha$'] = Par(-1, unif(-8, 4))
-        self.params['log$E_{c}$'] = Par(2, unif(0, 4))
-        self.params['log$A$'] = Par(-1, unif(-6, 5))
+        self.params[r'$\alpha$'] = Par(-1, unif(-8, 4))
+        self.params[r'log$E_{c}$'] = Par(2, unif(0, 4))
+        self.params[r'log$A$'] = Par(-1, unif(-6, 5))
 
 
     def func(self, E, T=None, O=None):
-        alpha = self.params['$\\alpha$'].value
-        logEc = self.params['log$E_{c}$'].value
-        logA = self.params['log$A$'].value
+        alpha = self.params[r'$\alpha$'].value
+        logEc = self.params[r'log$E_{c}$'].value
+        logA = self.params[r'log$A$'].value
 
         Ec = 10 ** logEc
         Amp = 10 ** logA
@@ -111,15 +111,15 @@ class ppl(Additive):
         self.comment = 'cutoff power law model with peak energy'
 
         self.params = OrderedDict()
-        self.params['$\\alpha$'] = Par(-1, unif(-2, 2))
-        self.params['log$E_{p}$'] = Par(2, unif(0, 4))
-        self.params['log$A$'] = Par(-1, unif(-6, 5))
+        self.params[r'$\alpha$'] = Par(-1, unif(-2, 2))
+        self.params[r'log$E_{p}$'] = Par(2, unif(0, 4))
+        self.params[r'log$A$'] = Par(-1, unif(-6, 5))
 
 
     def func(self, E, T=None, O=None):
-        alpha = self.params['$\\alpha$'].value
-        logEp = self.params['log$E_{p}$'].value
-        logA = self.params['log$A$'].value
+        alpha = self.params[r'$\alpha$'].value
+        logEp = self.params[r'log$E_{p}$'].value
+        logA = self.params[r'log$A$'].value
 
         Ep = 10 ** logEp
         Amp = 10 ** logA
@@ -144,17 +144,17 @@ class band(Additive):
         self.comment = 'grb band function'
 
         self.params = OrderedDict()
-        self.params['$\\alpha$'] = Par(-1, unif(-2, 2))
-        self.params['$\\beta$'] = Par(-4, unif(-6, -2))
-        self.params['log$E_{p}$'] = Par(2, unif(0, 4))
-        self.params['log$A$'] = Par(-1, unif(-6, 5))
+        self.params[r'$\alpha$'] = Par(-1, unif(-2, 2))
+        self.params[r'$\beta$'] = Par(-4, unif(-6, -2))
+        self.params[r'log$E_{p}$'] = Par(2, unif(0, 4))
+        self.params[r'log$A$'] = Par(-1, unif(-6, 5))
 
 
     def func(self, E, T=None, O=None):
-        alpha = self.params['$\\alpha$'].value
-        beta = self.params['$\\beta$'].value
-        logEp = self.params['log$E_{p}$'].value
-        logA = self.params['log$A$'].value
+        alpha = self.params[r'$\alpha$'].value
+        beta = self.params[r'$\beta$'].value
+        logEp = self.params[r'log$E_{p}$'].value
+        logA = self.params[r'log$A$'].value
 
         Ep = 10 ** logEp
         Amp = 10 ** logA
@@ -185,19 +185,19 @@ class cband(Additive):
         self.comment = 'band function with cut-off'
 
         self.params = OrderedDict()
-        self.params['$\\alpha_1$'] = Par(1, unif(-2, 2))
-        self.params['$\\alpha_2$'] = Par(-1, unif(-2, 2))
-        self.params['log$E_{b}$'] = Par(1, unif(0, 3))
-        self.params['log$E_{p}$'] = Par(3, unif(1, 4))
-        self.params['log$A$'] = Par(0, unif(-6, 6))
+        self.params[r'$\alpha_1$'] = Par(1, unif(-2, 2))
+        self.params[r'$\alpha_2$'] = Par(-1, unif(-2, 2))
+        self.params[r'log$E_{b}$'] = Par(1, unif(0, 3))
+        self.params[r'log$E_{p}$'] = Par(3, unif(1, 4))
+        self.params[r'log$A$'] = Par(0, unif(-6, 6))
 
 
     def func(self, E, T=None, O=None):
-        alpha1 = self.params['$\\alpha_1$'].value
-        alpha2 = self.params['$\\alpha_2$'].value
-        logEb = self.params['log$E_{b}$'].value
-        logEp = self.params['log$E_{p}$'].value
-        logA = self.params['log$A$'].value
+        alpha1 = self.params[r'$\alpha_1$'].value
+        alpha2 = self.params[r'$\alpha_2$'].value
+        logEb = self.params[r'log$E_{b}$'].value
+        logEp = self.params[r'log$E_{p}$'].value
+        logA = self.params[r'log$A$'].value
 
         Eb = 10 ** logEb
         Ep = 10 ** logEp
@@ -232,21 +232,21 @@ class dband(Additive):
         self.comment = 'double band functions'
 
         self.params = OrderedDict()
-        self.params['$\\alpha_{1}$'] = Par(1, unif(-2, 2))
-        self.params['$\\alpha_{2}$'] = Par(-1, unif(-2, 2))
-        self.params['$\\beta$'] = Par(-3, unif(-5, -2))
-        self.params['log$E_{b}$'] = Par(1, unif(0, 3))
-        self.params['log$E_{p}$'] = Par(3, unif(1, 4))
-        self.params['log$A$'] = Par(0, unif(-6, 6))
+        self.params[r'$\alpha_{1}$'] = Par(1, unif(-2, 2))
+        self.params[r'$\alpha_{2}$'] = Par(-1, unif(-2, 2))
+        self.params[r'$\beta$'] = Par(-3, unif(-5, -2))
+        self.params[r'log$E_{b}$'] = Par(1, unif(0, 3))
+        self.params[r'log$E_{p}$'] = Par(3, unif(1, 4))
+        self.params[r'log$A$'] = Par(0, unif(-6, 6))
 
 
     def func(self, E, T=None, O=None):
-        alpha1 = self.params['$\\alpha_{1}$'].value
-        alpha2 = self.params['$\\alpha_{2}$'].value
-        beta = self.params['$\\beta$'].value
-        logEb = self.params['log$E_{b}$'].value
-        logEp = self.params['log$E_{p}$'].value
-        logA = self.params['log$A$'].value
+        alpha1 = self.params[r'$\alpha_{1}$'].value
+        alpha2 = self.params[r'$\alpha_{2}$'].value
+        beta = self.params[r'$\beta$'].value
+        logEb = self.params[r'log$E_{b}$'].value
+        logEp = self.params[r'log$E_{p}$'].value
+        logA = self.params[r'log$A$'].value
 
         Eb = 10 ** logEb
         Ep = 10 ** logEp
@@ -282,17 +282,17 @@ class sbpl(Additive):
         self.comment = 'smoothly broken power law'
 
         self.params = OrderedDict()
-        self.params['$\\alpha$'] = Par(-1, unif(-4, 3))
-        self.params['$\\beta$'] = Par(-2, unif(-5, 2))
-        self.params['log$E_{b}$'] = Par(2, unif(0, 4))
-        self.params['log$A$'] = Par(-1, unif(-6, 5))
+        self.params[r'$\alpha$'] = Par(-1, unif(-4, 3))
+        self.params[r'$\beta$'] = Par(-2, unif(-5, 2))
+        self.params[r'log$E_{b}$'] = Par(2, unif(0, 4))
+        self.params[r'log$A$'] = Par(-1, unif(-6, 5))
 
 
     def func(self, E, T=None, O=None):
-        alpha = self.params['$\\alpha$'].value
-        beta = self.params['$\\beta$'].value
-        logEb = self.params['log$E_{b}$'].value
-        logA = self.params['log$A$'].value
+        alpha = self.params[r'$\alpha$'].value
+        beta = self.params[r'$\beta$'].value
+        logEb = self.params[r'log$E_{b}$'].value
+        logA = self.params[r'log$A$'].value
 
         Eb = 10 ** logEb
         Amp = 10 ** logA
@@ -324,17 +324,17 @@ class ssbpl(Additive):
         self.comment = 'single smoothly broken power law'
 
         self.params = OrderedDict()
-        self.params['$\\alpha$'] = Par(-1, unif(-4, 3))
-        self.params['$\\beta$'] = Par(-3, unif(-5, -2))
-        self.params['log$E_{p}$'] = Par(2, unif(0, 4))
-        self.params['log$A$'] = Par(0, unif(-6, 6))
+        self.params[r'$\alpha$'] = Par(-1, unif(-4, 3))
+        self.params[r'$\beta$'] = Par(-3, unif(-5, -2))
+        self.params[r'log$E_{p}$'] = Par(2, unif(0, 4))
+        self.params[r'log$A$'] = Par(0, unif(-6, 6))
 
 
     def func(self, E, T=None, O=None):
-        alpha = self.params['$\\alpha$'].value
-        beta = self.params['$\\beta$'].value
-        logEp = self.params['log$E_{p}$'].value
-        logA = self.params['log$A$'].value
+        alpha = self.params[r'$\alpha$'].value
+        beta = self.params[r'$\beta$'].value
+        logEp = self.params[r'log$E_{p}$'].value
+        logA = self.params[r'log$A$'].value
 
         Ep = 10 ** logEp
         Amp = 10 ** logA
@@ -363,19 +363,19 @@ class csbpl(Additive):
         self.comment = 'smoothly broken power law with cutoff'
 
         self.params = OrderedDict()
-        self.params['$\\alpha_{1}$'] = Par(1, unif(-2, 2))
-        self.params['$\\alpha_{2}$'] = Par(-1, unif(-2, 2))
-        self.params['log$E_{b}$'] = Par(1, unif(0, 3))
-        self.params['log$E_{p}$'] = Par(3, unif(1, 4))
-        self.params['log$A$'] = Par(0, unif(-6, 6))
+        self.params[r'$\alpha_{1}$'] = Par(1, unif(-2, 2))
+        self.params[r'$\alpha_{2}$'] = Par(-1, unif(-2, 2))
+        self.params[r'log$E_{b}$'] = Par(1, unif(0, 3))
+        self.params[r'log$E_{p}$'] = Par(3, unif(1, 4))
+        self.params[r'log$A$'] = Par(0, unif(-6, 6))
 
 
     def func(self, E, T=None, O=None):
-        alpha1 = self.params['$\\alpha_{1}$'].value
-        alpha2 = self.params['$\\alpha_{2}$'].value
-        logEb = self.params['log$E_{b}$'].value
-        logEp = self.params['log$E_{p}$'].value
-        logA = self.params['log$A$'].value
+        alpha1 = self.params[r'$\alpha_{1}$'].value
+        alpha2 = self.params[r'$\alpha_{2}$'].value
+        logEb = self.params[r'log$E_{b}$'].value
+        logEp = self.params[r'log$E_{p}$'].value
+        logA = self.params[r'log$A$'].value
 
         Eb = 10 ** logEb
         Ep = 10 ** logEp
@@ -406,21 +406,21 @@ class dsbpl(Additive):
         self.comment = 'double smoothly broken power laws'
 
         self.params = OrderedDict()
-        self.params['$\\alpha_{1}$'] = Par(1, unif(-2, 2))
-        self.params['$\\alpha_{2}$'] = Par(-1, unif(-2, 2))
-        self.params['$\\beta$'] = Par(-4, unif(-6, -2))
-        self.params['log$E_{b}$'] = Par(1, unif(0, 3))
-        self.params['log$E_{p}$'] = Par(3, unif(1, 4))
-        self.params['log$A$'] = Par(0, unif(-6, 6))
+        self.params[r'$\alpha_{1}$'] = Par(1, unif(-2, 2))
+        self.params[r'$\alpha_{2}$'] = Par(-1, unif(-2, 2))
+        self.params[r'$\beta$'] = Par(-4, unif(-6, -2))
+        self.params[r'log$E_{b}$'] = Par(1, unif(0, 3))
+        self.params[r'log$E_{p}$'] = Par(3, unif(1, 4))
+        self.params[r'log$A$'] = Par(0, unif(-6, 6))
 
 
     def func(self, E, T=None, O=None):
-        alpha1 = self.params['$\\alpha_{1}$'].value
-        alpha2 = self.params['$\\alpha_{2}$'].value
-        beta = self.params['$\\beta$'].value
-        logEb = self.params['log$E_{b}$'].value
-        logEp = self.params['log$E_{p}$'].value
-        logA = self.params['log$A$'].value
+        alpha1 = self.params[r'$\alpha_{1}$'].value
+        alpha2 = self.params[r'$\alpha_{2}$'].value
+        beta = self.params[r'$\beta$'].value
+        logEb = self.params[r'log$E_{b}$'].value
+        logEp = self.params[r'log$E_{p}$'].value
+        logA = self.params[r'log$A$'].value
 
         Eb = 10 ** logEb
         Ep = 10 ** logEp
@@ -453,25 +453,25 @@ class tsbpl(Additive):
         self.comment = 'triple smoothly broken power laws'
         
         self.params = OrderedDict()
-        self.params['$\\alpha_{a}$'] = Par(2, unif(0, 4))
-        self.params['$\\alpha_{m}$'] = Par(1, unif(-2, 2))
-        self.params['$\\alpha_{p}$'] = Par(-1, unif(-2, 2))
-        self.params['$\\beta$'] = Par(-4, unif(-6, -2))
-        self.params['log$E_{a}$'] = Par(1, unif(0, 2))
-        self.params['log$E_{m}$'] = Par(2, unif(0, 3))
-        self.params['log$E_{p}$'] = Par(3, unif(1, 4))
-        self.params['log$A$'] = Par(0, unif(-6, 6))
+        self.params[r'$\alpha_{a}$'] = Par(2, unif(0, 4))
+        self.params[r'$\alpha_{m}$'] = Par(1, unif(-2, 2))
+        self.params[r'$\alpha_{p}$'] = Par(-1, unif(-2, 2))
+        self.params[r'$\beta$'] = Par(-4, unif(-6, -2))
+        self.params[r'log$E_{a}$'] = Par(1, unif(0, 2))
+        self.params[r'log$E_{m}$'] = Par(2, unif(0, 3))
+        self.params[r'log$E_{p}$'] = Par(3, unif(1, 4))
+        self.params[r'log$A$'] = Par(0, unif(-6, 6))
         
         
     def func(self, E, T=None, O=None):
-        alpha_a = self.params['$\\alpha_{a}$'].value
-        alpha_m = self.params['$\\alpha_{m}$'].value
-        alpha_p = self.params['$\\alpha_{p}$'].value
-        beta = self.params['$\\beta$'].value
-        logEa = self.params['log$E_{a}$'].value
-        logEm = self.params['log$E_{m}$'].value
-        logEp = self.params['log$E_{p}$'].value
-        logA = self.params['log$A$'].value
+        alpha_a = self.params[r'$\alpha_{a}$'].value
+        alpha_m = self.params[r'$\alpha_{m}$'].value
+        alpha_p = self.params[r'$\alpha_{p}$'].value
+        beta = self.params[r'$\beta$'].value
+        logEa = self.params[r'log$E_{a}$'].value
+        logEm = self.params[r'log$E_{m}$'].value
+        logEp = self.params[r'log$E_{p}$'].value
+        logA = self.params[r'log$A$'].value
         
         Ea = 10 ** logEa
         Em = 10 ** logEm

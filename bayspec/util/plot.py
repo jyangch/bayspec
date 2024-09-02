@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 from ..model.model import Model
 from ..infer.infer import Infer
+from .corner import corner_plotly
 from ..data.spectrum import Spectrum
 from ..data.data import Data, DataUnit
 from ..infer.posterior import Posterior
@@ -1023,56 +1024,75 @@ class Plot(object):
             plt.show()
             
             
-    def corner(self):
+    def corner(self, ploter='plotly'):
         
         if not isinstance(self.cls, Posterior):
             raise TypeError('cls is not Posterior type, cannot call corner method')
         
         data = self.cls.posterior_sample[:, :-1].copy()
         weights = np.ones(self.cls.posterior_sample.shape[0]) / self.cls.posterior_sample.shape[0]
-        levels = 1.0 - np.exp(-0.5 * np.array([1, 1.5, 2]) ** 2)
-        
-        rcParams['font.family'] = 'sans-serif'
-        rcParams['font.size'] = 12
-        rcParams['pdf.fonttype'] = 42
-        
-        self.fig = corner.corner(
-            data, 
-            bins=30, 
-            color='blue', 
-            weights=weights, 
-            labels=self.cls.free_plabels, 
-            show_titles=True, 
-            use_math_text=True, 
-            smooth1d=2, 
-            smooth=2, 
-            levels=levels, 
-            plot_datapoints=True, 
-            plot_density=True, 
-            plot_contours=True, 
-            fill_contours=False, 
-            no_fill_contours=False)
-
-        axes = np.array(self.fig.axes).reshape((self.cls.free_nparams, self.cls.free_nparams))
         
         title_fmt = '%s = $%.2f_{-%.2f}^{+%.2f}$'
-        plabel = self.cls.free_plabels
+        plabel = [f'par#{key}' for key in self.cls.free_par.keys()]
         value = self.cls.par_best_ci()
         error = self.cls.par_error(value)
         
-        for i in range(self.cls.free_nparams):
-            ax = axes[i, i]
-            ax.set_title(title_fmt % (plabel[i], value[i], error[i][0], error[i][1]))
-            ax.errorbar(value[i], 0.005, 
-                        xerr=[[error[i][0]], [error[i][1]]], 
-                        fmt='or', ms=2, ecolor='r', elinewidth=1)
+        if ploter == 'plotly':
             
-        for yi in range(self.cls.free_nparams):
-            for xi in range(yi):
-                ax = axes[yi, xi]
-                ax.errorbar(value[xi], value[yi], 
-                            xerr=[[error[xi][0]], [error[xi][1]]],
-                            yerr=[[error[yi][0]], [error[yi][1]]],
-                            fmt='or', ms=2, ecolor='r', elinewidth=1)
+            levels = 1.0 - np.exp(-0.5 * np.array([1, 2]) ** 2)
+            
+            self.fig = corner_plotly(data, 
+                                     bins=30, 
+                                     weights=weights, 
+                                     smooth1d=2, 
+                                     smooth=2, 
+                                     labels=plabel, 
+                                     levels=levels, 
+                                     values=value, 
+                                     errors=error)
+            
+            self.fig.show()
+            
+        elif ploter == 'matplotlib':
         
-        plt.show()
+            levels = 1.0 - np.exp(-0.5 * np.array([1, 1.5, 2]) ** 2)
+            
+            rcParams['font.family'] = 'sans-serif'
+            rcParams['font.size'] = 12
+            rcParams['pdf.fonttype'] = 42
+            
+            self.fig = corner.corner(
+                data, 
+                bins=30, 
+                color='blue', 
+                weights=weights, 
+                labels=plabel, 
+                show_titles=True, 
+                use_math_text=True, 
+                smooth1d=2, 
+                smooth=2, 
+                levels=levels, 
+                plot_datapoints=True, 
+                plot_density=True, 
+                plot_contours=True, 
+                fill_contours=False, 
+                no_fill_contours=False)
+
+            axes = np.array(self.fig.axes).reshape((self.cls.free_nparams, self.cls.free_nparams))
+            
+            for i in range(self.cls.free_nparams):
+                ax = axes[i, i]
+                ax.set_title(title_fmt % (plabel[i], value[i], error[i][0], error[i][1]))
+                ax.errorbar(value[i], 0.005, 
+                            xerr=[[error[i][0]], [error[i][1]]], 
+                            fmt='or', ms=2, ecolor='r', elinewidth=1)
+                
+            for yi in range(self.cls.free_nparams):
+                for xi in range(yi):
+                    ax = axes[yi, xi]
+                    ax.errorbar(value[xi], value[yi], 
+                                xerr=[[error[xi][0]], [error[xi][1]]],
+                                yerr=[[error[yi][0]], [error[yi][1]]],
+                                fmt='or', ms=2, ecolor='r', elinewidth=1)
+        
+            plt.show()

@@ -22,19 +22,19 @@ class hlecpl(Tinvolved):
         self.comment = 'curvature effect model for cpl function'
 
         self.params = OrderedDict()
-        self.params['$\\alpha$'] = Par(-1, unif(-2, 2))
-        self.params['log$E_{p,c}$'] = Par(2, unif(0, 4))
-        self.params['log$A_{c}$'] = Par(0, unif(-6, 6))
-        self.params['$t_{0}$'] = Par(0, unif(-20, 20))
-        self.params['$t_{c}$'] = Par(10, unif(0, 50))
+        self.params[r'$\alpha$'] = Par(-1, unif(-2, 2))
+        self.params[r'log$E_{p,c}$'] = Par(2, unif(0, 4))
+        self.params[r'log$A_{c}$'] = Par(0, unif(-6, 6))
+        self.params[r'$t_{0}$'] = Par(0, unif(-20, 20))
+        self.params[r'$t_{c}$'] = Par(10, unif(0, 50))
 
 
     def func(self, E, T, O=None):
-        alpha = self.params['$\\alpha$'].value
-        logEpc = self.params['log$E_{p,c}$'].value
-        logAc = self.params['log$A_{c}$'].value
-        t0 = self.params['$t_{0}$'].value
-        tc = self.params['$t_{c}$'].value
+        alpha = self.params[r'$\alpha$'].value
+        logEpc = self.params[r'log$E_{p,c}$'].value
+        logAc = self.params[r'log$A_{c}$'].value
+        t0 = self.params[r'$t_{0}$'].value
+        tc = self.params[r'$t_{c}$'].value
 
         Epc = 10 ** logEpc
         Ac = 10 ** logAc
@@ -65,21 +65,21 @@ class hleband(Tinvolved):
         self.comment = 'curvature effect model for band function'
 
         self.params = OrderedDict()
-        self.params['$\\alpha$'] = Par(-1, unif(-2, 2))
-        self.params['$\\beta$'] = Par(-4, unif(-6, -2))
-        self.params['log$E_{p,c}$'] = Par(2, unif(0, 4))
-        self.params['log$A_{c}$'] = Par(0, unif(-6, 6))
-        self.params['$t_{0}$'] = Par(0, unif(-20, 20))
-        self.params['$t_{c}$'] = Par(10, unif(0, 50))
+        self.params[r'$\alpha$'] = Par(-1, unif(-2, 2))
+        self.params[r'$\beta$'] = Par(-4, unif(-6, -2))
+        self.params[r'log$E_{p,c}$'] = Par(2, unif(0, 4))
+        self.params[r'log$A_{c}$'] = Par(0, unif(-6, 6))
+        self.params[r'$t_{0}$'] = Par(0, unif(-20, 20))
+        self.params[r'$t_{c}$'] = Par(10, unif(0, 50))
 
 
     def func(self, E, T, O=None):
-        alpha = self.params['$\\alpha$'].value
-        beta = self.params['$\\beta$'].value
-        logEpc = self.params['log$E_{p,c}$'].value
-        logAc = self.params['log$A_{c}$'].value
-        t0 = self.params['$t_{0}$'].value
-        tc = self.params['$t_{c}$'].value
+        alpha = self.params[r'$\alpha$'].value
+        beta = self.params[r'$\beta$'].value
+        logEpc = self.params[r'log$E_{p,c}$'].value
+        logAc = self.params[r'log$A_{c}$'].value
+        t0 = self.params[r'$t_{0}$'].value
+        tc = self.params[r'$t_{c}$'].value
 
         Epc = 10 ** logEpc
         Ac = 10 ** logAc

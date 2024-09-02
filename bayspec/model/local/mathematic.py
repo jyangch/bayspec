@@ -14,9 +14,9 @@ class Const(Mathematic):
         self.comment = 'constant model'
 
         self.params = OrderedDict()
-        self.params['$C$'] = Par(0, unif(-10, 10))
+        self.params[r'$C$'] = Par(0, unif(-10, 10))
         
     
     def func(self, E, T=None, O=None):
-        C = self.params['$C$'].value
+        C = self.params[r'$C$'].value
         return C
