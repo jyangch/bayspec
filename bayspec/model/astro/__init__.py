@@ -130,3 +130,10 @@ for name, cls in model_classes.items():
     globals()[f'AS_{name}'] = new_class
     
     __all__.append(f'AS_{name}')
+    
+
+astro_models = {name: cls for name, cls in globals().items() 
+                if isinstance(cls, type) 
+                and issubclass(cls, Model) 
+                and name[:2] == 'AS'}
+__all__.append('astro_models')

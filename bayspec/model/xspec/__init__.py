@@ -147,3 +147,10 @@ for name, cls in model_classes.items():
     globals()[f'XS_{name}'] = new_class
     
     __all__.append(f'XS_{name}')
+
+
+xspec_models = {name: cls for name, cls in globals().items() 
+                if isinstance(cls, type) 
+                and issubclass(cls, Model) 
+                and name[:2] == 'XS'}
+__all__.append('xspec_models')

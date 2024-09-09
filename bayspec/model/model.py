@@ -277,9 +277,9 @@ class Model(object):
             return self.func(E, T)
         
         
-    def fracspec(self, E):
+    def nouspec(self, E):
         
-        if self.type != 'mul':
+        if self.type not in ['mul', 'math']:
             msg = f'fracspec is invalid for {self.type} type model'
             raise TypeError(msg)
         else:
@@ -397,13 +397,13 @@ class Model(object):
         return self.sample_statistic(sample)
     
     
-    def fracspec_sample(self, E):
+    def nouspec_sample(self, E):
         
         sample = np.empty([self.posterior_nsample, len(E)])
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
-            sample[i] = self.fracspec(E)
+            sample[i] = self.nouspec(E)
             
         return self.sample_statistic(sample)
     

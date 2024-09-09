@@ -177,3 +177,16 @@ class plaw(Prior):
         self.args = (a, loc, scale)
         self.expr = 'plaw'
         self.stat = stats.powerlaw(*self.args)
+        
+        
+all_priors = {name: cls for name, cls in globals().items() 
+              if isinstance(cls, type) 
+              and issubclass(cls, Prior) 
+              and name != 'Prior'}
+
+
+def list_priors():
+    return list(all_priors.keys())
+
+
+__all__ = list(all_priors.keys()) + ['list_priors', 'all_priors']

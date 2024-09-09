@@ -37,12 +37,12 @@ class Infer(object):
             for pair in new_pairs:
                 if isinstance(pair, (tuple, list)):
                     self._addpair(*pair)
+                    
+            self._extract()
             
         else:
             raise ValueError('unsupported pair type')
-        
-        self._extract()
-        
+
         
     def _addpair(self, *pair):
         

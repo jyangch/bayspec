@@ -37,19 +37,25 @@ class Data(object):
                 if isinstance(item, tuple):
                     self._setitem(*item)
                     
+            self._extract()
+                    
         elif isinstance(new_data, dict):
             for item in new_data.items():
                 self._setitem(*item)
+                
+            self._extract()
             
         else:
             raise ValueError('unsupported data type')
-        
-        self._extract()
-        
+
         
     def _setitem(self, key, value):
+        
         if not isinstance(value, DataUnit):
             raise ValueError('value parameter should be DataUnit type')
+        
+        if not value.completeness:
+            raise ValueError('failed for completeness check for dataunit')
         
         value.name = key
         self._data[key] = value
@@ -534,8 +540,11 @@ class DataUnit(object):
             
             self.rsp_ins = Response.from_plain(self.rsp_file, self.rsp_ii)
             
-        self.ebin = np.array(self.rsp_ins.phbin, dtype=float)
-        self.nbin = self.rsp_ins.phbin.shape[0]
+        if self.completeness:
+            self.ebin = np.array(self.rsp_ins.phbin, dtype=float)
+            self.nbin = self.rsp_ins.phbin.shape[0]
+        else:
+            self.ebin = self.nbin = None
 
 
     @property
@@ -584,8 +593,11 @@ class DataUnit(object):
         if self._notc is not None:
             if not isinstance(self._notc, (list, np.ndarray)):
                 raise ValueError('<notc> parameter should be list or array')
-            
-        self.noticing = self._notice(self.rsp_ins._chbin, self._notc)
+        
+        if self.completeness:
+            self.noticing = self._notice(self.rsp_ins._chbin, self._notc)
+        else:
+            self.noticing = None
 
 
     @property
@@ -613,30 +625,36 @@ class DataUnit(object):
             gr_params = {'min_evt': None, 'min_sigma': None, 'max_bin': None}
             gr_params.update(self._grpg)
             
-            ini_flag = (np.array(self.qualifying) & np.array(self.noticing)).astype(int).tolist()
-            
-            self.grouping =  self._group(
-                self.src_ins._counts, 
-                self.bkg_ins._counts, 
-                self.bkg_ins._errors, 
-                self.src_ins.exposure, 
-                self.bkg_ins.exposure, 
-                min_evt=gr_params['min_evt'], 
-                min_sigma=gr_params['min_sigma'], 
-                max_bin=gr_params['max_bin'], 
-                stat=self.stat, 
-                ini_flag=ini_flag)
+            if self.completeness:
+                ini_flag = (np.array(self.qualifying) & np.array(self.noticing)).astype(int).tolist()
+                
+                self.grouping =  self._group(
+                    self.src_ins._counts, 
+                    self.bkg_ins._counts, 
+                    self.bkg_ins._errors, 
+                    self.src_ins.exposure, 
+                    self.bkg_ins.exposure, 
+                    min_evt=gr_params['min_evt'], 
+                    min_sigma=gr_params['min_sigma'], 
+                    max_bin=gr_params['max_bin'], 
+                    stat=self.stat, 
+                    ini_flag=ini_flag)
+                
+            else:
+                self.grouping = None
 
 
     def _update_data(self):
         
-        self.src_ins._update(self.qualifying, self.noticing, self.grouping)
-        self.bkg_ins._update(self.qualifying, self.noticing, self.grouping)
-        self.rsp_ins._update(self.qualifying, self.noticing, self.grouping)
+        if self.completeness:
         
+            self.src_ins._update(self.qualifying, self.noticing, self.grouping)
+            self.bkg_ins._update(self.qualifying, self.noticing, self.grouping)
+            self.rsp_ins._update(self.qualifying, self.noticing, self.grouping)
+            
         self.npoint = self.src_ins.counts.shape[0]
-        
-        
+
+
     @property
     def time(self):
         
@@ -655,8 +673,11 @@ class DataUnit(object):
         if self._time is not None:
             if not isinstance(self._time, (int, float)):
                 raise ValueError('<time> parameter should be int or float')
-            
-        self.tarr = np.repeat(self._time, self.nbin)
+        
+        if self.completeness:
+            self.tarr = np.repeat(self._time, self.nbin)
+        else:
+            self.tarr = None
 
 
     def _update(self):
@@ -671,6 +692,15 @@ class DataUnit(object):
         self._update_grpg()
         self._update_data()
         self._update_time()
+        
+        
+    @property
+    def completeness(self):
+        
+        if self.src_ins is None or self.rsp_ins is None:
+            return False
+        else:
+            return True
 
 
     @property

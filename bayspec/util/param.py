@@ -6,7 +6,7 @@ from .prior import Prior
 class Par(object):
 
     def __init__(self, 
-                 val=None, 
+                 val, 
                  prior=None, 
                  post=None, 
                  comment=None, 
@@ -28,7 +28,7 @@ class Par(object):
     @property
     def val(self):
         
-        return self._val
+        return float(self._val)
 
 
     @val.setter
@@ -170,7 +170,7 @@ class Par(object):
 class Cfg(Par):
     
     def __init__(self, 
-                 val=None, 
+                 val, 
                  prior=None, 
                  post=None, 
                  comment=None, 

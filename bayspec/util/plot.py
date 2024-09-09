@@ -129,7 +129,7 @@ class Plot(object):
         self._cls = new_cls
 
     
-    def spectrum(self, ploter='plotly'):
+    def spectrum(self, ploter='plotly', show=True):
         
         if not isinstance(self.cls, Spectrum):
             raise TypeError('cls is not Spectrum type, cannot call spectrum method')
@@ -151,8 +151,9 @@ class Plot(object):
             self.fig.update_xaxes(title_text='Channel')
             self.fig.update_yaxes(title_text='Counts', type='log')
             self.fig.update_layout(template='plotly_white', height=600, width=800)
+            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            self.fig.show()
+            if show: self.fig.show()
             
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
@@ -180,10 +181,10 @@ class Plot(object):
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             
-            plt.show()
+            if show: plt.show()
             
             
-    def response(self, ploter='plotly', ch_range=None, ph_range=None):
+    def response(self, ploter='plotly', ch_range=None, ph_range=None, show=True):
         
         if not isinstance(self.cls, Response):
             raise TypeError('cls is not Response type, cannot call response method')
@@ -216,8 +217,9 @@ class Plot(object):
             self.fig.update_xaxes(title_text='Channel energy (keV)', type='log')
             self.fig.update_yaxes(title_text='Photon energy (keV)', type='log')
             self.fig.update_layout(template='plotly_white', height=600, width=800)
+            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            self.fig.show()
+            if show: self.fig.show()
             
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
@@ -237,10 +239,10 @@ class Plot(object):
             ax.set_ylabel('Photon energy (keV)')
             self.fig.colorbar(c, orientation='vertical')
 
-            plt.show()
+            if show: plt.show()
             
             
-    def response_photon(self, ploter='plotly', ph_range=None):
+    def response_photon(self, ploter='plotly', ph_range=None, show=True):
         
         if not isinstance(self.cls, Response):
             raise TypeError('cls is not Response type, cannot call response_photon method')
@@ -272,8 +274,9 @@ class Plot(object):
             self.fig.update_xaxes(title_text='Photon energy (keV)', type='log')
             self.fig.update_yaxes(type='log')
             self.fig.update_layout(template='plotly_white', height=600, width=800)
+            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            self.fig.show()
+            if show: self.fig.show()
             
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
@@ -300,10 +303,10 @@ class Plot(object):
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             
-            plt.show()
+            if show: plt.show()
 
 
-    def response_channel(self, ploter='plotly', ch_range=None):
+    def response_channel(self, ploter='plotly', ch_range=None, show=True):
         
         if not isinstance(self.cls, Response):
             raise TypeError('cls is not Response type, cannot call response_channel method')
@@ -330,8 +333,9 @@ class Plot(object):
             self.fig.update_xaxes(title_text='Channel energy (keV)', type='log')
             self.fig.update_yaxes(type='log')
             self.fig.update_layout(template='plotly_white', height=600, width=800)
+            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            self.fig.show()
+            if show: self.fig.show()
             
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
@@ -358,13 +362,16 @@ class Plot(object):
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             
-            plt.show()
-            
-            
-    def dataunit(self, ploter='plotly', style='CE'):
+            if show: plt.show()
+
+
+    def dataunit(self, ploter='plotly', style='CE', show=True):
         
         if not isinstance(self.cls, DataUnit):
             raise TypeError('cls is not DataUnit type, cannot call dataunit method')
+        
+        if not self.cls.completeness:
+            raise AttributeError('failed for completeness check')
         
         x = self.cls.rsp_chbin_mean.astype(float)
         x_le = self.cls.rsp_chbin_width.astype(float) / 2
@@ -463,8 +470,9 @@ class Plot(object):
             self.fig.update_xaxes(title_text='Energy (keV)', type='log')
             self.fig.update_yaxes(title_text=ylabel, type='log')
             self.fig.update_layout(template='plotly_white', height=600, width=800)
+            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            self.fig.show()
+            if show: self.fig.show()
             
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
@@ -498,10 +506,10 @@ class Plot(object):
             ax.spines['top'].set_visible(False)
             ax.legend()
             
-            plt.show()
+            if show: plt.show()
 
 
-    def data(self, ploter='plotly', style='CE'):
+    def data(self, ploter='plotly', style='CE', show=True):
         
         if not isinstance(self.cls, Data):
             raise TypeError('cls is not Data type, cannot call data method')
@@ -576,7 +584,9 @@ class Plot(object):
             self.fig.update_xaxes(title_text='Energy (keV)', type='log')
             self.fig.update_yaxes(title_text=ylabel, type='log')
             self.fig.update_layout(template='plotly_white', height=600, width=800)
-            self.fig.show()
+            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
+            
+            if show: self.fig.show()
             
         elif ploter == 'matplotlib':
             ax.set_xscale('log')
@@ -595,10 +605,11 @@ class Plot(object):
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             ax.legend()
-            plt.show()
+            
+            if show: plt.show()
             
 
-    def model(self, E, T=None, ploter='plotly', style='NE', CI=False, yrange=None):
+    def model(self, Es, Ts=None, ploter='plotly', style='NE', CI=False, yrange=None, show=True):
         
         if not isinstance(self.cls[0], Model):
             raise TypeError('cls is not Model list, cannot call model method')
@@ -622,33 +633,58 @@ class Plot(object):
             gs = self.fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = self.fig.add_subplot(gs[0, 0])
         
-        x = np.array(E).astype(float)
-        
         for i, model in enumerate(self.cls):
+            
+            E = Es[i]; T = Ts[i]
+            x = np.array(E).astype(float)
         
             if style == 'NE':
+                if model.type not in ['add', 'tinv', 'math']:
+                    raise AttributeError(f'{style} is invalid for {model.type} type model')
+                
                 ylabel = 'Photons/cm^2/s/keV'
-                y = model.phtspec(E, T).astype(float)
                 if CI:
-                    y_ci = model.phtspec_sample(E, T)['Isigma'].astype(float)
+                    y_sample = model.phtspec_sample(E, T)
+                    y = y_sample['median'].astype(float)
+                    y_ci = y_sample['Isigma'].astype(float)
+                else:
+                    y = model.phtspec(E, T).astype(float)
                     
             elif style == 'Fv':
+                if model.type not in ['add', 'tinv', 'math']:
+                    raise AttributeError(f'{style} is invalid for {model.type} type model')
+                
                 ylabel = 'erg/cm^2/s/keV'
-                y = model.flxspec(E, T).astype(float)
                 if CI:
-                    y_ci = model.flxspec_sample(E, T)['Isigma'].astype(float)
+                    y_sample = model.flxspec_sample(E, T)
+                    y = y_sample['median'].astype(float)
+                    y_ci = y_sample['Isigma'].astype(float)
+                else:
+                    y = model.flxspec(E, T).astype(float)
                     
             elif style == 'vFv':
+                if model.type not in ['add', 'tinv', 'math']:
+                    raise AttributeError(f'{style} is invalid for {model.type} type model')
+                
                 ylabel = 'erg/cm^2/s'
-                y = model.ergspec(E, T).astype(float)
                 if CI:
-                    y_ci = model.ergspec_sample(E, T)['Isigma'].astype(float)
+                    y_sample = model.ergspec_sample(E, T)
+                    y = y_sample['median'].astype(float)
+                    y_ci = y_sample['Isigma'].astype(float)
+                else:
+                    y = model.ergspec(E, T).astype(float)
                     
-            elif style == 'Fr':
-                ylabel = 'Fraction'
-                y = model.fracspec(E).astype(float)
+            elif style == 'NoU':
+                if model.type not in ['mul', 'math']:
+                    raise AttributeError(f'{style} is invalid for {model.type} type model')
+                
+                ylabel = 'dimensionless'
                 if CI:
-                    y_ci = model.fracspec_sample(E)['Isigma'].astype(float)
+                    y_sample = model.nouspec_sample(E)
+                    y = y_sample['median'].astype(float)
+                    y_ci = y_sample['Isigma'].astype(float)
+                else:
+                    y = model.nouspec(E).astype(float)
                     
             else:
                 raise ValueError(f'unsupported style argument: {style}')
@@ -664,22 +700,22 @@ class Plot(object):
                 
                 if CI:
                     low = go.Scatter(x=x, 
-                                    y=y_ci[0], 
-                                    mode='lines', 
-                                    name=f'{model.expr} lower', 
-                                    fill=None, 
-                                    line_color='rgba(0,0,0,0)', 
-                                    showlegend=False)
+                                     y=y_ci[0], 
+                                     mode='lines', 
+                                     name=f'{model.expr} lower', 
+                                     fill=None, 
+                                     line_color='rgba(0,0,0,0)', 
+                                     showlegend=False)
                     self.fig.add_trace(low)
                     
                     upp = go.Scatter(x=x, 
-                                    y=y_ci[1], 
-                                    mode='lines', 
-                                    name=f'{model.expr} upper', 
-                                    fill='tonexty', 
-                                    line_color='rgba(0,0,0,0)', 
-                                    fillcolor=Plot.get_rgb(self.colors[i], 0.5), 
-                                    showlegend=False)
+                                     y=y_ci[1], 
+                                     mode='lines', 
+                                     name=f'{model.expr} upper', 
+                                     fill='tonexty', 
+                                     line_color='rgba(0,0,0,0)', 
+                                     fillcolor=Plot.get_rgb(self.colors[i], 0.5), 
+                                     showlegend=False)
                     self.fig.add_trace(upp)
 
             elif ploter == 'matplotlib':
@@ -692,8 +728,9 @@ class Plot(object):
             self.fig.update_yaxes(title_text=ylabel, type='log')
             if yrange is not None: self.fig.update_yaxes(range=[np.log10(yrange[0]), np.log10(yrange[1])])
             self.fig.update_layout(template='plotly_white', height=600, width=800)
+            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            self.fig.show()
+            if show: self.fig.show()
                 
         elif ploter == 'matplotlib':
             ax.set_xscale('log')
@@ -711,10 +748,10 @@ class Plot(object):
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             
-            plt.show()
+            if show: plt.show()
             
 
-    def pair(self, ploter='plotly', style='CE'):
+    def pair(self, ploter='plotly', style='CE', show=True):
         
         if not isinstance(self.cls, Pair):
             raise TypeError('cls is not Pair type, cannot call pair method')
@@ -822,7 +859,9 @@ class Plot(object):
             self.fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
             self.fig.update_yaxes(title_text='Sigma', showgrid=False, range=[-3.5, 3.5], row=2, col=1)
             self.fig.update_layout(template='plotly_white', height=700, width=700)
-            self.fig.show()
+            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
+            
+            if show: self.fig.show()
             
         elif ploter == 'matplotlib':
             ax1.set_xscale('log')
@@ -856,10 +895,11 @@ class Plot(object):
             ax2.spines['top'].set_linewidth(1.0)
             ax2.spines['left'].set_linewidth(1.0)
             ax2.spines['right'].set_linewidth(1.0)
-            plt.show()
+            
+            if show: plt.show()
             
             
-    def walker(self):
+    def walker(self, show=True):
         
         if not isinstance(self.cls, (Infer, Posterior)):
             raise TypeError('cls is not Infer or Posterior type, cannot call walker method')
@@ -873,10 +913,10 @@ class Plot(object):
             ax.yaxis.set_label_coords(-0.1, 0.5)
         axes[-1].set_xlabel("step number")
         
-        plt.show()
+        if show: plt.show()
             
             
-    def ctsspec(self, ploter='plotly', style='CE'):
+    def ctsspec(self, ploter='plotly', style='CE', show=True):
         
         if not isinstance(self.cls, (Infer, Posterior)):
             raise TypeError('cls is not Infer or Posterior type, cannot call infer method')
@@ -987,7 +1027,9 @@ class Plot(object):
             self.fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
             self.fig.update_yaxes(title_text='Sigma', showgrid=False, range=[-3.5, 3.5], row=2, col=1)
             self.fig.update_layout(template='plotly_white', height=700, width=700)
-            self.fig.show()
+            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
+            
+            if show: self.fig.show()
             
         elif ploter == 'matplotlib':
             ax1.set_xscale('log')
@@ -1021,10 +1063,11 @@ class Plot(object):
             ax2.spines['top'].set_linewidth(1.0)
             ax2.spines['left'].set_linewidth(1.0)
             ax2.spines['right'].set_linewidth(1.0)
-            plt.show()
+            
+            if show: plt.show()
             
             
-    def corner(self, ploter='plotly'):
+    def corner(self, ploter='plotly', show=True):
         
         if not isinstance(self.cls, Posterior):
             raise TypeError('cls is not Posterior type, cannot call corner method')
@@ -1051,7 +1094,7 @@ class Plot(object):
                                      values=value, 
                                      errors=error)
             
-            self.fig.show()
+            if show: self.fig.show()
             
         elif ploter == 'matplotlib':
         
@@ -1095,4 +1138,4 @@ class Plot(object):
                                 yerr=[[error[yi][0]], [error[yi][1]]],
                                 fmt='or', ms=2, ecolor='r', elinewidth=1)
         
-            plt.show()
+            if show: plt.show()
