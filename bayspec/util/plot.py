@@ -56,7 +56,7 @@ class Plot(object):
             
             fig.update_xaxes(title_text='Channel')
             fig.update_yaxes(title_text='Counts', type='log')
-            fig.update_layout(template='plotly_white', height=600, width=800)
+            fig.update_layout(template='plotly_white', height=600, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
             if show: fig.show()
@@ -125,7 +125,7 @@ class Plot(object):
             
             fig.update_xaxes(title_text='Channel energy (keV)', type='log')
             fig.update_yaxes(title_text='Photon energy (keV)', type='log')
-            fig.update_layout(template='plotly_white', height=600, width=800)
+            fig.update_layout(template='plotly_white', height=600, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
             if show: fig.show()
@@ -185,7 +185,7 @@ class Plot(object):
             
             fig.update_xaxes(title_text='Photon energy (keV)', type='log')
             fig.update_yaxes(type='log')
-            fig.update_layout(template='plotly_white', height=600, width=800)
+            fig.update_layout(template='plotly_white', height=600, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
             if show: fig.show()
@@ -247,7 +247,7 @@ class Plot(object):
             
             fig.update_xaxes(title_text='Channel energy (keV)', type='log')
             fig.update_yaxes(type='log')
-            fig.update_layout(template='plotly_white', height=600, width=800)
+            fig.update_layout(template='plotly_white', height=600, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
             if show: fig.show()
@@ -387,7 +387,7 @@ class Plot(object):
             
             fig.update_xaxes(title_text='Energy (keV)', type='log')
             fig.update_yaxes(title_text=ylabel, type='log')
-            fig.update_layout(template='plotly_white', height=600, width=800)
+            fig.update_layout(template='plotly_white', height=600, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
             if show: fig.show()
@@ -497,7 +497,7 @@ class Plot(object):
         if ploter == 'plotly':
             fig.update_xaxes(title_text='Energy (keV)', type='log')
             fig.update_yaxes(title_text=ylabel, type='log')
-            fig.update_layout(template='plotly_white', height=600, width=800)
+            fig.update_layout(template='plotly_white', height=600, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
             if show: fig.show()
@@ -526,9 +526,9 @@ class Plot(object):
 
 
     @staticmethod
-    def model(ploter='plotly', style='NE', CI=False, yrange=None, show=True):
+    def model(ploter='plotly', style='NE', CI=False, yrange=None):
         
-        modelplot = ModelPlot(ploter=ploter, style=style, CI=CI, yrange=yrange, show=show)
+        modelplot = ModelPlot(ploter=ploter, style=style, CI=CI, yrange=yrange)
             
         return modelplot
 
@@ -634,7 +634,7 @@ class Plot(object):
             fig.update_xaxes(title_text='Energy (keV)', row=2, col=1, type='log')
             fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
             fig.update_yaxes(title_text='Sigma', showgrid=False, range=[-3.5, 3.5], row=2, col=1)
-            fig.update_layout(template='plotly_white', height=700, width=700)
+            fig.update_layout(template='plotly_white', height=700, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
             if show: fig.show()
@@ -801,7 +801,7 @@ class Plot(object):
             fig.update_xaxes(title_text='Energy (keV)', row=2, col=1, type='log')
             fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
             fig.update_yaxes(title_text='Sigma', showgrid=False, range=[-3.5, 3.5], row=2, col=1)
-            fig.update_layout(template='plotly_white', height=700, width=700)
+            fig.update_layout(template='plotly_white', height=700, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
             if show: fig.show()
@@ -929,13 +929,12 @@ class ModelPlot(object):
             + px.colors.qualitative.G10 \
                 + px.colors.qualitative.T10
     
-    def __init__(self, ploter='plotly', style='NE', CI=False, yrange=None, show=True):
+    def __init__(self, ploter='plotly', style='NE', CI=False, yrange=None):
         
         self.ploter = ploter
         self.style = style
         self.CI = CI
         self.yrange = yrange
-        self.show = show
         
         if self.style == 'NE':
             ylabel = 'Photons/cm^2/s/keV'
@@ -954,7 +953,7 @@ class ModelPlot(object):
             self.fig.update_xaxes(title_text='Energy (keV)', type='log')
             self.fig.update_yaxes(title_text=ylabel, type='log')
             if yrange is not None: self.fig.update_yaxes(range=[np.log10(yrange[0]), np.log10(yrange[1])])
-            self.fig.update_layout(template='plotly_white', height=600, width=800)
+            self.fig.update_layout(template='plotly_white', height=600, width=600)
             self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
         elif self.ploter == 'matplotlib':
@@ -993,7 +992,7 @@ class ModelPlot(object):
         return 'rgba(%d, %d, %d, %f)' % tuple(rgb)
         
         
-    def add_model(self, model, E, T=None):
+    def add_model(self, model, E, T=None, show=False):
         
         if not isinstance(model, Model):
             raise TypeError('model is not Model type, cannot call add_model method')
@@ -1055,7 +1054,7 @@ class ModelPlot(object):
                             mode='lines', 
                             name=model.expr, 
                             showlegend=True, 
-                            line=dict(width=2, color=ModelPlot.colors(self.model_index)))
+                            line=dict(width=2, color=ModelPlot.colors[self.model_index]))
             self.fig.add_trace(mo)
             
             if self.CI:
@@ -1074,15 +1073,17 @@ class ModelPlot(object):
                                  name=f'{model.expr} upper', 
                                  fill='tonexty', 
                                  line_color='rgba(0,0,0,0)', 
-                                 fillcolor=ModelPlot.get_rgb(ModelPlot.colors(self.model_index), 0.5), 
+                                 fillcolor=ModelPlot.get_rgb(ModelPlot.colors[self.model_index], 0.5), 
                                  showlegend=False)
                 self.fig.add_trace(upp)
                 
-            if self.show: self.fig.show()
+            if show: self.fig.show()
 
         elif self.ploter == 'matplotlib':
-            self.ax.plot(x, y, lw=1.0, color=ModelPlot.colors(self.model_index))
+            self.ax.plot(x, y, lw=1.0, color=ModelPlot.colors[self.model_index])
             if self.CI: 
-                self.ax.fill_between(x, y_ci[0], y_ci[1], fc=ModelPlot.colors(self.model_index), alpha=0.5)
+                self.ax.fill_between(x, y_ci[0], y_ci[1], fc=ModelPlot.colors[self.model_index], alpha=0.5)
             
-            if self.show: plt.show()
+            if show: plt.show()
+            
+        return self.fig
