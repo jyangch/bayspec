@@ -20,94 +20,11 @@ from ..data.response import Response, Auxiliary
 
 class Plot(object):
     
-    def __init__(self, cls):
-        
-        self.cls = cls
-        
-        
-    @classmethod
-    def from_spectrum(cls, spectrum):
-        
-        if isinstance(spectrum, Spectrum):
-            return cls(spectrum)
-        
-        else:
-            raise ValueError('spectrum argument should be Spectrum type')
-        
-        
-    @classmethod
-    def from_response(cls, response):
-        
-        if isinstance(response, Response):
-            return cls(response)
-        
-        else:
-            raise ValueError('response argument should be Response type')
-        
-        
-    @classmethod
-    def from_dataunit(cls, dataunit):
-        
-        if isinstance(dataunit, DataUnit):
-            return cls(dataunit)
-        
-        else:
-            raise ValueError('dataunit argument should be DataUnit type')
-        
-        
-    @classmethod
-    def from_data(cls, data):
-        
-        if isinstance(data, Data):
-            return cls(data)
-        
-        else:
-            raise ValueError('data argument should be Data type')
-        
-        
-    @classmethod
-    def from_model(cls, model):
-        
-        if isinstance(model, Model):
-            return cls([model])
-        
-        elif isinstance(model, list) and isinstance(model[0], Model):
-            return cls(model)
-        
-        else:
-            raise ValueError('model argument should be Model type or Model list')
-        
-        
-    @classmethod
-    def from_pair(cls, pair):
-        
-        if isinstance(pair, Pair):
-            return cls(pair)
-        
-        else:
-            raise ValueError('pair argument should be Pair type')
-        
-        
-    @classmethod
-    def from_infer(cls, infer):
-        
-        if isinstance(infer, Infer):
-            return cls(infer)
-        
-        else:
-            raise ValueError('infer argument should be Infer type')
-        
-        
-    @classmethod
-    def from_posterior(cls, posterior):
-        
-        if isinstance(posterior, Posterior):
-            return cls(posterior)
-        
-        else:
-            raise ValueError('posterior argument should be Posterior type')
-        
-        
+    colors = px.colors.qualitative.Plotly \
+        + px.colors.qualitative.D3 \
+            + px.colors.qualitative.G10 \
+                + px.colors.qualitative.T10
+
     @staticmethod
     def get_rgb(color, opacity=1.0):
         
@@ -115,57 +32,46 @@ class Plot(object):
         rgb = [int(x * 255) for x in rgba[:3]] + [opacity]
         
         return 'rgba(%d, %d, %d, %f)' % tuple(rgb)
-
     
-    @property
-    def cls(self):
-        
-        return self._cls
-
-
-    @cls.setter
-    def cls(self, new_cls):
-        
-        self._cls = new_cls
-
     
-    def spectrum(self, ploter='plotly', show=True):
+    @staticmethod
+    def spectrum(cls, ploter='plotly', show=True):
         
-        if not isinstance(self.cls, Spectrum):
+        if not isinstance(cls, Spectrum):
             raise TypeError('cls is not Spectrum type, cannot call spectrum method')
         
         if ploter == 'plotly':
-            self.fig = go.Figure()
-            obs = go.Scatter(x=np.arange(len(self.cls._counts)), 
-                             y=self.cls._counts.astype(float), 
+            fig = go.Figure()
+            obs = go.Scatter(x=np.arange(len(cls._counts)), 
+                             y=cls._counts.astype(float), 
                              mode='lines', 
                              showlegend=False, 
                              error_y=dict(
                                  type='data',
-                                 array=self.cls._errors.astype(float),
+                                 array=cls._errors.astype(float),
                                  thickness=1.5,
                                  width=0)
                              )
-            self.fig.add_trace(obs)
+            fig.add_trace(obs)
             
-            self.fig.update_xaxes(title_text='Channel')
-            self.fig.update_yaxes(title_text='Counts', type='log')
-            self.fig.update_layout(template='plotly_white', height=600, width=800)
-            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
+            fig.update_xaxes(title_text='Channel')
+            fig.update_yaxes(title_text='Counts', type='log')
+            fig.update_layout(template='plotly_white', height=600, width=800)
+            fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            if show: self.fig.show()
+            if show: fig.show()
             
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
 
-            self.fig = plt.figure(figsize=(8, 6))
-            gs = self.fig.add_gridspec(1, 1, wspace=0, hspace=0)
-            ax = self.fig.add_subplot(gs[0, 0])
+            fig = plt.figure(figsize=(8, 6))
+            gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
+            ax = fig.add_subplot(gs[0, 0])
 
-            ax.errorbar(np.arange(len(self.cls._counts)), self.cls._counts, 
-                        yerr=self.cls._errors, fmt='-', lw=1.0, elinewidth=1.0, capsize=0)
+            ax.errorbar(np.arange(len(cls._counts)), cls._counts, 
+                        yerr=cls._errors, fmt='-', lw=1.0, elinewidth=1.0, capsize=0)
             ax.set_yscale('log')
             ax.set_xlabel('Channel')
             ax.set_ylabel('Counts')
@@ -183,17 +89,20 @@ class Plot(object):
             
             if show: plt.show()
             
+        return fig
             
-    def response(self, ploter='plotly', ch_range=None, ph_range=None, show=True):
+    
+    @staticmethod
+    def response(cls, ploter='plotly', ch_range=None, ph_range=None, show=True):
         
-        if not isinstance(self.cls, Response):
+        if not isinstance(cls, Response):
             raise TypeError('cls is not Response type, cannot call response method')
         
-        if isinstance(self.cls, Auxiliary):
+        if isinstance(cls, Auxiliary):
             raise TypeError('cls is Auxiliary type, cannot call response method')
         
-        ch_mean = np.mean(self.cls._chbin, axis=1)
-        ph_mean = np.mean(self.cls._phbin, axis=1)
+        ch_mean = np.mean(cls._chbin, axis=1)
+        ph_mean = np.mean(cls._phbin, axis=1)
         
         if ch_range is None:
             ch_idx = np.arange(len(ch_mean))
@@ -206,20 +115,20 @@ class Plot(object):
             ph_idx = np.where((ph_mean >= ph_range[0]) & (ph_mean <= ph_range[1]))[0]
         
         if ploter == 'plotly':
-            self.fig = go.Figure()
-            rsp = go.Contour(z=self.cls._drm[ph_idx, :][:, ch_idx].astype(float), 
+            fig = go.Figure()
+            rsp = go.Contour(z=cls._drm[ph_idx, :][:, ch_idx].astype(float), 
                              x=ch_mean[ch_idx].astype(float), 
                              y=ph_mean[ph_idx].astype(float), 
                              colorscale='Jet'
                              )
-            self.fig.add_trace(rsp)
+            fig.add_trace(rsp)
             
-            self.fig.update_xaxes(title_text='Channel energy (keV)', type='log')
-            self.fig.update_yaxes(title_text='Photon energy (keV)', type='log')
-            self.fig.update_layout(template='plotly_white', height=600, width=800)
-            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
+            fig.update_xaxes(title_text='Channel energy (keV)', type='log')
+            fig.update_yaxes(title_text='Photon energy (keV)', type='log')
+            fig.update_layout(template='plotly_white', height=600, width=800)
+            fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            if show: self.fig.show()
+            if show: fig.show()
             
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
@@ -228,26 +137,29 @@ class Plot(object):
 
             X, Y = np.meshgrid(ch_mean[ch_idx], ph_mean[ph_idx])
             
-            self.fig = plt.figure(figsize=(8, 6))
-            gs = self.fig.add_gridspec(1, 1, wspace=0, hspace=0)
-            ax = self.fig.add_subplot(gs[0, 0])
+            fig = plt.figure(figsize=(8, 6))
+            gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
+            ax = fig.add_subplot(gs[0, 0])
 
-            c = ax.contourf(X, Y, self.cls._drm[ph_idx, :][:, ch_idx], cmap='jet')
+            c = ax.contourf(X, Y, cls._drm[ph_idx, :][:, ch_idx], cmap='jet')
             ax.set_xscale('log')
             ax.set_yscale('log')
             ax.set_xlabel('Channel energy (keV)')
             ax.set_ylabel('Photon energy (keV)')
-            self.fig.colorbar(c, orientation='vertical')
+            fig.colorbar(c, orientation='vertical')
 
             if show: plt.show()
             
+        return fig
             
-    def response_photon(self, ploter='plotly', ph_range=None, show=True):
+    
+    @staticmethod
+    def response_photon(cls, ploter='plotly', ph_range=None, show=True):
         
-        if not isinstance(self.cls, Response):
+        if not isinstance(cls, Response):
             raise TypeError('cls is not Response type, cannot call response_photon method')
         
-        ph_mean = np.mean(self.cls._phbin, axis=1)
+        ph_mean = np.mean(cls._phbin, axis=1)
         
         if ph_range is None:
             ph_idx = np.arange(len(ph_mean))
@@ -256,36 +168,36 @@ class Plot(object):
         
         x = ph_mean[ph_idx].astype(float)
         
-        if isinstance(self.cls, Auxiliary):
-            y = self.cls._srp[ph_idx].astype(float)
+        if isinstance(cls, Auxiliary):
+            y = cls._srp[ph_idx].astype(float)
         else:
-            y = np.sum(self.cls._drm[ph_idx, :], axis=1).astype(float)
+            y = np.sum(cls._drm[ph_idx, :], axis=1).astype(float)
             
         
         if ploter == 'plotly':
-            self.fig = go.Figure()
+            fig = go.Figure()
             obs = go.Scatter(x=x, 
                              y=y, 
                              mode='lines', 
                              showlegend=False
                              )
-            self.fig.add_trace(obs)
+            fig.add_trace(obs)
             
-            self.fig.update_xaxes(title_text='Photon energy (keV)', type='log')
-            self.fig.update_yaxes(type='log')
-            self.fig.update_layout(template='plotly_white', height=600, width=800)
-            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
+            fig.update_xaxes(title_text='Photon energy (keV)', type='log')
+            fig.update_yaxes(type='log')
+            fig.update_layout(template='plotly_white', height=600, width=800)
+            fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            if show: self.fig.show()
+            if show: fig.show()
             
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
 
-            self.fig = plt.figure(figsize=(8, 6))
-            gs = self.fig.add_gridspec(1, 1, wspace=0, hspace=0)
-            ax = self.fig.add_subplot(gs[0, 0])
+            fig = plt.figure(figsize=(8, 6))
+            gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
+            ax = fig.add_subplot(gs[0, 0])
 
             ax.plot(x, y, lw=1.0)
             ax.set_xscale('log')
@@ -304,17 +216,20 @@ class Plot(object):
             ax.spines['top'].set_visible(False)
             
             if show: plt.show()
+            
+        return fig
 
 
-    def response_channel(self, ploter='plotly', ch_range=None, show=True):
+    @staticmethod
+    def response_channel(cls, ploter='plotly', ch_range=None, show=True):
         
-        if not isinstance(self.cls, Response):
+        if not isinstance(cls, Response):
             raise TypeError('cls is not Response type, cannot call response_channel method')
         
-        if isinstance(self.cls, Auxiliary):
+        if isinstance(cls, Auxiliary):
             raise TypeError('cls is Auxiliary type, cannot call response_channel method')
         
-        ch_mean = np.mean(self.cls._chbin, axis=1)
+        ch_mean = np.mean(cls._chbin, axis=1)
         
         if ch_range is None:
             ch_idx = np.arange(len(ch_mean))
@@ -322,31 +237,31 @@ class Plot(object):
             ch_idx = np.where((ch_mean >= ch_range[0]) & (ch_mean <= ch_range[1]))[0]
         
         if ploter == 'plotly':
-            self.fig = go.Figure()
+            fig = go.Figure()
             obs = go.Scatter(x=ch_mean[ch_idx].astype(float), 
-                             y=np.sum(self.cls._drm[:, ch_idx], axis=0).astype(float), 
+                             y=np.sum(cls._drm[:, ch_idx], axis=0).astype(float), 
                              mode='lines', 
                              showlegend=False
                              )
-            self.fig.add_trace(obs)
+            fig.add_trace(obs)
             
-            self.fig.update_xaxes(title_text='Channel energy (keV)', type='log')
-            self.fig.update_yaxes(type='log')
-            self.fig.update_layout(template='plotly_white', height=600, width=800)
-            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
+            fig.update_xaxes(title_text='Channel energy (keV)', type='log')
+            fig.update_yaxes(type='log')
+            fig.update_layout(template='plotly_white', height=600, width=800)
+            fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            if show: self.fig.show()
+            if show: fig.show()
             
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
 
-            self.fig = plt.figure(figsize=(8, 6))
-            gs = self.fig.add_gridspec(1, 1, wspace=0, hspace=0)
-            ax = self.fig.add_subplot(gs[0, 0])
+            fig = plt.figure(figsize=(8, 6))
+            gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
+            ax = fig.add_subplot(gs[0, 0])
 
-            ax.plot(ch_mean[ch_idx], np.sum(self.cls._drm[:, ch_idx], axis=0), lw=1.0)
+            ax.plot(ch_mean[ch_idx], np.sum(cls._drm[:, ch_idx], axis=0), lw=1.0)
             ax.set_xscale('log')
             ax.set_yscale('log')
             ax.set_xlabel('Channel energy (keV)')
@@ -363,41 +278,44 @@ class Plot(object):
             ax.spines['top'].set_visible(False)
             
             if show: plt.show()
+            
+        return fig
 
 
-    def dataunit(self, ploter='plotly', style='CE', show=True):
+    @staticmethod
+    def dataunit(cls, ploter='plotly', style='CE', show=True):
         
-        if not isinstance(self.cls, DataUnit):
+        if not isinstance(cls, DataUnit):
             raise TypeError('cls is not DataUnit type, cannot call dataunit method')
         
-        if not self.cls.completeness:
+        if not cls.completeness:
             raise AttributeError('failed for completeness check')
         
-        x = self.cls.rsp_chbin_mean.astype(float)
-        x_le = self.cls.rsp_chbin_width.astype(float) / 2
-        x_he = self.cls.rsp_chbin_width.astype(float) / 2
+        x = cls.rsp_chbin_mean.astype(float)
+        x_le = cls.rsp_chbin_width.astype(float) / 2
+        x_he = cls.rsp_chbin_width.astype(float) / 2
         
         if style == 'CC':
-            src_y = self.cls.src_ctsrate.astype(float)
-            src_y_err = self.cls.src_ctsrate_error.astype(float)
+            src_y = cls.src_ctsrate.astype(float)
+            src_y_err = cls.src_ctsrate_error.astype(float)
             
-            bkg_y = self.cls.bkg_ctsrate.astype(float)
-            bkg_y_err = self.cls.bkg_ctsrate_error.astype(float)
+            bkg_y = cls.bkg_ctsrate.astype(float)
+            bkg_y_err = cls.bkg_ctsrate_error.astype(float)
             
-            net_y = self.cls.net_ctsrate.astype(float)
-            net_y_err = self.cls.net_ctsrate_error.astype(float)
+            net_y = cls.net_ctsrate.astype(float)
+            net_y_err = cls.net_ctsrate_error.astype(float)
             
             ylabel = 'Counts/s/channel'
         
         elif style == 'CE':
-            src_y = self.cls.src_ctsspec.astype(float)
-            src_y_err = self.cls.src_ctsspec_error.astype(float)
+            src_y = cls.src_ctsspec.astype(float)
+            src_y_err = cls.src_ctsspec_error.astype(float)
             
-            bkg_y = self.cls.bkg_ctsspec.astype(float)
-            bkg_y_err = self.cls.bkg_ctsspec_error.astype(float)
+            bkg_y = cls.bkg_ctsspec.astype(float)
+            bkg_y_err = cls.bkg_ctsspec_error.astype(float)
             
-            net_y = self.cls.net_ctsspec.astype(float)
-            net_y_err = self.cls.net_ctsspec_error.astype(float)
+            net_y = cls.net_ctsspec.astype(float)
+            net_y_err = cls.net_ctsspec_error.astype(float)
             
             ylabel = 'Counts/s/keV'
             
@@ -405,7 +323,7 @@ class Plot(object):
             raise ValueError(f'unsupported style argument: {style}')
             
         if ploter == 'plotly':
-            self.fig = go.Figure()
+            fig = go.Figure()
             src = go.Scatter(x=x, 
                              y=src_y, 
                              mode='markers', 
@@ -463,25 +381,25 @@ class Plot(object):
                                  width=0), 
                              marker=dict(symbol='circle', size=3))
             
-            self.fig.add_trace(src)
-            self.fig.add_trace(bkg)
-            self.fig.add_trace(net)
+            fig.add_trace(src)
+            fig.add_trace(bkg)
+            fig.add_trace(net)
             
-            self.fig.update_xaxes(title_text='Energy (keV)', type='log')
-            self.fig.update_yaxes(title_text=ylabel, type='log')
-            self.fig.update_layout(template='plotly_white', height=600, width=800)
-            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
+            fig.update_xaxes(title_text='Energy (keV)', type='log')
+            fig.update_yaxes(title_text=ylabel, type='log')
+            fig.update_layout(template='plotly_white', height=600, width=800)
+            fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            if show: self.fig.show()
+            if show: fig.show()
             
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
 
-            self.fig = plt.figure(figsize=(8, 6))
-            gs = self.fig.add_gridspec(1, 1, wspace=0, hspace=0)
-            ax = self.fig.add_subplot(gs[0, 0])
+            fig = plt.figure(figsize=(8, 6))
+            gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
+            ax = fig.add_subplot(gs[0, 0])
             
             ax.errorbar(x, src_y, xerr = [x_le, x_he], yerr=src_y_err, fmt='none', 
                         ecolor='m', elinewidth=1.0, capsize=0, label='src')
@@ -507,51 +425,47 @@ class Plot(object):
             ax.legend()
             
             if show: plt.show()
+            
+        return fig
 
 
-    def data(self, ploter='plotly', style='CE', show=True):
+    @staticmethod
+    def data(cls, ploter='plotly', style='CE', show=True):
         
-        if not isinstance(self.cls, Data):
+        if not isinstance(cls, Data):
             raise TypeError('cls is not Data type, cannot call data method')
         
-        if len(self.cls.exprs) <= 10:
-            self.colors = dict(zip(self.cls.exprs, px.colors.qualitative.Plotly))
-        elif 10 < len(self.cls.exprs) <= 24:
-            self.colors = dict(zip(self.cls.exprs, px.colors.qualitative.Dark24))
-        else:
-            self.colors = dict(zip(self.cls.exprs, mpl.colormaps['rainbow'](np.linspace(0, 1, len(self.cls.exprs)))))
-        
         if ploter == 'plotly':
-            self.fig = go.Figure()
+            fig = go.Figure()
             
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
-            self.fig = plt.figure(figsize=(8, 6))
-            gs = self.fig.add_gridspec(1, 1, wspace=0, hspace=0)
-            ax = self.fig.add_subplot(gs[0, 0])
+            fig = plt.figure(figsize=(8, 6))
+            gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
+            ax = fig.add_subplot(gs[0, 0])
             
-        x = self.cls.rsp_chbin_mean
-        x_le = [chw / 2 for chw in self.cls.rsp_chbin_width]
-        x_he = [chw / 2 for chw in self.cls.rsp_chbin_width]
+        x = cls.rsp_chbin_mean
+        x_le = [chw / 2 for chw in cls.rsp_chbin_width]
+        x_he = [chw / 2 for chw in cls.rsp_chbin_width]
         
         if style == 'CC':
-            y = self.cls.net_ctsrate
-            y_err = self.cls.net_ctsrate_error
+            y = cls.net_ctsrate
+            y_err = cls.net_ctsrate_error
             
             ylabel = 'Counts/s/channel'
             
         elif style == 'CE':
-            y = self.cls.net_ctsspec
-            y_err = self.cls.net_ctsspec_error
+            y = cls.net_ctsspec
+            y_err = cls.net_ctsspec_error
             
             ylabel = 'Counts/s/keV'
             
         else:
             raise ValueError(f'unsupported style argument: {style}')
             
-        for i, expr in enumerate(self.cls.exprs):
+        for i, expr in enumerate(cls.exprs):
                 
             if ploter == 'plotly':
                 obs = go.Scatter(x=x[i].astype(float), 
@@ -564,29 +478,29 @@ class Plot(object):
                                      symmetric=False,
                                      array=x_he[i].astype(float),
                                      arrayminus=x_le[i].astype(float),
-                                     color=self.colors[expr],
+                                     color=Plot.colors[i],
                                      thickness=1.5,
                                      width=0),
                                  error_y=dict(
                                      type='data',
                                      array=y_err[i].astype(float),
-                                     color=self.colors[expr],
+                                     color=Plot.colors[i],
                                      thickness=1.5,
                                      width=0), 
-                                 marker=dict(symbol='circle', size=3, color=self.colors[expr]))
-                self.fig.add_trace(obs)
+                                 marker=dict(symbol='circle', size=3, color=Plot.colors[i]))
+                fig.add_trace(obs)
                 
             elif ploter == 'matplotlib':
                 ax.errorbar(x[i], y[i], xerr=[x_le[i], x_he[i]], yerr=y_err[i], fmt='none', 
-                            ecolor=self.colors[expr], elinewidth=0.8, capsize=0, capthick=0, label=expr)
+                            ecolor=Plot.colors[i], elinewidth=0.8, capsize=0, capthick=0, label=expr)
                 
         if ploter == 'plotly':
-            self.fig.update_xaxes(title_text='Energy (keV)', type='log')
-            self.fig.update_yaxes(title_text=ylabel, type='log')
-            self.fig.update_layout(template='plotly_white', height=600, width=800)
-            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
+            fig.update_xaxes(title_text='Energy (keV)', type='log')
+            fig.update_yaxes(title_text=ylabel, type='log')
+            fig.update_layout(template='plotly_white', height=600, width=800)
+            fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            if show: self.fig.show()
+            if show: fig.show()
             
         elif ploter == 'matplotlib':
             ax.set_xscale('log')
@@ -605,166 +519,28 @@ class Plot(object):
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             ax.legend()
-            
+
             if show: plt.show()
-            
+ 
+        return fig
 
-    def model(self, Es, Ts=None, ploter='plotly', style='NE', CI=False, yrange=None, show=True):
-        
-        if not isinstance(self.cls[0], Model):
-            raise TypeError('cls is not Model list, cannot call model method')
-        
-        if len(self.cls) <= 10:
-            self.colors = px.colors.qualitative.Plotly
-        elif 10 < len(self.cls) <= 24:
-            self.colors = px.colors.qualitative.Dark24
-        else:
-            raise ValueError('too much models')
-        
-        if ploter == 'plotly':
-            self.fig = go.Figure()
-            
-        elif ploter == 'matplotlib':
-            rcParams['font.family'] = 'sans-serif'
-            rcParams['font.size'] = 12
-            rcParams['pdf.fonttype'] = 42
 
-            self.fig = plt.figure(figsize=(8, 6))
-            gs = self.fig.add_gridspec(1, 1, wspace=0, hspace=0)
-            ax = self.fig.add_subplot(gs[0, 0])
+    @staticmethod
+    def model(ploter='plotly', style='NE', CI=False, yrange=None, show=True):
         
-        for i, model in enumerate(self.cls):
+        modelplot = ModelPlot(ploter=ploter, style=style, CI=CI, yrange=yrange, show=show)
             
-            E = Es[i]; T = Ts[i]
-            x = np.array(E).astype(float)
-        
-            if style == 'NE':
-                if model.type not in ['add', 'tinv', 'math']:
-                    raise AttributeError(f'{style} is invalid for {model.type} type model')
-                
-                ylabel = 'Photons/cm^2/s/keV'
-                if CI:
-                    y_sample = model.phtspec_sample(E, T)
-                    y = y_sample['median'].astype(float)
-                    y_ci = y_sample['Isigma'].astype(float)
-                else:
-                    y = model.phtspec(E, T).astype(float)
-                    
-            elif style == 'Fv':
-                if model.type not in ['add', 'tinv', 'math']:
-                    raise AttributeError(f'{style} is invalid for {model.type} type model')
-                
-                ylabel = 'erg/cm^2/s/keV'
-                if CI:
-                    y_sample = model.flxspec_sample(E, T)
-                    y = y_sample['median'].astype(float)
-                    y_ci = y_sample['Isigma'].astype(float)
-                else:
-                    y = model.flxspec(E, T).astype(float)
-                    
-            elif style == 'vFv':
-                if model.type not in ['add', 'tinv', 'math']:
-                    raise AttributeError(f'{style} is invalid for {model.type} type model')
-                
-                ylabel = 'erg/cm^2/s'
-                if CI:
-                    y_sample = model.ergspec_sample(E, T)
-                    y = y_sample['median'].astype(float)
-                    y_ci = y_sample['Isigma'].astype(float)
-                else:
-                    y = model.ergspec(E, T).astype(float)
-                    
-            elif style == 'NoU':
-                if model.type not in ['mul', 'math']:
-                    raise AttributeError(f'{style} is invalid for {model.type} type model')
-                
-                ylabel = 'dimensionless'
-                if CI:
-                    y_sample = model.nouspec_sample(E)
-                    y = y_sample['median'].astype(float)
-                    y_ci = y_sample['Isigma'].astype(float)
-                else:
-                    y = model.nouspec(E).astype(float)
-                    
-            else:
-                raise ValueError(f'unsupported style argument: {style}')
-        
-            if ploter == 'plotly':
-                mo = go.Scatter(x=x, 
-                                y=y, 
-                                mode='lines', 
-                                name=model.expr, 
-                                showlegend=True, 
-                                line=dict(width=2, color=self.colors[i]))
-                self.fig.add_trace(mo)
-                
-                if CI:
-                    low = go.Scatter(x=x, 
-                                     y=y_ci[0], 
-                                     mode='lines', 
-                                     name=f'{model.expr} lower', 
-                                     fill=None, 
-                                     line_color='rgba(0,0,0,0)', 
-                                     showlegend=False)
-                    self.fig.add_trace(low)
-                    
-                    upp = go.Scatter(x=x, 
-                                     y=y_ci[1], 
-                                     mode='lines', 
-                                     name=f'{model.expr} upper', 
-                                     fill='tonexty', 
-                                     line_color='rgba(0,0,0,0)', 
-                                     fillcolor=Plot.get_rgb(self.colors[i], 0.5), 
-                                     showlegend=False)
-                    self.fig.add_trace(upp)
+        return modelplot
 
-            elif ploter == 'matplotlib':
-                ax.plot(x, y, lw=1.0, color=self.colors[i])
-                if CI: ax.fill_between(x, y_ci[0], y_ci[1], fc=self.colors[i], alpha=0.5)
-                
-        if ploter == 'plotly':
-                
-            self.fig.update_xaxes(title_text='Energy (keV)', type='log')
-            self.fig.update_yaxes(title_text=ylabel, type='log')
-            if yrange is not None: self.fig.update_yaxes(range=[np.log10(yrange[0]), np.log10(yrange[1])])
-            self.fig.update_layout(template='plotly_white', height=600, width=800)
-            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
-            
-            if show: self.fig.show()
-                
-        elif ploter == 'matplotlib':
-            ax.set_xscale('log')
-            ax.set_yscale('log')
-            ax.set_xlabel('Energy (keV)')
-            ax.set_ylabel(ylabel)
-            if yrange is not None: ax.set_ylim(yrange)
-            ax.minorticks_on()
-            ax.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
-            ax.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
-            ax.tick_params(which='major', width=0.5, length=3)
-            ax.tick_params(which='minor', width=0.5, length=2)
-            ax.spines['bottom'].set_linewidth(0.5)
-            ax.spines['left'].set_linewidth(0.5)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
-            
-            if show: plt.show()
-            
 
-    def pair(self, ploter='plotly', style='CE', show=True):
+    @staticmethod
+    def pair(cls, ploter='plotly', style='CE', show=True):
         
-        if not isinstance(self.cls, Pair):
+        if not isinstance(cls, Pair):
             raise TypeError('cls is not Pair type, cannot call pair method')
         
-        if len(self.cls.data.exprs) <= 10:
-            self.colors = dict(zip(self.cls.data.exprs, px.colors.qualitative.Plotly))
-        elif 10 < len(self.cls.data.exprs) <= 24:
-            self.colors = dict(zip(self.cls.data.exprs, px.colors.qualitative.Dark24))
-        else:
-            self.colors = dict(zip(self.cls.data.exprs, mpl.colormaps['rainbow'](np.linspace(0, 1, len(self.cls.data.exprs)))))
-        
         if ploter == 'plotly':
-            self.fig = make_subplots(
+            fig = make_subplots(
                 rows=2, cols=1,
                 row_heights=[0.75, 0.25], 
                 shared_xaxes=True,
@@ -775,29 +551,29 @@ class Plot(object):
             rcParams['font.family'] = 'sans-serif'
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
-            self.fig = plt.figure(figsize=(6, 8))
-            gs = self.fig.add_gridspec(4, 1, wspace=0, hspace=0)
-            ax1 = self.fig.add_subplot(gs[0:3, 0])
-            ax2 = self.fig.add_subplot(gs[3, 0], sharex=ax1)
+            fig = plt.figure(figsize=(6, 8))
+            gs = fig.add_gridspec(4, 1, wspace=0, hspace=0)
+            ax1 = fig.add_subplot(gs[0:3, 0])
+            ax2 = fig.add_subplot(gs[3, 0], sharex=ax1)
             
-        obs_x = self.cls.data.rsp_chbin_mean
-        obs_x_le = [chw / 2 for chw in self.cls.data.rsp_chbin_width]
-        obs_x_he = [chw / 2 for chw in self.cls.data.rsp_chbin_width]
+        obs_x = cls.data.rsp_chbin_mean
+        obs_x_le = [chw / 2 for chw in cls.data.rsp_chbin_width]
+        obs_x_he = [chw / 2 for chw in cls.data.rsp_chbin_width]
         
         if style == 'CC':
             ylabel = 'Counts/s/channel'
             
-            obs_y = self.cls.data.net_ctsrate
-            obs_y_err = self.cls.data.net_ctsrate_error
-            mo_y = self.cls.model.ctsrate
+            obs_y = cls.data.net_ctsrate
+            obs_y_err = cls.data.net_ctsrate_error
+            mo_y = cls.model.ctsrate
             res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
             
         elif style == 'CE':
             ylabel = 'Counts/s/keV'
             
-            obs_y = self.cls.data.net_ctsspec
-            obs_y_err = self.cls.data.net_ctsspec_error
-            mo_y = self.cls.model.ctsspec
+            obs_y = cls.data.net_ctsspec
+            obs_y_err = cls.data.net_ctsspec_error
+            mo_y = cls.model.ctsspec
             res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
             
         else:
@@ -806,7 +582,7 @@ class Plot(object):
         ymin = np.quantile(list(chain.from_iterable(obs_y)), 0.05).astype(float)
         ymax = 2 * np.max(list(chain.from_iterable(obs_y))).astype(float)
             
-        for i, expr in enumerate(self.cls.data.exprs):
+        for i, expr in enumerate(cls.data.exprs):
                 
             if ploter == 'plotly':
                 obs = go.Scatter(x=obs_x[i].astype(float), 
@@ -819,49 +595,49 @@ class Plot(object):
                                      symmetric=False,
                                      array=obs_x_he[i].astype(float),
                                      arrayminus=obs_x_le[i].astype(float),
-                                     color=self.colors[expr],
+                                     color=Plot.colors[i],
                                      thickness=1.5,
                                      width=0),
                                  error_y=dict(
                                      type='data',
                                      array=obs_y_err[i].astype(float),
-                                     color=self.colors[expr],
+                                     color=Plot.colors[i],
                                      thickness=1.5,
                                      width=0), 
-                                 marker=dict(symbol='cross-thin', size=0, color=self.colors[expr]))
+                                 marker=dict(symbol='cross-thin', size=0, color=Plot.colors[i]))
                 mo = go.Scatter(x=obs_x[i].astype(float), 
                                 y=mo_y[i].astype(float), 
                                 name=expr, 
                                 showlegend=True, 
                                 mode='lines', 
-                                line=dict(width=2, color=self.colors[expr]))
+                                line=dict(width=2, color=Plot.colors[i]))
                 res = go.Scatter(x=obs_x[i].astype(float), 
                                  y=res_y[i].astype(float), 
                                  name=f'res of {expr}', 
                                  showlegend=False, 
                                  mode='markers', 
-                                 marker=dict(symbol='cross-thin', size=10, color=self.colors[expr], 
-                                             line=dict(width=1.5, color=self.colors[expr])))
+                                 marker=dict(symbol='cross-thin', size=10, color=Plot.colors[i], 
+                                             line=dict(width=1.5, color=Plot.colors[i])))
                 
-                self.fig.add_trace(obs, row=1, col=1)
-                self.fig.add_trace(mo, row=1, col=1)
-                self.fig.add_trace(res, row=2, col=1)
+                fig.add_trace(obs, row=1, col=1)
+                fig.add_trace(mo, row=1, col=1)
+                fig.add_trace(res, row=2, col=1)
                 
             elif ploter == 'matplotlib':
                 ax1.errorbar(obs_x[i], obs_y[i], xerr = [obs_x_le[i], obs_x_he[i]], yerr=obs_y_err[i], 
-                             fmt='none', ecolor=self.colors[expr], elinewidth=0.8, capsize=0, capthick=0, label=expr)
-                ax1.plot(obs_x[i], mo_y[i], color=self.colors[expr], lw=1.0)
-                ax2.scatter(obs_x[i], res_y[i], marker='+', color=self.colors[expr], s=40, linewidths=0.8)
+                             fmt='none', ecolor=Plot.colors[i], elinewidth=0.8, capsize=0, capthick=0, label=expr)
+                ax1.plot(obs_x[i], mo_y[i], color=Plot.colors[i], lw=1.0)
+                ax2.scatter(obs_x[i], res_y[i], marker='+', color=Plot.colors[i], s=40, linewidths=0.8)
                 
         if ploter == 'plotly':
-            self.fig.update_xaxes(title_text='', row=1, col=1, type='log')
-            self.fig.update_xaxes(title_text='Energy (keV)', row=2, col=1, type='log')
-            self.fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
-            self.fig.update_yaxes(title_text='Sigma', showgrid=False, range=[-3.5, 3.5], row=2, col=1)
-            self.fig.update_layout(template='plotly_white', height=700, width=700)
-            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
+            fig.update_xaxes(title_text='', row=1, col=1, type='log')
+            fig.update_xaxes(title_text='Energy (keV)', row=2, col=1, type='log')
+            fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
+            fig.update_yaxes(title_text='Sigma', showgrid=False, range=[-3.5, 3.5], row=2, col=1)
+            fig.update_layout(template='plotly_white', height=700, width=700)
+            fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            if show: self.fig.show()
+            if show: fig.show()
             
         elif ploter == 'matplotlib':
             ax1.set_xscale('log')
@@ -898,41 +674,40 @@ class Plot(object):
             
             if show: plt.show()
             
+        return fig
             
-    def walker(self, show=True):
+    
+    @staticmethod
+    def emcee_walker(cls, show=True):
         
-        if not isinstance(self.cls, (Infer, Posterior)):
+        if not isinstance(cls, (Infer, Posterior)):
             raise TypeError('cls is not Infer or Posterior type, cannot call walker method')
         
-        self.fig, axes = plt.subplots(self.cls.free_nparams, figsize=(10, 2 * self.cls.free_nparams), sharex='all')
-        for i in range(self.cls.free_nparams):
+        fig, axes = plt.subplots(cls.free_nparams, figsize=(10, 2 * cls.free_nparams), sharex='all')
+        for i in range(cls.free_nparams):
             ax = axes[i]
-            ax.plot(self.cls.samples[:, :, i], "k", alpha=0.3)
-            ax.set_xlim(0, len(self.cls.samples))
-            ax.set_ylabel(self.cls.free_plabels[i])
+            ax.plot(cls.samples[:, :, i], "k", alpha=0.3)
+            ax.set_xlim(0, len(cls.samples))
+            ax.set_ylabel(cls.free_plabels[i])
             ax.yaxis.set_label_coords(-0.1, 0.5)
         axes[-1].set_xlabel("step number")
         
         if show: plt.show()
-            
-            
-    def ctsspec(self, ploter='plotly', style='CE', show=True):
         
-        if not isinstance(self.cls, (Infer, Posterior)):
+        return fig
+            
+    
+    @staticmethod
+    def infer_ctsspec(cls, ploter='plotly', style='CE', show=True):
+        
+        if not isinstance(cls, (Infer, Posterior)):
             raise TypeError('cls is not Infer or Posterior type, cannot call infer method')
         
-        if isinstance(self.cls, Posterior):
-            self.cls.at_par(self.cls.par_best_ci())
-        
-        if len(self.cls.data_exprs) <= 10:
-            self.colors = dict(zip(self.cls.data_exprs, px.colors.qualitative.Plotly))
-        elif 10 < len(self.cls.data_exprs) <= 24:
-            self.colors = dict(zip(self.cls.data_exprs, px.colors.qualitative.Dark24))
-        else:
-            self.colors = dict(zip(self.cls.data_exprs, mpl.colormaps['rainbow'](np.linspace(0, 1, len(self.cls.data_exprs)))))
+        if isinstance(cls, Posterior):
+            cls.at_par(cls.par_best_ci())
         
         if ploter == 'plotly':
-            self.fig = make_subplots(
+            fig = make_subplots(
                 rows=2, cols=1,
                 row_heights=[0.75, 0.25], 
                 shared_xaxes=True,
@@ -943,29 +718,29 @@ class Plot(object):
             rcParams['font.family'] = 'sans-serif'
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
-            self.fig = plt.figure(figsize=(6, 8))
-            gs = self.fig.add_gridspec(4, 1, wspace=0, hspace=0)
-            ax1 = self.fig.add_subplot(gs[0:3, 0])
-            ax2 = self.fig.add_subplot(gs[3, 0], sharex=ax1)
+            fig = plt.figure(figsize=(6, 8))
+            gs = fig.add_gridspec(4, 1, wspace=0, hspace=0)
+            ax1 = fig.add_subplot(gs[0:3, 0])
+            ax2 = fig.add_subplot(gs[3, 0], sharex=ax1)
             
-        obs_x = self.cls.data_chbin_mean
-        obs_x_le = [chw / 2 for chw in self.cls.data_chbin_width]
-        obs_x_he = [chw / 2 for chw in self.cls.data_chbin_width]
+        obs_x = cls.data_chbin_mean
+        obs_x_le = [chw / 2 for chw in cls.data_chbin_width]
+        obs_x_he = [chw / 2 for chw in cls.data_chbin_width]
         
         if style == 'CC':
             ylabel = 'Counts/s/channel'
             
-            obs_y = self.cls.data_ctsrate
-            obs_y_err = self.cls.data_ctsrate_error
-            mo_y = self.cls.model_ctsrate
+            obs_y = cls.data_ctsrate
+            obs_y_err = cls.data_ctsrate_error
+            mo_y = cls.model_ctsrate
             res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
             
         elif style == 'CE':
             ylabel = 'Counts/s/keV'
             
-            obs_y = self.cls.data_ctsspec
-            obs_y_err = self.cls.data_ctsspec_error
-            mo_y = self.cls.model_ctsspec
+            obs_y = cls.data_ctsspec
+            obs_y_err = cls.data_ctsspec_error
+            mo_y = cls.model_ctsspec
             res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
             
         else:
@@ -974,7 +749,7 @@ class Plot(object):
         ymin = np.quantile(list(chain.from_iterable(obs_y)), 0.05).astype(float)
         ymax = 2 * np.max(list(chain.from_iterable(obs_y))).astype(float)
             
-        for i, expr in enumerate(self.cls.data_exprs):
+        for i, expr in enumerate(cls.data_exprs):
                 
             if ploter == 'plotly':
                 obs = go.Scatter(x=obs_x[i].astype(float), 
@@ -987,49 +762,49 @@ class Plot(object):
                                      symmetric=False,
                                      array=obs_x_he[i].astype(float),
                                      arrayminus=obs_x_le[i].astype(float),
-                                     color=self.colors[expr],
+                                     color=Plot.colors[i],
                                      thickness=1.5,
                                      width=0),
                                  error_y=dict(
                                      type='data',
                                      array=obs_y_err[i].astype(float),
-                                     color=self.colors[expr],
+                                     color=Plot.colors[i],
                                      thickness=1.5,
                                      width=0), 
-                                 marker=dict(symbol='cross-thin', size=0, color=self.colors[expr]))
+                                 marker=dict(symbol='cross-thin', size=0, color=Plot.colors[i]))
                 mo = go.Scatter(x=obs_x[i].astype(float), 
                                 y=mo_y[i].astype(float), 
                                 name=expr, 
                                 showlegend=True, 
                                 mode='lines', 
-                                line=dict(width=2, color=self.colors[expr]))
+                                line=dict(width=2, color=Plot.colors[i]))
                 res = go.Scatter(x=obs_x[i].astype(float), 
                                  y=res_y[i].astype(float), 
                                  name=f'res of {expr}', 
                                  showlegend=False, 
                                  mode='markers', 
-                                 marker=dict(symbol='cross-thin', size=10, color=self.colors[expr], 
-                                             line=dict(width=1.5, color=self.colors[expr])))
+                                 marker=dict(symbol='cross-thin', size=10, color=Plot.colors[i], 
+                                             line=dict(width=1.5, color=Plot.colors[i])))
                 
-                self.fig.add_trace(obs, row=1, col=1)
-                self.fig.add_trace(mo, row=1, col=1)
-                self.fig.add_trace(res, row=2, col=1)
+                fig.add_trace(obs, row=1, col=1)
+                fig.add_trace(mo, row=1, col=1)
+                fig.add_trace(res, row=2, col=1)
                 
             elif ploter == 'matplotlib':
                 ax1.errorbar(obs_x[i], obs_y[i], xerr = [obs_x_le[i], obs_x_he[i]], yerr=obs_y_err[i], 
-                             fmt='none', ecolor=self.colors[expr], elinewidth=0.8, capsize=0, capthick=0, label=expr)
-                ax1.plot(obs_x[i], mo_y[i], color=self.colors[expr], lw=1.0)
-                ax2.scatter(obs_x[i], res_y[i], marker='+', color=self.colors[expr], s=40, linewidths=0.8)
+                             fmt='none', ecolor=Plot.colors[i], elinewidth=0.8, capsize=0, capthick=0, label=expr)
+                ax1.plot(obs_x[i], mo_y[i], color=Plot.colors[i], lw=1.0)
+                ax2.scatter(obs_x[i], res_y[i], marker='+', color=Plot.colors[i], s=40, linewidths=0.8)
                 
         if ploter == 'plotly':
-            self.fig.update_xaxes(title_text='', row=1, col=1, type='log')
-            self.fig.update_xaxes(title_text='Energy (keV)', row=2, col=1, type='log')
-            self.fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
-            self.fig.update_yaxes(title_text='Sigma', showgrid=False, range=[-3.5, 3.5], row=2, col=1)
-            self.fig.update_layout(template='plotly_white', height=700, width=700)
-            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
+            fig.update_xaxes(title_text='', row=1, col=1, type='log')
+            fig.update_xaxes(title_text='Energy (keV)', row=2, col=1, type='log')
+            fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
+            fig.update_yaxes(title_text='Sigma', showgrid=False, range=[-3.5, 3.5], row=2, col=1)
+            fig.update_layout(template='plotly_white', height=700, width=700)
+            fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            if show: self.fig.show()
+            if show: fig.show()
             
         elif ploter == 'matplotlib':
             ax1.set_xscale('log')
@@ -1066,35 +841,38 @@ class Plot(object):
             
             if show: plt.show()
             
+        return fig
             
-    def corner(self, ploter='plotly', show=True):
         
-        if not isinstance(self.cls, Posterior):
+    @staticmethod   
+    def post_corner(cls, ploter='plotly', show=True):
+        
+        if not isinstance(cls, Posterior):
             raise TypeError('cls is not Posterior type, cannot call corner method')
         
-        data = self.cls.posterior_sample[:, :-1].copy()
-        weights = np.ones(self.cls.posterior_sample.shape[0]) / self.cls.posterior_sample.shape[0]
+        data = cls.posterior_sample[:, :-1].copy()
+        weights = np.ones(cls.posterior_sample.shape[0]) / cls.posterior_sample.shape[0]
         
         title_fmt = '%s = $%.2f_{-%.2f}^{+%.2f}$'
-        plabel = [f'par#{key}' for key in self.cls.free_par.keys()]
-        value = self.cls.par_best_ci()
-        error = self.cls.par_error(value)
+        plabel = [f'par#{key}' for key in cls.free_par.keys()]
+        value = cls.par_best_ci()
+        error = cls.par_error(value)
         
         if ploter == 'plotly':
             
             levels = 1.0 - np.exp(-0.5 * np.array([1, 2]) ** 2)
             
-            self.fig = corner_plotly(data, 
-                                     bins=30, 
-                                     weights=weights, 
-                                     smooth1d=2, 
-                                     smooth=2, 
-                                     labels=plabel, 
-                                     levels=levels, 
-                                     values=value, 
-                                     errors=error)
+            fig = corner_plotly(data, 
+                                bins=30, 
+                                weights=weights, 
+                                smooth1d=2, 
+                                smooth=2, 
+                                labels=plabel, 
+                                levels=levels, 
+                                values=value, 
+                                errors=error)
             
-            if show: self.fig.show()
+            if show: fig.show()
             
         elif ploter == 'matplotlib':
         
@@ -1104,7 +882,7 @@ class Plot(object):
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
             
-            self.fig = corner.corner(
+            fig = corner.corner(
                 data, 
                 bins=30, 
                 color='blue', 
@@ -1121,16 +899,16 @@ class Plot(object):
                 fill_contours=False, 
                 no_fill_contours=False)
 
-            axes = np.array(self.fig.axes).reshape((self.cls.free_nparams, self.cls.free_nparams))
+            axes = np.array(fig.axes).reshape((cls.free_nparams, cls.free_nparams))
             
-            for i in range(self.cls.free_nparams):
+            for i in range(cls.free_nparams):
                 ax = axes[i, i]
                 ax.set_title(title_fmt % (plabel[i], value[i], error[i][0], error[i][1]))
                 ax.errorbar(value[i], 0.005, 
                             xerr=[[error[i][0]], [error[i][1]]], 
                             fmt='or', ms=2, ecolor='r', elinewidth=1)
                 
-            for yi in range(self.cls.free_nparams):
+            for yi in range(cls.free_nparams):
                 for xi in range(yi):
                     ax = axes[yi, xi]
                     ax.errorbar(value[xi], value[yi], 
@@ -1139,3 +917,172 @@ class Plot(object):
                                 fmt='or', ms=2, ecolor='r', elinewidth=1)
         
             if show: plt.show()
+            
+        return fig
+    
+    
+    
+class ModelPlot(object):
+    
+    colors = px.colors.qualitative.Plotly \
+        + px.colors.qualitative.D3 \
+            + px.colors.qualitative.G10 \
+                + px.colors.qualitative.T10
+    
+    def __init__(self, ploter='plotly', style='NE', CI=False, yrange=None, show=True):
+        
+        self.ploter = ploter
+        self.style = style
+        self.CI = CI
+        self.yrange = yrange
+        self.show = show
+        
+        if self.style == 'NE':
+            ylabel = 'Photons/cm^2/s/keV'
+        elif self.style == 'Fv':
+            ylabel = 'erg/cm^2/s/keV'
+        elif self.style == 'vFv':
+            ylabel = 'erg/cm^2/s'
+        elif self.style == 'NoU':
+            ylabel = 'dimensionless'
+        else:
+            raise ValueError(f'unsupported style argument: {self.style}')
+        
+        if self.ploter == 'plotly':
+            self.fig = go.Figure()
+            
+            self.fig.update_xaxes(title_text='Energy (keV)', type='log')
+            self.fig.update_yaxes(title_text=ylabel, type='log')
+            if yrange is not None: self.fig.update_yaxes(range=[np.log10(yrange[0]), np.log10(yrange[1])])
+            self.fig.update_layout(template='plotly_white', height=600, width=800)
+            self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
+            
+        elif self.ploter == 'matplotlib':
+            rcParams['font.family'] = 'sans-serif'
+            rcParams['font.size'] = 12
+            rcParams['pdf.fonttype'] = 42
+
+            self.fig = plt.figure(figsize=(8, 6))
+            gs = self.fig.add_gridspec(1, 1, wspace=0, hspace=0)
+            self.ax = self.fig.add_subplot(gs[0, 0])
+            
+            self.ax.set_xscale('log')
+            self.ax.set_yscale('log')
+            self.ax.set_xlabel('Energy (keV)')
+            self.ax.set_ylabel(ylabel)
+            if yrange is not None: self.ax.set_ylim(yrange)
+            self.ax.minorticks_on()
+            self.ax.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
+            self.ax.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
+            self.ax.tick_params(which='major', width=0.5, length=3)
+            self.ax.tick_params(which='minor', width=0.5, length=2)
+            self.ax.spines['bottom'].set_linewidth(0.5)
+            self.ax.spines['left'].set_linewidth(0.5)
+            self.ax.spines['right'].set_visible(False)
+            self.ax.spines['top'].set_visible(False)
+            
+        self.model_index = -1
+        
+        
+    @staticmethod
+    def get_rgb(color, opacity=1.0):
+        
+        rgba = mpl.colors.to_rgba(color)
+        rgb = [int(x * 255) for x in rgba[:3]] + [opacity]
+        
+        return 'rgba(%d, %d, %d, %f)' % tuple(rgb)
+        
+        
+    def add_model(self, model, E, T=None):
+        
+        if not isinstance(model, Model):
+            raise TypeError('model is not Model type, cannot call add_model method')
+        
+        self.model_index += 1
+        
+        x = np.array(E).astype(float)
+        
+        if self.style == 'NE':
+            if model.type not in ['add', 'tinv']:
+                raise AttributeError(f'{self.style} is invalid for {model.type} type model')
+                
+            if self.CI:
+                y_sample = model.phtspec_sample(E, T)
+                y = y_sample['median'].astype(float)
+                y_ci = y_sample['Isigma'].astype(float)
+            else:
+                y = model.phtspec(E, T).astype(float)
+                
+        elif self.style == 'Fv':
+            if model.type not in ['add', 'tinv']:
+                raise AttributeError(f'{self.style} is invalid for {model.type} type model')
+            
+            if self.CI:
+                y_sample = model.flxspec_sample(E, T)
+                y = y_sample['median'].astype(float)
+                y_ci = y_sample['Isigma'].astype(float)
+            else:
+                y = model.flxspec(E, T).astype(float)
+                
+        elif self.style == 'vFv':
+            if model.type not in ['add', 'tinv', 'math']:
+                raise AttributeError(f'{self.style} is invalid for {model.type} type model')
+            
+            if self.CI:
+                y_sample = model.ergspec_sample(E, T)
+                y = y_sample['median'].astype(float)
+                y_ci = y_sample['Isigma'].astype(float)
+            else:
+                y = model.ergspec(E, T).astype(float)
+                
+        elif self.style == 'NoU':
+            if model.type not in ['mul', 'math']:
+                raise AttributeError(f'{self.style} is invalid for {model.type} type model')
+            
+            if self.CI:
+                y_sample = model.nouspec_sample(E)
+                y = y_sample['median'].astype(float)
+                y_ci = y_sample['Isigma'].astype(float)
+            else:
+                y = model.nouspec(E).astype(float)
+                
+        else:
+            raise ValueError(f'unsupported style argument: {self.style}')
+        
+        if self.ploter == 'plotly':
+            mo = go.Scatter(x=x, 
+                            y=y, 
+                            mode='lines', 
+                            name=model.expr, 
+                            showlegend=True, 
+                            line=dict(width=2, color=ModelPlot.colors(self.model_index)))
+            self.fig.add_trace(mo)
+            
+            if self.CI:
+                low = go.Scatter(x=x, 
+                                 y=y_ci[0], 
+                                 mode='lines', 
+                                 name=f'{model.expr} lower', 
+                                 fill=None, 
+                                 line_color='rgba(0,0,0,0)', 
+                                 showlegend=False)
+                self.fig.add_trace(low)
+                
+                upp = go.Scatter(x=x, 
+                                 y=y_ci[1], 
+                                 mode='lines', 
+                                 name=f'{model.expr} upper', 
+                                 fill='tonexty', 
+                                 line_color='rgba(0,0,0,0)', 
+                                 fillcolor=ModelPlot.get_rgb(ModelPlot.colors(self.model_index), 0.5), 
+                                 showlegend=False)
+                self.fig.add_trace(upp)
+                
+            if self.show: self.fig.show()
+
+        elif self.ploter == 'matplotlib':
+            self.ax.plot(x, y, lw=1.0, color=ModelPlot.colors(self.model_index))
+            if self.CI: 
+                self.ax.fill_between(x, y_ci[0], y_ci[1], fc=ModelPlot.colors(self.model_index), alpha=0.5)
+            
+            if self.show: plt.show()
