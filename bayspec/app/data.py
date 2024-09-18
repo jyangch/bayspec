@@ -247,6 +247,5 @@ for di, data_key in enumerate(st.session_state.data.keys()):
                             if not dataunit.completeness:
                                 st.warning('dataunit is not complete!', icon="⚠️")
                             else:
-                                plot = Plot.from_dataunit(dataunit)
-                                plot.dataunit(style='CE', show=False)
-                                st.plotly_chart(plot.fig, theme="streamlit", use_container_width=True)
+                                fig = Plot.dataunit(dataunit, style='CE', show=False)
+                                st.plotly_chart(fig, theme="streamlit", use_container_width=True)

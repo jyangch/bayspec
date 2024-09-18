@@ -319,9 +319,9 @@ for mi, model_key in enumerate(st.session_state.model.keys()):
                                 tarr = None
                                 
                             if style is not None:
-                                plot = Plot.from_model(component)
-                                plot.model(earr, tarr, style=style, show=False)
-                                st.plotly_chart(plot.fig, theme="streamlit", use_container_width=True)
+                                modelplot = Plot.model(style=style, CI=False)
+                                fig = modelplot.add_model(component, earr, tarr, show=False)
+                                st.plotly_chart(fig, theme="streamlit", use_container_width=True)
 
         with expression_tab:
             set_col, _, info_col = st.columns([4.9, 0.2, 4.9])
@@ -424,14 +424,12 @@ for mi, model_key in enumerate(st.session_state.model.keys()):
                                                 key=key)
                         
                         if len(comp_keys) > 0:
-                            comp_list = list()
-                            earr_list = list()
-                            tarr_list = list()
+                            
+                            modelplot = Plot.model(style=style, CI=False)
                             
                             comp_tabs = st.tabs([r'%s' % comp for comp in comp_keys])
                             for comp_key, comp_tab in zip(comp_keys, comp_tabs):
                                 comp = all_comps[comp_key]
-                                comp_list.append(comp)
                                 with comp_tab:
                                     key = f'{model_key}_{comp_key}_erange'; ini = (0, 4); set_ini(key, ini)
                                     erange = st.slider('Select energy range in logspace', 
@@ -439,7 +437,6 @@ for mi, model_key in enumerate(st.session_state.model.keys()):
                                                     value=ini, 
                                                     key=key)
                                     earr = np.logspace(erange[0], erange[1], 300)
-                                    earr_list.append(earr)
                                     
                                     if comp.type == 'tinv':
                                         key = f'{model_key}_{comp_key}_epoch'; ini = None; set_ini(key, ini)
@@ -457,8 +454,6 @@ for mi, model_key in enumerate(st.session_state.model.keys()):
                                     else:
                                         tarr = None
                                         
-                                    tarr_list.append(tarr)
-                                        
-                            plot = Plot.from_model(comp_list)
-                            plot.model(earr_list, tarr_list, style=style, CI=False, show=False)
-                            st.plotly_chart(plot.fig, theme="streamlit", use_container_width=True)
+                                fig = modelplot.add_model(comp, earr, tarr, show=False)
+
+                            st.plotly_chart(fig, theme="streamlit", use_container_width=True)

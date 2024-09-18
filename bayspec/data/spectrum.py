@@ -74,7 +74,21 @@ class Spectrum(object):
         return self._backscale
     
     
+    def set_zero(self):
+        
+        self._counts = self.counts = np.zeros_like(self.counts).astype(float)
+        self._errors = self.errors = np.zeros_like(self.errors).astype(float)
+        
+        
+    def scale(self, src_sc, bkg_sc):
+        
+        sc = src_sc / bkg_sc
+        self._counts = self._counts * sc
+        self._errors = self._errors * sc
+    
+    
     def _update(self, qual, notc, grpg):
+        
         self.qual = qual
         self.notc = notc
         self.grpg = grpg
@@ -103,12 +117,6 @@ class Spectrum(object):
                     
         self.counts = np.array(new_counts)
         self.errors = np.array(new_errors)
-
-
-    def set_zero(self):
-        
-        self._counts = self.counts = np.zeros_like(self.counts).astype(float)
-        self._errors = self.errors = np.zeros_like(self.errors).astype(float)
 
 
     @property
@@ -393,10 +401,3 @@ class Background(Spectrum):
                 return cls.from_bkg2(bkg_file)
             else:
                 return cls.from_bkg(bkg_file)
-    
-    
-    def scale(self, src_sc, bkg_sc):
-        
-        sc = src_sc / bkg_sc
-        self.counts = self.counts * sc
-        self.errors = self.errors * sc

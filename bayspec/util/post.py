@@ -69,6 +69,18 @@ class Post(object):
         
         else:
             return self.sample[np.argmax(self.loglike)]
+        
+        
+    @property
+    def best_ci(self):
+        
+        return self._best_ci
+    
+    
+    @best_ci.setter
+    def best_ci(self, new_best_ci):
+        
+        self._best_ci = new_best_ci
     
     
     def quantile(self, q):

@@ -379,6 +379,7 @@ class DataUnit(object):
             raise ValueError(f'unsupported src file type')
         
         self.src_ins = Source.from_plain(self.src_file, self.src_ii)
+        self.src_ins.scale(self.src_ins.backscale, self.src_ins.backscale)
 
 
     @property

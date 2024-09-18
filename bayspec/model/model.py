@@ -344,27 +344,6 @@ class Model(object):
         
         for i, thi in enumerate(theta): 
             self.par[i+1].val = thi
-            
-            
-    def sample_statistic(self, sample):
-        
-        mean = np.mean(sample, axis=0)
-        median = np.median(sample, axis=0)
-        
-        q = 68.27 / 100
-        Isigma = np.quantile(sample, [0.5 - q / 2, 0.5 + q / 2], axis=0)
-        
-        q = 95.45 / 100
-        IIsigma = np.quantile(sample, [0.5 - q / 2, 0.5 + q / 2], axis=0)
-        
-        q = 99.73 / 100
-        IIIsigma = np.quantile(sample, [0.5 - q / 2, 0.5 + q / 2], axis=0)
-        
-        return dict([('mean', mean), 
-                     ('median', median), 
-                     ('Isigma', Isigma), 
-                     ('IIsigma', IIsigma), 
-                     ('IIIsigma', IIIsigma)])
 
 
     @property
@@ -386,6 +365,57 @@ class Model(object):
         return sample
     
     
+    def sample_statistic(self, sample):
+        
+        mean = np.mean(sample, axis=0)
+        median = np.median(sample, axis=0)
+        
+        q = 68.27 / 100
+        Isigma = np.quantile(sample, [0.5 - q / 2, 0.5 + q / 2], axis=0)
+        
+        q = 95.45 / 100
+        IIsigma = np.quantile(sample, [0.5 - q / 2, 0.5 + q / 2], axis=0)
+        
+        q = 99.73 / 100
+        IIIsigma = np.quantile(sample, [0.5 - q / 2, 0.5 + q / 2], axis=0)
+        
+        return dict([('mean', mean), 
+                     ('median', median), 
+                     ('Isigma', Isigma), 
+                     ('IIsigma', IIsigma), 
+                     ('IIIsigma', IIIsigma)])
+    
+    
+    @property
+    def posterior_statistic(self):
+        
+        return self.sample_statistic(self.posterior_sample)
+    
+    
+    @property
+    def par_mean(self):
+        
+        return [par.val if par.frozen else par.post.mean for par in self.par.values()]
+    
+    
+    @property
+    def par_median(self):
+        
+        return [par.val if par.frozen else par.post.median for par in self.par.values()]
+    
+    
+    @property
+    def par_best(self):
+        
+        return [par.val if par.frozen else par.post.best for par in self.par.values()]
+    
+    
+    @property
+    def par_best_ci(self):
+        
+        return [par.val if par.frozen else par.post.best_ci for par in self.par.values()]
+        
+
     def phtspec_sample(self, E, T=None):
         
         sample = np.empty([self.posterior_nsample, len(E)])

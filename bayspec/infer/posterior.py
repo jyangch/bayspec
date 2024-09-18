@@ -38,6 +38,21 @@ class Posterior(Infer):
             loglike = self.posterior_sample[:, -1].copy()
             
             self.free_par[i+1].post = Post(sample, loglike)
+            
+        self._par_best_ci(q=0.6827)
+
+
+    def _par_best_ci(self, q=0.6827):
+        
+        argsort = np.argsort(self.posterior_sample[: ,-1])[::-1]
+        sort_posterior_sample = self.posterior_sample[: ,0:-1].copy()[argsort]
+        
+        for sample in sort_posterior_sample:
+            if np.array([True if (ci[0] <= sample[i] <= ci[1]) else False \
+                for i, ci in enumerate(self.par_interval(q))]).all():
+                
+                for par, value in zip(self.free_par.values(), sample):
+                    par.post.best_ci = value
 
 
     @property
@@ -80,16 +95,10 @@ class Posterior(Infer):
         return [par.post.best for par in self.free_par.values()]
     
     
-    def par_best_ci(self, q=0.6827):
+    @property
+    def par_best_ci(self):
         
-        argsort = np.argsort(self.posterior_sample[: ,-1])[::-1]
-        sort_posterior_sample = self.posterior_sample[: ,0:-1].copy()[argsort]
-        
-        for sample in sort_posterior_sample:
-            if np.array([True if (ci[0] <= sample[i] <= ci[1]) else False \
-                for i, ci in enumerate(self.par_interval(q))]).all():
-                
-                return sample.tolist()
+        return [par.post.best_ci for par in self.free_par.values()]
 
 
     def par_quantile(self, q):
@@ -179,7 +188,7 @@ class Posterior(Infer):
         
         free_par_info['Mean'] = ['%.3f'%par for par in self.par_mean]
         free_par_info['Median'] = ['%.3f'%par for par in self.par_median]
-        free_par_info['Best'] = ['%.3f'%par for par in self.par_best_ci()]
+        free_par_info['Best'] = ['%.3f'%par for par in self.par_best_ci]
         free_par_info['1sigma CI'] = ['[%.3f, %.3f]'%tuple(ci) for ci in self.par_Isigma]
         
         return Info.from_dict(free_par_info)
@@ -188,7 +197,7 @@ class Posterior(Infer):
     @property
     def stat_info(self):
         
-        self.at_par(self.par_best_ci())
+        self.at_par(self.par_best_ci)
         
         return Info.from_dict(self.all_stat)
 

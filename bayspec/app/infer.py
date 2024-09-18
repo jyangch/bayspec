@@ -203,9 +203,8 @@ with st.expander('***Manual fitting***', expanded=False):
                                      key=key)
         
         with plot_col:
-            plot = Plot.from_infer(infer)
-            plot.ctsspec(style='CE', show=False)
-            st.plotly_chart(plot.fig, theme="streamlit", use_container_width=True)
+            fig = Plot.infer_ctsspec(infer, style='CE', show=False)
+            st.plotly_chart(fig, theme="streamlit", use_container_width=True)
             
 with st.expander('***Bayesian inference***', expanded=False):
     
@@ -327,17 +326,15 @@ with st.expander('***Bayesian inference***', expanded=False):
             if not st.session_state.infer_state['run_state']:
                 st.warning('Please run Bayesian inference!', icon="⚠️")
             else:
-                plot = Plot.from_posterior(post)
-                plot.corner(show=False)
-                st.plotly_chart(plot.fig, theme="streamlit", use_container_width=True)
+                fig = Plot.post_corner(post, show=False)
+                st.plotly_chart(fig, theme="streamlit", use_container_width=True)
                 
         with st.popover("Counts spectra plot", use_container_width=True):
             if not st.session_state.infer_state['run_state']:
                 st.warning('Please run Bayesian inference!', icon="⚠️")
             else:
-                plot = Plot.from_posterior(post)
-                plot.ctsspec(style='CE', show=False)
-                st.plotly_chart(plot.fig, theme="streamlit", use_container_width=True)
+                fig = Plot.infer_ctsspec(post, style='CE', show=False)
+                st.plotly_chart(fig, theme="streamlit", use_container_width=True)
                 
         with st.popover("Model spectra plot", use_container_width=True):       
             key = 'post_model_style'; ini = None; set_ini(key, ini)
@@ -373,14 +370,12 @@ with st.expander('***Bayesian inference***', expanded=False):
                                        key=key)
 
             if len(comp_keys) > 0:
-                comp_list = list()
-                earr_list = list()
-                tarr_list = list()
+
+                modelplot = Plot.model(style=style, CI=True)
                 
                 comp_tabs = st.tabs([r'%s' % comp for comp in comp_keys])
                 for comp_key, comp_tab in zip(comp_keys, comp_tabs):
                     comp = all_comps[comp_key]
-                    comp_list.append(comp)
                     with comp_tab:
                         key = f'post_{comp_key}_erange'; ini = (0, 4); set_ini(key, ini)
                         erange = st.slider('Select energy range in logspace', 
@@ -388,7 +383,6 @@ with st.expander('***Bayesian inference***', expanded=False):
                                            value=(0, 4), 
                                            key=key)
                         earr = np.logspace(erange[0], erange[1], 300)
-                        earr_list.append(earr)
                         
                         if comp.type == 'tinv':
                             key = f'post_{comp_key}_epoch'; ini = None; set_ini(key, ini)
@@ -406,8 +400,6 @@ with st.expander('***Bayesian inference***', expanded=False):
                         else:
                             tarr = None
                             
-                        tarr_list.append(tarr)
-                            
-                plot = Plot.from_model(comp_list)
-                plot.model(earr_list, tarr_list, style=style, CI=True, show=False)
-                st.plotly_chart(plot.fig, theme="streamlit", use_container_width=True)
+                    fig = modelplot.add_model(comp, earr, tarr, show=False)
+
+                st.plotly_chart(fig, theme="streamlit", use_container_width=True)
