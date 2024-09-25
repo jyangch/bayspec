@@ -579,8 +579,8 @@ class Plot(object):
         else:
             raise ValueError(f'unsupported style argument: {style}')
         
-        ymin = np.quantile(list(chain.from_iterable(obs_y)), 0.05).astype(float)
-        ymax = 2 * np.max(list(chain.from_iterable(obs_y))).astype(float)
+        # ymin = np.quantile(list(chain.from_iterable(obs_y)), 0.05).astype(float)
+        # ymax = 2 * np.max(list(chain.from_iterable(obs_y))).astype(float)
             
         for i, expr in enumerate(cls.data.exprs):
                 
@@ -632,7 +632,8 @@ class Plot(object):
         if ploter == 'plotly':
             fig.update_xaxes(title_text='', row=1, col=1, type='log')
             fig.update_xaxes(title_text='Energy (keV)', row=2, col=1, type='log')
-            fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
+            fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log')
+            # fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
             fig.update_yaxes(title_text='Sigma', showgrid=False, range=[-3.5, 3.5], row=2, col=1)
             fig.update_layout(template='plotly_white', height=700, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
@@ -643,7 +644,7 @@ class Plot(object):
             ax1.set_xscale('log')
             ax1.set_yscale('log')
             ax1.set_ylabel(ylabel)
-            ax1.set_ylim([ymin, ymax])
+            # ax1.set_ylim([ymin, ymax])
             ax1.minorticks_on()
             ax1.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
             ax1.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
@@ -704,7 +705,7 @@ class Plot(object):
             raise TypeError('cls is not Infer or Posterior type, cannot call infer method')
         
         if isinstance(cls, Posterior):
-            cls.at_par(cls.par_best_ci)
+            cls.at_par(cls.par_best)
         
         if ploter == 'plotly':
             fig = make_subplots(
@@ -746,8 +747,8 @@ class Plot(object):
         else:
             raise ValueError(f'unsupported style argument: {style}')
         
-        ymin = np.quantile(list(chain.from_iterable(obs_y)), 0.05).astype(float)
-        ymax = 2 * np.max(list(chain.from_iterable(obs_y))).astype(float)
+        # ymin = np.quantile(list(chain.from_iterable(obs_y)), 0.05).astype(float)
+        # ymax = 2 * np.max(list(chain.from_iterable(obs_y))).astype(float)
             
         for i, expr in enumerate(cls.data_exprs):
                 
@@ -799,7 +800,8 @@ class Plot(object):
         if ploter == 'plotly':
             fig.update_xaxes(title_text='', row=1, col=1, type='log')
             fig.update_xaxes(title_text='Energy (keV)', row=2, col=1, type='log')
-            fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
+            fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log')
+            # fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
             fig.update_yaxes(title_text='Sigma', showgrid=False, range=[-3.5, 3.5], row=2, col=1)
             fig.update_layout(template='plotly_white', height=700, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
@@ -810,7 +812,7 @@ class Plot(object):
             ax1.set_xscale('log')
             ax1.set_yscale('log')
             ax1.set_ylabel(ylabel)
-            ax1.set_ylim([ymin, ymax])
+            # ax1.set_ylim([ymin, ymax])
             ax1.minorticks_on()
             ax1.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
             ax1.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
@@ -855,7 +857,7 @@ class Plot(object):
         
         title_fmt = '%s = $%.2f_{-%.2f}^{+%.2f}$'
         plabel = [f'par#{key}' for key in cls.free_par.keys()]
-        value = cls.par_best_ci
+        value = cls.par_best
         error = cls.par_error(value)
         
         if ploter == 'plotly':
