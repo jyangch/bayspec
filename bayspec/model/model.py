@@ -414,6 +414,48 @@ class Model(object):
     def par_best_ci(self):
         
         return [par.val if par.frozen else par.post.best_ci for par in self.par.values()]
+    
+    
+    def best_phtspec(self, E, T=None):
+        
+        self.at_par(self.par_best_ci)
+        
+        return self.phtspec(E, T)
+    
+    
+    def best_nouspec(self, E):
+        
+        self.at_par(self.par_best_ci)
+        
+        return self.nouspec(E)
+    
+    
+    def best_flxspec(self, E, T=None):
+        
+        self.at_par(self.par_best_ci)
+        
+        return self.flxspec(E, T)
+    
+    
+    def best_ergspec(self, E, T=None):
+        
+        self.at_par(self.par_best_ci)
+        
+        return self.ergspec(E, T)
+    
+    
+    def best_phtflux(self, emin, emax, ngrid, epoch=None):
+        
+        self.at_par(self.par_best_ci)
+        
+        return self.phtflux(emin, emax, ngrid, epoch)
+    
+    
+    def best_ergflux(self, emin, emax, ngrid, epoch=None):
+        
+        self.at_par(self.par_best_ci)
+        
+        return self.ergflux(emin, emax, ngrid, epoch)
         
 
     def phtspec_sample(self, E, T=None):

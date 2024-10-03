@@ -35,9 +35,9 @@ class Posterior(Infer):
         
         for i in range(self.free_nparams):
             sample = self.posterior_sample[:, i].copy()
-            loglike = self.posterior_sample[:, -1].copy()
+            logprob = self.posterior_sample[:, -1].copy()
             
-            self.free_par[i+1].post = Post(sample, loglike)
+            self.free_par[i+1].post = Post(sample, logprob)
             
         self._par_best_ci(q=0.6827)
 
@@ -53,6 +53,8 @@ class Posterior(Infer):
                 
                 for par, value in zip(self.free_par.values(), sample):
                     par.post.best_ci = value
+                
+                break
 
 
     @property
@@ -188,7 +190,7 @@ class Posterior(Infer):
         
         free_par_info['Mean'] = ['%.3f'%par for par in self.par_mean]
         free_par_info['Median'] = ['%.3f'%par for par in self.par_median]
-        free_par_info['Best'] = ['%.3f'%par for par in self.par_best]
+        free_par_info['Best'] = ['%.3f'%par for par in self.par_best_ci]
         free_par_info['1sigma CI'] = ['[%.3f, %.3f]'%tuple(ci) for ci in self.par_Isigma]
         
         return Info.from_dict(free_par_info)
@@ -197,7 +199,7 @@ class Posterior(Infer):
     @property
     def stat_info(self):
         
-        self.at_par(self.par_best)
+        self.at_par(self.par_best_ci)
         
         return Info.from_dict(self.all_stat)
 

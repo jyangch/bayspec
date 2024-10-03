@@ -705,7 +705,7 @@ class Plot(object):
             raise TypeError('cls is not Infer or Posterior type, cannot call infer method')
         
         if isinstance(cls, Posterior):
-            cls.at_par(cls.par_best)
+            cls.at_par(cls.par_best_ci)
         
         if ploter == 'plotly':
             fig = make_subplots(
@@ -857,7 +857,7 @@ class Plot(object):
         
         title_fmt = '%s = $%.2f_{-%.2f}^{+%.2f}$'
         plabel = [f'par#{key}' for key in cls.free_par.keys()]
-        value = cls.par_best
+        value = cls.par_best_ci
         error = cls.par_error(value)
         
         if ploter == 'plotly':
@@ -1076,7 +1076,7 @@ class ModelPlot(object):
                                  fill='tonexty', 
                                  line_color='rgba(0,0,0,0)', 
                                  fillcolor=ModelPlot.get_rgb(ModelPlot.colors[self.model_index], 0.5), 
-                                 showlegend=False)
+                                 showlegend=True)
                 self.fig.add_trace(upp)
                 
             if show: self.fig.show()

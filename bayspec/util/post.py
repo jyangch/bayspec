@@ -5,10 +5,10 @@ from collections import OrderedDict
 
 class Post(object):
     
-    def __init__(self, sample, loglike=None):
+    def __init__(self, sample, logprob=None):
         
         self._sample = sample
-        self._loglike = loglike
+        self._logprob = logprob
         
         
     @property
@@ -28,19 +28,19 @@ class Post(object):
             
             
     @property
-    def loglike(self):
+    def logprob(self):
         
-        return self._loglike
+        return self._logprob
     
     
-    @loglike.setter
-    def loglike(self, new_loglike):
+    @logprob.setter
+    def logprob(self, new_logprob):
         
-        if not (np.ndim(new_loglike) == 1):
-            raise ValueError('loglike must be 1D arrays')
+        if not (np.ndim(new_logprob) == 1):
+            raise ValueError('logprob must be 1D arrays')
         
         else:
-            self._loglike = new_loglike
+            self._logprob = new_logprob
             
             
     @property
@@ -64,11 +64,11 @@ class Post(object):
     @property
     def best(self):
         
-        if self.loglike is None:
+        if self.logprob is None:
             return None
         
         else:
-            return self.sample[np.argmax(self.loglike)]
+            return self.sample[np.argmax(self.logprob)]
         
         
     @property

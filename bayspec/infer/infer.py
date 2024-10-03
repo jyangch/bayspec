@@ -522,8 +522,25 @@ class Infer(object):
             return -np.inf
         else:
             return np.log(ppr)
+        
+        
+    def _logprior_sample(self, theta_sample):
+        
+        pprs_sample = np.zeros_like(theta_sample)
+        
+        for i in range(theta_sample.shape[1]):
+            pprs_sample[:, i] = self.free_par[i+1].prior.pdf(theta_sample[:, i])
+            
+        ppr_sample = np.prod(pprs_sample, axis=1)
+        
+        return np.where(ppr_sample == 0, -np.inf, np.log(ppr_sample))
 
-    
+
+    def _logprob(self, theta):
+
+        return self._logprior(theta) + self._loglike(theta)
+
+
     def __str__(self):
         
         print(self.cfg_info.table)
@@ -570,7 +587,10 @@ class Infer(object):
         
         self.posterior_stats = self.Analyzer.get_stats()
         self.posterior_sample = self.Analyzer.get_equal_weighted_posterior()
-        
+
+        self.posterior_sample[:, -1] = self.posterior_sample[:, -1] + \
+            self._logprior_sample(self.posterior_sample[:, 0:-1])
+
         self.logevidence = self.posterior_stats['nested importance sampling global log-evidence']
         
         json.dump(self.nlive, open(self.prefix + 'nlive.json', 'w'), indent=4, cls=JsonEncoder)
