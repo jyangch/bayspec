@@ -32,9 +32,13 @@ add_model_list = ['Blackbody',
                   'DMFitFunction', 
                   'DMSpectra']
 
-assert set(add_model_list) < set(astromodel_dict['name'])
-add_model_classes = {name: getattr(astromodels, name) for name in add_model_list}
-add_model_types = {name: 'add' for name in add_model_list}
+add_model_classes = dict()
+for name in add_model_list:
+    try:
+        add_model_classes[name] = getattr(astromodels, name)
+    except AttributeError:
+        pass
+add_model_types = {name: 'add' for name in add_model_classes.keys()}
 
 mul_model_list = ['PhAbs', 
                   'TbAbs', 
@@ -42,9 +46,13 @@ mul_model_list = ['PhAbs',
                   'EBLattenuation', 
                   'ZDust']
 
-assert set(mul_model_list) < set(astromodel_dict['name'])
-mul_model_classes = {name: getattr(astromodels, name) for name in mul_model_list}
-mul_model_types = {name: 'mul' for name in mul_model_list}
+mul_model_classes = dict()
+for name in mul_model_list:
+    try:
+        mul_model_classes[name] = getattr(astromodels, name)
+    except AttributeError:
+        pass
+mul_model_types = {name: 'mul' for name in mul_model_classes.keys()}
 
 math_model_list = ['Sin', 
                    'StepFunction', 
@@ -55,9 +63,13 @@ math_model_list = ['Sin',
                    'Cubic', 
                    'Quartic']
 
-assert set(math_model_list) < set(astromodel_dict['name'])
-math_model_classes = {name: getattr(astromodels, name) for name in math_model_list}
-math_model_types = {name: 'math' for name in math_model_list}
+math_model_classes = dict()
+for name in math_model_list:
+    try:
+        math_model_classes[name] = getattr(astromodels, name)
+    except AttributeError:
+        pass
+math_model_types = {name: 'math' for name in math_model_classes.keys()}
 
 model_classes = dict(**add_model_classes, **mul_model_classes, **math_model_classes)
 model_types = dict(**add_model_types, **mul_model_types, **math_model_types)
