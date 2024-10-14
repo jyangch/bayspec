@@ -78,14 +78,15 @@ class Data(object):
         self.rsp_factor = [unit.rsp_factor for unit in self.data.values()]
         self.src_factor = [unit.src_factor for unit in self.data.values()]
         self.bkg_factor = [unit.bkg_factor for unit in self.data.values()]
+        
+        self.src_efficiency = [unit.src_efficiency for unit in self.data.values()]
+        self.bkg_efficiency = [unit.bkg_efficiency for unit in self.data.values()]
 
         self.src_counts = [src.counts for src in self.srcs]
         self.src_errors = [src.errors for src in self.srcs]
-        self.src_exposure = [src.exposure for src in self.srcs]
         
         self.bkg_counts = [bkg.counts for bkg in self.bkgs]
         self.bkg_errors = [bkg.errors for bkg in self.bkgs]
-        self.bkg_exposure = [bkg.exposure for bkg in self.bkgs]
         
         self.rsp_chbin = [rsp.chbin for rsp in self.rsps]
         self.rsp_phbin = [rsp.phbin for rsp in self.rsps]
@@ -105,15 +106,15 @@ class Data(object):
 
 
     @property
-    def corr_src_exposure(self):
+    def corr_src_efficiency(self):
         
-        return [unit.corr_src_exposure for unit in self.data.values()]
+        return [unit.corr_src_efficiency for unit in self.data.values()]
     
     
     @property
-    def corr_bkg_exposure(self):
+    def corr_bkg_efficiency(self):
         
-        return [unit.corr_bkg_exposure for unit in self.data.values()]
+        return [unit.corr_bkg_efficiency for unit in self.data.values()]
     
     
     @property
@@ -379,7 +380,6 @@ class DataUnit(object):
             raise ValueError(f'unsupported src file type')
         
         self.src_ins = Source.from_plain(self.src_file, self.src_ii)
-        self.src_ins.scale(self.src_ins.backscale, self.src_ins.backscale)
 
 
     @property
@@ -420,7 +420,6 @@ class DataUnit(object):
                 raise ValueError(f'unsupported bkg file type')
             
             self.bkg_ins = Background.from_plain(self.bkg_file, self.bkg_ii)
-            self.bkg_ins.scale(self.src_ins.backscale, self.bkg_ins.backscale)
             
             
     @property
@@ -635,6 +634,8 @@ class DataUnit(object):
                     self.bkg_ins._errors, 
                     self.src_ins.exposure, 
                     self.bkg_ins.exposure, 
+                    self.src_ins.backscale, 
+                    self.bkg_ins.backscale, 
                     min_evt=gr_params['min_evt'], 
                     min_sigma=gr_params['min_sigma'], 
                     max_bin=gr_params['max_bin'], 
@@ -654,6 +655,11 @@ class DataUnit(object):
             self.rsp_ins._update(self.qualifying, self.noticing, self.grouping)
             
         self.npoint = self.src_ins.counts.shape[0]
+        
+        self.src_efficiency = self.src_ins.exposure
+        self.bkg_efficiency = self.bkg_ins.exposure * self.bkg_ins.backscale / self.src_ins.backscale
+        
+        self.alpha = self.src_efficiency / self.bkg_efficiency
 
 
     @property
@@ -780,15 +786,15 @@ class DataUnit(object):
 
 
     @property
-    def corr_src_exposure(self):
+    def corr_src_efficiency(self):
         
-        return self.src_ins.exposure * self.src_factor
+        return self.src_efficiency * self.src_factor
 
 
     @property
-    def corr_bkg_exposure(self):
+    def corr_bkg_efficiency(self):
         
-        return self.bkg_ins.exposure * self.bkg_factor
+        return self.bkg_efficiency * self.bkg_factor
     
     
     @property
@@ -812,13 +818,13 @@ class DataUnit(object):
     @property
     def src_ctsrate(self):
         
-        return self.src_ins.counts / self.corr_src_exposure
+        return self.src_ins.counts / self.corr_src_efficiency
     
     
     @property
     def src_ctsrate_error(self):
         
-        return self.src_ins.errors  / self.corr_src_exposure
+        return self.src_ins.errors  / self.corr_src_efficiency
     
     
     @property
@@ -836,13 +842,13 @@ class DataUnit(object):
     @property
     def bkg_ctsrate(self):
         
-        return self.bkg_ins.counts  / self.corr_bkg_exposure
+        return self.bkg_ins.counts  / self.corr_bkg_efficiency
     
     
     @property
     def bkg_ctsrate_error(self):
         
-        return self.bkg_ins.errors  / self.corr_bkg_exposure
+        return self.bkg_ins.errors  / self.corr_bkg_efficiency
     
     
     @property
@@ -992,6 +998,8 @@ class DataUnit(object):
         berr, 
         ts, 
         tb, 
+        ss, 
+        sb, 
         min_sigma=None, 
         min_evt=None, 
         max_bin=None, 
@@ -1006,10 +1014,21 @@ class DataUnit(object):
         
         if ini_flag is None:
             ini_flag = [1] * len(s)
+            
+        if min_sigma is None:
+            min_sigma = -np.inf
+        
+        if min_evt is None:
+            min_evt = 0
+            
+        if max_bin is None:
+            max_bin = np.inf
+            
+        alpha = ts * ss / (tb * sb)
 
         flag, gs = [], []
         nowbin = False
-        sp_, bp, bperr, cp = 0, 0, 0, 0
+        cs, cb, cberr, cp = 0, 0, 0, 0
         for i in range(len(s)):
             if ini_flag[i] != 1:
                 flag.append(0)
@@ -1019,7 +1038,7 @@ class DataUnit(object):
                     else:
                         flag[gs[-1]] = -1
                 nowbin = False
-                sp_, bp, cp = 0, 0, 0
+                cs, cb, cberr, cp = 0, 0, 0, 0
             else:
                 if not nowbin:
                     flag.append(1)
@@ -1032,86 +1051,31 @@ class DataUnit(object):
                 si = s[i]
                 bi = b[i]
                 bierr = berr[i]
-                sp_ += si
-                bp += bi
-                bperr = np.sqrt(bperr ** 2 + bierr ** 2)
-
-                if max_bin is None:
-
-                    if min_sigma is not None:
-
-                        if stat is None: stat = 'pgstat'
-                        if stat in ['pstat', 'cstat', 'ppstat', 'Xppstat', 'Xcstat', 'ULppstat']:
-                            if (bp < 0 or sp_ < 0) and (bp != sp_):
-                                sigma = 0
-                            else:
-                                sigma = ppsig(sp_, bp, ts / tb)
-                        elif stat in ['gstat', 'chi2', 'pgstat', 'Xpgstat', 'ULpgstat']:
-                            if sp_ <= 0:
-                                sigma = 0
-                            elif bperr == 0:
-                                sigma = 0
-                            else:
-                                sigma = pgsig(sp_, bp, bperr)
-                        else:
-                            raise KeyError('It is unavailable kind of stat!')
-
-                        if sigma >= min_sigma:
-                            nowbin = False
-                            sp_, bp, bperr = 0, 0, 0
-                        else:
-                            nowbin = True
-
-                    elif min_evt is not None:
-                        evt = sp_ - bp
-
-                        if evt >= min_evt:
-                            nowbin = False
-                            sp_, bp, bperr = 0, 0, 0
-                        else:
-                            nowbin = True
-
-                else:
-
-                    if min_sigma is not None:
-
-                        if stat is None: stat = 'pgstat'
-                        if stat in ['pstat', 'cstat', 'ppstat', 'Xppstat', 'Xcstat', 'ULppstat']:
-                            if (bp < 0 or sp_ < 0) and (bp != sp_):
-                                sigma = 0
-                            else:
-                                sigma = ppsig(sp_, bp, ts / tb)
-                        elif stat in ['gstat', 'chi2', 'pgstat', 'Xpgstat', 'ULpgstat']:
-                            if sp_ <= 0:
-                                sigma = 0
-                            elif bperr == 0:
-                                sigma = 0
-                            else:
-                                sigma = pgsig(sp_, bp, bperr)
-                        else:
-                            raise KeyError('It is unavailable kind of stat!')
-
-                        if sigma >= min_sigma or cp == max_bin:
-                            nowbin = False
-                            sp_, bp, bperr, cp = 0, 0, 0, 0
-                        else:
-                            nowbin = True
-
-                    elif min_evt is not None:
-                        evt = sp_ - bp
-
-                        if evt >= min_evt or cp == max_bin:
-                            nowbin = False
-                            sp_, bp, bperr, cp = 0, 0, 0, 0
-                        else:
-                            nowbin = True
-
+                cs += si
+                cb += bi
+                cberr = np.sqrt(cberr ** 2 + bierr ** 2)
+                
+                if stat is None: stat = 'pgstat'
+                if stat in ['pstat', 'cstat', 'ppstat', 'Xppstat', 'Xcstat', 'ULppstat']:
+                    if (cb < 0 or cs < 0) and (cb != cs):
+                        sigma = 0
                     else:
-                        if cp == max_bin:
-                            nowbin = False
-                            sp_, bp, bperr, cp = 0, 0, 0, 0
-                        else:
-                            nowbin = True
+                        sigma = ppsig(cs, cb, alpha)
+                elif stat in ['gstat', 'chi2', 'pgstat', 'Xpgstat', 'ULpgstat']:
+                    if cs <= 0 or cberr == 0:
+                        sigma = 0
+                    else:
+                        sigma = pgsig(cs, cb * alpha, cberr * alpha)
+                else:
+                    raise AttributeError(f'unsupported stat: {stat}')
+                
+                evt = cs - cb * alpha
+                
+                if ((sigma >= min_sigma) and (evt >= min_evt)) or cp == max_bin:
+                    nowbin = False
+                    cs, cb, cberr, cp = 0, 0, 0, 0
+                else:
+                    nowbin = True
 
                 if nowbin and i == (len(s) - 1):
                     if len(gs) < 2:

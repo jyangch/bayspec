@@ -82,8 +82,8 @@ class Pair(object):
                                  self.data.src_counts, 
                                  self.data.bkg_counts, 
                                  self.model.ctsrate, 
-                                 self.data.corr_src_exposure, 
-                                 self.data.corr_bkg_exposure, 
+                                 self.data.corr_src_efficiency, 
+                                 self.data.corr_bkg_efficiency, 
                                  self.data.src_errors, 
                                  self.data.bkg_errors, 
                                  self.data.stats))).astype(float)

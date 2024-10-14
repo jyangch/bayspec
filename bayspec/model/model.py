@@ -209,7 +209,7 @@ class Model(object):
         
         phtflux = self.integ(response.phbin, tarr)
         ctsrate = np.dot(phtflux, response.drm)
-        ctsspec = self._ctsrate / response.chbin_width
+        ctsspec = ctsrate / response.chbin_width
         
         return ctsrate, ctsspec
         
@@ -218,7 +218,7 @@ class Model(object):
         
         phtflux = self.integ(dataunit.ebin, dataunit.tarr)
         ctsrate = np.dot(phtflux, dataunit.corr_rsp_drm)
-        ctsspec = self._ctsrate / dataunit.rsp_chbin_width
+        ctsspec = ctsrate / dataunit.rsp_chbin_width
         
         return ctsrate, ctsspec
         
@@ -228,7 +228,7 @@ class Model(object):
         flat_phtflux = self.integ(data.ebin, data.tarr)
         phtflux = [flat_phtflux[i:j].copy() for (i, j) in zip(data.bin_start, data.bin_stop)]
         ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, data.corr_rsp_drm)]
-        ctsspec = [cr / chw for (cr, chw) in zip(self._ctsrate, data.rsp_chbin_width)]
+        ctsspec = [cr / chw for (cr, chw) in zip(ctsrate, data.rsp_chbin_width)]
         
         return ctsrate, ctsspec
         
@@ -255,7 +255,7 @@ class Model(object):
     
     
     @property
-    def phtspec_ch(self):
+    def phtspec_at_rsp(self):
         
         return [self.phtspec(E, T) for (E, T) in \
             zip(self.fit_to.rsp_chbin_mean, self.fit_to.rsp_chbin_tarr)]
@@ -264,7 +264,7 @@ class Model(object):
     @property
     def cts_to_pht(self):
         
-        return [cts / pht for (cts, pht) in zip(self.ctsspec, self.phtspec_ch)]
+        return [cts / pht for (cts, pht) in zip(self.ctsspec, self.phtspec_at_rsp)]
 
 
     def phtspec(self, E, T=None):

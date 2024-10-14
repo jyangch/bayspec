@@ -78,13 +78,6 @@ class Spectrum(object):
         
         self._counts = self.counts = np.zeros_like(self.counts).astype(float)
         self._errors = self.errors = np.zeros_like(self.errors).astype(float)
-        
-        
-    def scale(self, src_sc, bkg_sc):
-        
-        sc = src_sc / bkg_sc
-        self._counts = self._counts * sc
-        self._errors = self._errors * sc
     
     
     def _update(self, qual, notc, grpg):

@@ -35,7 +35,7 @@ class Plot(object):
     
     
     @staticmethod
-    def spectrum(cls, ploter='plotly', show=False):
+    def spectrum(cls, ploter='plotly', show=True):
         
         if not isinstance(cls, Spectrum):
             raise TypeError('cls is not Spectrum type, cannot call spectrum method')
@@ -93,7 +93,7 @@ class Plot(object):
             
     
     @staticmethod
-    def response(cls, ploter='plotly', ch_range=None, ph_range=None, show=False):
+    def response(cls, ploter='plotly', ch_range=None, ph_range=None, show=True):
         
         if not isinstance(cls, Response):
             raise TypeError('cls is not Response type, cannot call response method')
@@ -154,7 +154,7 @@ class Plot(object):
             
     
     @staticmethod
-    def response_photon(cls, ploter='plotly', ph_range=None, show=False):
+    def response_photon(cls, ploter='plotly', ph_range=None, show=True):
         
         if not isinstance(cls, Response):
             raise TypeError('cls is not Response type, cannot call response_photon method')
@@ -221,7 +221,7 @@ class Plot(object):
 
 
     @staticmethod
-    def response_channel(cls, ploter='plotly', ch_range=None, show=False):
+    def response_channel(cls, ploter='plotly', ch_range=None, show=True):
         
         if not isinstance(cls, Response):
             raise TypeError('cls is not Response type, cannot call response_channel method')
@@ -283,7 +283,7 @@ class Plot(object):
 
 
     @staticmethod
-    def dataunit(cls, ploter='plotly', style='CE', show=False):
+    def dataunit(cls, ploter='plotly', style='CE', show=True):
         
         if not isinstance(cls, DataUnit):
             raise TypeError('cls is not DataUnit type, cannot call dataunit method')
@@ -430,7 +430,7 @@ class Plot(object):
 
 
     @staticmethod
-    def data(cls, ploter='plotly', style='CE', show=False):
+    def data(cls, ploter='plotly', style='CE', show=True):
         
         if not isinstance(cls, Data):
             raise TypeError('cls is not Data type, cannot call data method')
@@ -534,7 +534,7 @@ class Plot(object):
 
 
     @staticmethod
-    def pair(cls, ploter='plotly', style='CE', show=False):
+    def pair(cls, ploter='plotly', style='CE', show=True):
         
         if not isinstance(cls, Pair):
             raise TypeError('cls is not Pair type, cannot call pair method')
@@ -679,7 +679,7 @@ class Plot(object):
             
     
     @staticmethod
-    def emcee_walker(cls, show=False):
+    def emcee_walker(cls, show=True):
         
         if not isinstance(cls, (Infer, Posterior)):
             raise TypeError('cls is not Infer or Posterior type, cannot call walker method')
@@ -699,7 +699,7 @@ class Plot(object):
             
     
     @staticmethod
-    def infer_ctsspec(cls, ploter='plotly', style='CE', show=False):
+    def infer_ctsspec(cls, ploter='plotly', style='CE', show=True):
         
         if not isinstance(cls, (Infer, Posterior)):
             raise TypeError('cls is not Infer or Posterior type, cannot call infer method')
@@ -847,7 +847,7 @@ class Plot(object):
             
         
     @staticmethod
-    def post_corner(cls, ploter='plotly', show=False):
+    def post_corner(cls, ploter='plotly', show=True):
         
         if not isinstance(cls, Posterior):
             raise TypeError('cls is not Posterior type, cannot call corner method')
@@ -994,7 +994,7 @@ class ModelPlot(object):
         return 'rgba(%d, %d, %d, %f)' % tuple(rgb)
         
         
-    def add_model(self, model, E, T=None, show=False):
+    def add_model(self, model, E, T=None, show=True):
         
         if not isinstance(model, Model):
             raise TypeError('model is not Model type, cannot call add_model method')

@@ -242,13 +242,16 @@ class Statistic(object):
         
         B = kwargs['B']
         m = kwargs['m']
+        
         ts = kwargs['ts']
+        tb = kwargs['tb']
+        alpha = ts / tb
         
         bkg_cts = np.sum(B)
         mo_cts = np.sum(m * ts)
         
         ul_sigma = 3
-        sigma = ppsig(mo_cts + bkg_cts, bkg_cts, 1)
+        sigma = ppsig(mo_cts + bkg_cts * alpha, bkg_cts, alpha)
 
         return (sigma - ul_sigma) ** 2
     
@@ -260,6 +263,9 @@ class Statistic(object):
         m = kwargs['m']
         
         ts = kwargs['ts']
+        tb = kwargs['tb']
+        alpha = ts / tb
+        
         sigma_B = kwargs['sigma_B']
         
         bkg_cts = np.sum(B)
@@ -267,6 +273,6 @@ class Statistic(object):
         bkg_err = np.sqrt(np.sum(sigma_B * sigma_B))
         
         ul_sigma = 3
-        sigma = pgsig(mo_cts + bkg_cts, bkg_cts, bkg_err)
+        sigma = pgsig(mo_cts + bkg_cts * alpha, bkg_cts * alpha, bkg_err * alpha)
 
         return (sigma - ul_sigma) ** 2

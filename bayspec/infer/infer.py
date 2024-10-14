@@ -342,7 +342,7 @@ class Infer(object):
     @property
     def model_phtspec(self):
         
-        return [value for model in self.Model for value in model.phtspec_ch]
+        return [value for model in self.Model for value in model.phtspec_at_rsp]
     
     
     @property
