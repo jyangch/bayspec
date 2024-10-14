@@ -2,6 +2,7 @@ import inspect
 import warnings
 import numpy as np
 from io import BytesIO
+from scipy import special
 from ..util.info import Info
 from ..util.param import Par
 from collections import OrderedDict
@@ -74,6 +75,8 @@ class Data(object):
         
         self.weights = np.array([unit.weight for unit in self.data.values()])
         self.npoints = np.array([unit.npoint for unit in self.data.values()])
+        
+        self.notcs = [unit.notc for unit in self.data.values()]
         
         self.rsp_factor = [unit.rsp_factor for unit in self.data.values()]
         self.src_factor = [unit.src_factor for unit in self.data.values()]
@@ -593,6 +596,14 @@ class DataUnit(object):
         if self._notc is not None:
             if not isinstance(self._notc, (list, np.ndarray)):
                 raise ValueError('<notc> parameter should be list or array')
+            else:
+                self._notc = self._notc.tolist()
+                if type(self._notc[0]) is not list:
+                    self._notc = [self._notc]
+                else:
+                    self._notc = self._union(self._notc)
+        else:
+            self._notc = [[np.min(self.rsp_ins._chbin), np.max(self.rsp_ins._chbin)]]
         
         if self.completeness:
             self.noticing = self._notice(self.rsp_ins._chbin, self._notc)
@@ -885,6 +896,20 @@ class DataUnit(object):
     def net_ctsspec_error(self):
         
         return np.sqrt(self.src_ctsspec_error ** 2 + self.bkg_ctsspec_error ** 2)
+    
+    
+    def src_counts_upperlimit(self, cl=0.9):
+        
+        N = np.sum(self.src_ins.counts)
+        B = np.sum(self.bkg_ins.counts) * self.alpha
+        
+        return special.gammaincinv(N + 1, cl * special.gammaincc(N + 1, B) 
+                                   + special.gammainc(N + 1, B)) - B
+        
+        
+    def src_ctsrate_upperlimit(self, cl=0.9):
+        
+        return self.src_counts_upperlimit(cl) / self.corr_src_efficiency
 
 
     @property
@@ -973,6 +998,27 @@ class DataUnit(object):
         return None
     
     
+    @staticmethod
+    def _union(bins):
+        
+        if len(bins) == 0:
+            return []
+
+        bins1 = np.array([bin_[0] for bin_ in bins])
+        bins = np.array(bins)[np.argsort(bins1)]
+        bins = bins.tolist()
+
+        res = [bins[0]]
+        for i in range(1, len(bins)):
+            a1, a2 = res[-1][0], res[-1][1]
+            b1, b2 = bins[i][0], bins[i][1]
+            if b2 >= a1 and a2 >= b1:
+                res[-1] = [min(a1, b1), max(a2, b2)]
+            else: res.append(bins[i])
+
+        return res
+
+
     @staticmethod
     def _notice(chbin, notc=None):
         

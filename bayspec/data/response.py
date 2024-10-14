@@ -211,12 +211,8 @@ class Response(object):
 
 
     @staticmethod
-    def intersection(A, B):
-        # for example
-        # A = [[0,2], [5,10], [13,23], [24,25]]
-        # B = [[1,5], [8,12], [15,24], [25,26]]
+    def _intersection(A, B):
 
-        #sort A and B
         A1 = np.array([i[-1] for i in A])
         B1 = np.array([i[-1] for i in B])
         A = np.array(A)[np.argsort(A1)]
@@ -231,16 +227,16 @@ class Response(object):
                 res.append([max(a1, b1), min(a2, b2)])
             if b2 < a2: j += 1
             else: i += 1
+            
         return res
 
 
     @staticmethod
-    def union(bins):
+    def _union(bins):
         
         if len(bins) == 0:
             return []
 
-        #sort bins
         bins1 = np.array([bin_[0] for bin_ in bins])
         bins = np.array(bins)[np.argsort(bins1)]
         bins = bins.tolist()

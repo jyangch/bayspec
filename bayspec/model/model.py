@@ -265,6 +265,16 @@ class Model(object):
     def cts_to_pht(self):
         
         return [cts / pht for (cts, pht) in zip(self.ctsspec, self.phtspec_at_rsp)]
+    
+    
+    @property
+    def cts_to_flux(self):
+        
+        ctsrate = [np.sum(cr) for cr in self.ctsrate]
+        ergflux = [np.sum([self.ergflux(emin, emax, 1000) for emin, emax in notc])
+                   for notc in self.fit_to.notcs]
+        
+        return [flux / cts for (flux, cts) in zip(ergflux, ctsrate)]
 
 
     def phtspec(self, E, T=None):
