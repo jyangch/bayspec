@@ -597,7 +597,7 @@ class DataUnit(object):
             if not isinstance(self._notc, (list, np.ndarray)):
                 raise ValueError('<notc> parameter should be list or array')
             else:
-                self._notc = self._notc.tolist()
+                self._notc = list(self._notc)
                 if type(self._notc[0]) is not list:
                     self._notc = [self._notc]
                 else:
