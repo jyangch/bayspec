@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="bayspec",
-    version="0.1.0",
+    version="0.1.1",
     description="A Bayesian inference-based spectral fitting tool for multi-dimensional and multi-wavelength astrophysical data.",
     author="jyang",
     author_email="jyang@smail.nju.edu.cn",
@@ -14,9 +14,9 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS",
-        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.8",
     ],
-    python_requires=">=3.10",
+    python_requires=">=3.8",
     install_requires=[
         "numpy>=1.26.4",
         "pandas>=2.1.0",
