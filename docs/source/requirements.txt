@@ -1,1 +1,4 @@
-sphinx_rtd_theme
+sphinx
+nbsphinx
+plotly
+myst-nb

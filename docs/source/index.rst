@@ -3,15 +3,26 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-bayspec documentation
+BaySpec documentation
 =====================
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+*BaySpec* is a Bayesian inference-based spectral fitting tool for multi-dimensional and multi-wavelength astrophysical data.
 
+
+Contents
+^^^^^^^^
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :maxdepth: 4
 
+   installation.rst
+   quickstart.rst
+   modules.rst
+
+
+Indices and tables
+------------------
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
