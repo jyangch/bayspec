@@ -18,8 +18,6 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=[
-        "sphinx>=4.0",
-        "sphinx-rtd-theme"
         "numpy>=1.26.4",
         "pandas>=2.1.0",
         "scipy>=1.11.2",
