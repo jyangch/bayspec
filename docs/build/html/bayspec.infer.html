@@ -1,0 +1,734 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bayspec.infer package &mdash; bayspec 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=92734c54"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            bayspec
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">bayspec.infer package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-bayspec.infer.infer">bayspec.infer.infer module</a><ul>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer"><code class="docutils literal notranslate"><span class="pre">Infer</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.all_config"><code class="docutils literal notranslate"><span class="pre">Infer.all_config</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.all_params"><code class="docutils literal notranslate"><span class="pre">Infer.all_params</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.all_stat"><code class="docutils literal notranslate"><span class="pre">Infer.all_stat</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.append"><code class="docutils literal notranslate"><span class="pre">Infer.append()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.at_par"><code class="docutils literal notranslate"><span class="pre">Infer.at_par()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.cdicts"><code class="docutils literal notranslate"><span class="pre">Infer.cdicts</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.cfg"><code class="docutils literal notranslate"><span class="pre">Infer.cfg</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.cfg_info"><code class="docutils literal notranslate"><span class="pre">Infer.cfg_info</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.data_chbin_mean"><code class="docutils literal notranslate"><span class="pre">Infer.data_chbin_mean</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.data_chbin_width"><code class="docutils literal notranslate"><span class="pre">Infer.data_chbin_width</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.data_ctsrate"><code class="docutils literal notranslate"><span class="pre">Infer.data_ctsrate</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.data_ctsrate_error"><code class="docutils literal notranslate"><span class="pre">Infer.data_ctsrate_error</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.data_ctsspec"><code class="docutils literal notranslate"><span class="pre">Infer.data_ctsspec</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.data_ctsspec_error"><code class="docutils literal notranslate"><span class="pre">Infer.data_ctsspec_error</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.dof"><code class="docutils literal notranslate"><span class="pre">Infer.dof</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.emcee"><code class="docutils literal notranslate"><span class="pre">Infer.emcee()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.emcee_logprob"><code class="docutils literal notranslate"><span class="pre">Infer.emcee_logprob()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.foo"><code class="docutils literal notranslate"><span class="pre">Infer.foo()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.free_nparams"><code class="docutils literal notranslate"><span class="pre">Infer.free_nparams</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.free_par"><code class="docutils literal notranslate"><span class="pre">Infer.free_par</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.free_par_info"><code class="docutils literal notranslate"><span class="pre">Infer.free_par_info</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.free_params"><code class="docutils literal notranslate"><span class="pre">Infer.free_params</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.free_plabels"><code class="docutils literal notranslate"><span class="pre">Infer.free_plabels</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.free_pranges"><code class="docutils literal notranslate"><span class="pre">Infer.free_pranges</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.free_pvalues"><code class="docutils literal notranslate"><span class="pre">Infer.free_pvalues</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.idpid"><code class="docutils literal notranslate"><span class="pre">Infer.idpid</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.link"><code class="docutils literal notranslate"><span class="pre">Infer.link()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.loglike"><code class="docutils literal notranslate"><span class="pre">Infer.loglike</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.loglike_list"><code class="docutils literal notranslate"><span class="pre">Infer.loglike_list</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.logprior"><code class="docutils literal notranslate"><span class="pre">Infer.logprior</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.minimize"><code class="docutils literal notranslate"><span class="pre">Infer.minimize()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.model_cts_to_pht"><code class="docutils literal notranslate"><span class="pre">Infer.model_cts_to_pht</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.model_ctsrate"><code class="docutils literal notranslate"><span class="pre">Infer.model_ctsrate</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.model_ctsspec"><code class="docutils literal notranslate"><span class="pre">Infer.model_ctsspec</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.model_phtspec"><code class="docutils literal notranslate"><span class="pre">Infer.model_phtspec</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.multinest"><code class="docutils literal notranslate"><span class="pre">Infer.multinest()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.multinest_loglike"><code class="docutils literal notranslate"><span class="pre">Infer.multinest_loglike()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.multinest_prior_transform"><code class="docutils literal notranslate"><span class="pre">Infer.multinest_prior_transform()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.npoint"><code class="docutils literal notranslate"><span class="pre">Infer.npoint</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.npoint_list"><code class="docutils literal notranslate"><span class="pre">Infer.npoint_list</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.pairs"><code class="docutils literal notranslate"><span class="pre">Infer.pairs</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.par"><code class="docutils literal notranslate"><span class="pre">Infer.par</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.par_info"><code class="docutils literal notranslate"><span class="pre">Infer.par_info</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.pdicts"><code class="docutils literal notranslate"><span class="pre">Infer.pdicts</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.prior_list"><code class="docutils literal notranslate"><span class="pre">Infer.prior_list</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.stat"><code class="docutils literal notranslate"><span class="pre">Infer.stat</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.stat_info"><code class="docutils literal notranslate"><span class="pre">Infer.stat_info</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.stat_list"><code class="docutils literal notranslate"><span class="pre">Infer.stat_list</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.unlink"><code class="docutils literal notranslate"><span class="pre">Infer.unlink()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.infer.Infer.weight_list"><code class="docutils literal notranslate"><span class="pre">Infer.weight_list</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-bayspec.infer.pair">bayspec.infer.pair module</a><ul>
+<li><a class="reference internal" href="#bayspec.infer.pair.Pair"><code class="docutils literal notranslate"><span class="pre">Pair</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.infer.pair.Pair.data"><code class="docutils literal notranslate"><span class="pre">Pair.data</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.pair.Pair.loglike"><code class="docutils literal notranslate"><span class="pre">Pair.loglike</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.pair.Pair.loglike_list"><code class="docutils literal notranslate"><span class="pre">Pair.loglike_list</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.pair.Pair.model"><code class="docutils literal notranslate"><span class="pre">Pair.model</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.pair.Pair.npoint"><code class="docutils literal notranslate"><span class="pre">Pair.npoint</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.pair.Pair.npoint_list"><code class="docutils literal notranslate"><span class="pre">Pair.npoint_list</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.pair.Pair.stat"><code class="docutils literal notranslate"><span class="pre">Pair.stat</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.pair.Pair.stat_func"><code class="docutils literal notranslate"><span class="pre">Pair.stat_func</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.pair.Pair.stat_list"><code class="docutils literal notranslate"><span class="pre">Pair.stat_list</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.pair.Pair.weight_list"><code class="docutils literal notranslate"><span class="pre">Pair.weight_list</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-bayspec.infer.posterior">bayspec.infer.posterior module</a><ul>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior"><code class="docutils literal notranslate"><span class="pre">Posterior</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.IC_info"><code class="docutils literal notranslate"><span class="pre">Posterior.IC_info</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.aic"><code class="docutils literal notranslate"><span class="pre">Posterior.aic</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.aicc"><code class="docutils literal notranslate"><span class="pre">Posterior.aicc</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.bic"><code class="docutils literal notranslate"><span class="pre">Posterior.bic</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.free_par_info"><code class="docutils literal notranslate"><span class="pre">Posterior.free_par_info</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.infer"><code class="docutils literal notranslate"><span class="pre">Posterior.infer</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.lnZ"><code class="docutils literal notranslate"><span class="pre">Posterior.lnZ</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.max_loglike"><code class="docutils literal notranslate"><span class="pre">Posterior.max_loglike</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.par_IIIsigma"><code class="docutils literal notranslate"><span class="pre">Posterior.par_IIIsigma</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.par_IIsigma"><code class="docutils literal notranslate"><span class="pre">Posterior.par_IIsigma</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.par_Isigma"><code class="docutils literal notranslate"><span class="pre">Posterior.par_Isigma</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.par_best"><code class="docutils literal notranslate"><span class="pre">Posterior.par_best</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.par_best_ci"><code class="docutils literal notranslate"><span class="pre">Posterior.par_best_ci</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.par_error"><code class="docutils literal notranslate"><span class="pre">Posterior.par_error()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.par_interval"><code class="docutils literal notranslate"><span class="pre">Posterior.par_interval()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.par_mean"><code class="docutils literal notranslate"><span class="pre">Posterior.par_mean</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.par_median"><code class="docutils literal notranslate"><span class="pre">Posterior.par_median</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.par_quantile"><code class="docutils literal notranslate"><span class="pre">Posterior.par_quantile()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.posterior_statistic"><code class="docutils literal notranslate"><span class="pre">Posterior.posterior_statistic</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.posterior.Posterior.stat_info"><code class="docutils literal notranslate"><span class="pre">Posterior.stat_info</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-bayspec.infer.statistic">bayspec.infer.statistic module</a><ul>
+<li><a class="reference internal" href="#bayspec.infer.statistic.Statistic"><code class="docutils literal notranslate"><span class="pre">Statistic</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.infer.statistic.Statistic.Gstat"><code class="docutils literal notranslate"><span class="pre">Statistic.Gstat()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.statistic.Statistic.PGstat"><code class="docutils literal notranslate"><span class="pre">Statistic.PGstat()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.statistic.Statistic.PGstat_UL"><code class="docutils literal notranslate"><span class="pre">Statistic.PGstat_UL()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.statistic.Statistic.PGstat_Xspec"><code class="docutils literal notranslate"><span class="pre">Statistic.PGstat_Xspec()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.statistic.Statistic.PPstat"><code class="docutils literal notranslate"><span class="pre">Statistic.PPstat()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.statistic.Statistic.PPstat_UL"><code class="docutils literal notranslate"><span class="pre">Statistic.PPstat_UL()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.statistic.Statistic.PPstat_Xspec"><code class="docutils literal notranslate"><span class="pre">Statistic.PPstat_Xspec()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.statistic.Statistic.Pstat"><code class="docutils literal notranslate"><span class="pre">Statistic.Pstat()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.statistic.Statistic.gaussian_logpdf"><code class="docutils literal notranslate"><span class="pre">Statistic.gaussian_logpdf()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.statistic.Statistic.poisson_logpmf"><code class="docutils literal notranslate"><span class="pre">Statistic.poisson_logpmf()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.statistic.Statistic.xdivy"><code class="docutils literal notranslate"><span class="pre">Statistic.xdivy()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.infer.statistic.Statistic.xlogy"><code class="docutils literal notranslate"><span class="pre">Statistic.xlogy()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-bayspec.infer">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">bayspec</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">bayspec.infer package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/bayspec.infer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="bayspec-infer-package">
+<h1>bayspec.infer package<a class="headerlink" href="#bayspec-infer-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-bayspec.infer.infer">
+<span id="bayspec-infer-infer-module"></span><h2>bayspec.infer.infer module<a class="headerlink" href="#module-bayspec.infer.infer" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.infer.infer.</span></span><span class="sig-name descname"><span class="pre">Infer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pairs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/infer.html#Infer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.infer.Infer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.all_config">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">all_config</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.all_config" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.all_params">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">all_params</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.all_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.all_stat">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">all_stat</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.all_stat" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.append">
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">pair</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/infer.html#Infer.append"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.infer.Infer.append" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.at_par">
+<span class="sig-name descname"><span class="pre">at_par</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/infer.html#Infer.at_par"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.infer.Infer.at_par" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.cdicts">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cdicts</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.cdicts" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.cfg">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cfg</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.cfg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.cfg_info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">cfg_info</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.cfg_info" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.data_chbin_mean">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_chbin_mean</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.data_chbin_mean" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.data_chbin_width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_chbin_width</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.data_chbin_width" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.data_ctsrate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_ctsrate</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.data_ctsrate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.data_ctsrate_error">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_ctsrate_error</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.data_ctsrate_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.data_ctsspec">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_ctsspec</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.data_ctsspec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.data_ctsspec_error">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data_ctsspec_error</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.data_ctsspec_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.dof">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dof</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.dof" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.emcee">
+<span class="sig-name descname"><span class="pre">emcee</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nstep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discard</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resume</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/infer.html#Infer.emcee"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.infer.Infer.emcee" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.emcee_logprob">
+<span class="sig-name descname"><span class="pre">emcee_logprob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/infer.html#Infer.emcee_logprob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.infer.Infer.emcee_logprob" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.foo">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">foo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/infer.html#Infer.foo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.infer.Infer.foo" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.free_nparams">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">free_nparams</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.free_nparams" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.free_par">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">free_par</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.free_par" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.free_par_info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">free_par_info</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.free_par_info" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.free_params">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">free_params</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.free_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.free_plabels">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">free_plabels</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.free_plabels" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.free_pranges">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">free_pranges</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.free_pranges" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.free_pvalues">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">free_pvalues</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.free_pvalues" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.idpid">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">idpid</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.idpid" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.link">
+<span class="sig-name descname"><span class="pre">link</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pids</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/infer.html#Infer.link"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.infer.Infer.link" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.loglike">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loglike</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.loglike" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.loglike_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loglike_list</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.loglike_list" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.logprior">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">logprior</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.logprior" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.minimize">
+<span class="sig-name descname"><span class="pre">minimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Nelder-Mead'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/infer.html#Infer.minimize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.infer.Infer.minimize" title="Link to this definition"></a></dt>
+<dd><p>method: ‘Nelder-Mead’, ‘TNC’, ‘SLSQP’, ‘Powell’, ‘trust-constr’, ‘L-BFGS-B’</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.model_cts_to_pht">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">model_cts_to_pht</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.model_cts_to_pht" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.model_ctsrate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">model_ctsrate</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.model_ctsrate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.model_ctsspec">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">model_ctsspec</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.model_ctsspec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.model_phtspec">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">model_phtspec</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.model_phtspec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.multinest">
+<span class="sig-name descname"><span class="pre">multinest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nlive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resume</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">savepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/infer.html#Infer.multinest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.infer.Infer.multinest" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.multinest_loglike">
+<span class="sig-name descname"><span class="pre">multinest_loglike</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cube</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nparams</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/infer.html#Infer.multinest_loglike"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.infer.Infer.multinest_loglike" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.multinest_prior_transform">
+<span class="sig-name descname"><span class="pre">multinest_prior_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cube</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nparams</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/infer.html#Infer.multinest_prior_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.infer.Infer.multinest_prior_transform" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.npoint">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">npoint</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.npoint" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.npoint_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">npoint_list</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.npoint_list" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.pairs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pairs</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.pairs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.par">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">par</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.par" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.par_info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">par_info</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.par_info" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.pdicts">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pdicts</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.pdicts" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.prior_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">prior_list</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.prior_list" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.stat">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stat</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.stat" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.stat_info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stat_info</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.stat_info" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.stat_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stat_list</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.stat_list" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.unlink">
+<span class="sig-name descname"><span class="pre">unlink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pids</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/infer.html#Infer.unlink"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.infer.Infer.unlink" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.infer.Infer.weight_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">weight_list</span></span><a class="headerlink" href="#bayspec.infer.infer.Infer.weight_list" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bayspec.infer.pair">
+<span id="bayspec-infer-pair-module"></span><h2>bayspec.infer.pair module<a class="headerlink" href="#module-bayspec.infer.pair" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.infer.pair.Pair">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.infer.pair.</span></span><span class="sig-name descname"><span class="pre">Pair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/pair.html#Pair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.pair.Pair" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.pair.Pair.data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#bayspec.infer.pair.Pair.data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.pair.Pair.loglike">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loglike</span></span><a class="headerlink" href="#bayspec.infer.pair.Pair.loglike" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.pair.Pair.loglike_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loglike_list</span></span><a class="headerlink" href="#bayspec.infer.pair.Pair.loglike_list" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.pair.Pair.model">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#bayspec.infer.pair.Pair.model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.pair.Pair.npoint">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">npoint</span></span><a class="headerlink" href="#bayspec.infer.pair.Pair.npoint" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.pair.Pair.npoint_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">npoint_list</span></span><a class="headerlink" href="#bayspec.infer.pair.Pair.npoint_list" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.pair.Pair.stat">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stat</span></span><a class="headerlink" href="#bayspec.infer.pair.Pair.stat" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.pair.Pair.stat_func">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stat_func</span></span><a class="headerlink" href="#bayspec.infer.pair.Pair.stat_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.pair.Pair.stat_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stat_list</span></span><a class="headerlink" href="#bayspec.infer.pair.Pair.stat_list" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.pair.Pair.weight_list">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">weight_list</span></span><a class="headerlink" href="#bayspec.infer.pair.Pair.weight_list" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bayspec.infer.posterior">
+<span id="bayspec-infer-posterior-module"></span><h2>bayspec.infer.posterior module<a class="headerlink" href="#module-bayspec.infer.posterior" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.infer.posterior.</span></span><span class="sig-name descname"><span class="pre">Posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">infer</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/posterior.html#Posterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.posterior.Posterior" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bayspec.infer.infer.Infer" title="bayspec.infer.infer.Infer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Infer</span></code></a></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.IC_info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IC_info</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.IC_info" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.aic">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">aic</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.aic" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.aicc">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">aicc</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.aicc" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.bic">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bic</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.bic" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.free_par_info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">free_par_info</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.free_par_info" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.infer">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">infer</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.infer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.lnZ">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">lnZ</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.lnZ" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.max_loglike">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_loglike</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.max_loglike" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.par_IIIsigma">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">par_IIIsigma</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.par_IIIsigma" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.par_IIsigma">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">par_IIsigma</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.par_IIsigma" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.par_Isigma">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">par_Isigma</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.par_Isigma" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.par_best">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">par_best</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.par_best" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.par_best_ci">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">par_best_ci</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.par_best_ci" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.par_error">
+<span class="sig-name descname"><span class="pre">par_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">par</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.6827</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/posterior.html#Posterior.par_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.posterior.Posterior.par_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.par_interval">
+<span class="sig-name descname"><span class="pre">par_interval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/posterior.html#Posterior.par_interval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.posterior.Posterior.par_interval" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.par_mean">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">par_mean</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.par_mean" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.par_median">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">par_median</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.par_median" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.par_quantile">
+<span class="sig-name descname"><span class="pre">par_quantile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/posterior.html#Posterior.par_quantile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.posterior.Posterior.par_quantile" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.posterior_statistic">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">posterior_statistic</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.posterior_statistic" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.infer.posterior.Posterior.stat_info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stat_info</span></span><a class="headerlink" href="#bayspec.infer.posterior.Posterior.stat_info" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bayspec.infer.statistic">
+<span id="bayspec-infer-statistic-module"></span><h2>bayspec.infer.statistic module<a class="headerlink" href="#module-bayspec.infer.statistic" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.infer.statistic.Statistic">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.infer.statistic.</span></span><span class="sig-name descname"><span class="pre">Statistic</span></span><a class="reference internal" href="_modules/bayspec/infer/statistic.html#Statistic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.statistic.Statistic" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.statistic.Statistic.Gstat">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Gstat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/statistic.html#Statistic.Gstat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.statistic.Statistic.Gstat" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.statistic.Statistic.PGstat">
+<span class="sig-name descname"><span class="pre">PGstat</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/statistic.html#Statistic.PGstat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.statistic.Statistic.PGstat" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.statistic.Statistic.PGstat_UL">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PGstat_UL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/statistic.html#Statistic.PGstat_UL"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.statistic.Statistic.PGstat_UL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.statistic.Statistic.PGstat_Xspec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PGstat_Xspec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/statistic.html#Statistic.PGstat_Xspec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.statistic.Statistic.PGstat_Xspec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.statistic.Statistic.PPstat">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PPstat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/statistic.html#Statistic.PPstat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.statistic.Statistic.PPstat" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.statistic.Statistic.PPstat_UL">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PPstat_UL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/statistic.html#Statistic.PPstat_UL"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.statistic.Statistic.PPstat_UL" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.statistic.Statistic.PPstat_Xspec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PPstat_Xspec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/statistic.html#Statistic.PPstat_Xspec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.statistic.Statistic.PPstat_Xspec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.statistic.Statistic.Pstat">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Pstat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/statistic.html#Statistic.Pstat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.statistic.Statistic.Pstat" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.statistic.Statistic.gaussian_logpdf">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">gaussian_logpdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/statistic.html#Statistic.gaussian_logpdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.statistic.Statistic.gaussian_logpdf" title="Link to this definition"></a></dt>
+<dd><p>NOTE
+logpdf (for gaussian) = -0.5 * ((x-loc)^2/scale^2 + log(2π*scale^2))
+Here omit the term log(2π*scale^2)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.statistic.Statistic.poisson_logpmf">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">poisson_logpmf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/statistic.html#Statistic.poisson_logpmf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.statistic.Statistic.poisson_logpmf" title="Link to this definition"></a></dt>
+<dd><p>NOTE
+logpmf (for poisson) = klogmu - mu - log(k!)
+Stirling’s approximation: ln(K!) ~ klogk - k + log(2πk) / 2
+Here omit the term log(2πk) / 2</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.statistic.Statistic.xdivy">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">xdivy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/statistic.html#Statistic.xdivy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.statistic.Statistic.xdivy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.infer.statistic.Statistic.xlogy">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">xlogy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/infer/statistic.html#Statistic.xlogy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.infer.statistic.Statistic.xlogy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bayspec.infer">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-bayspec.infer" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jun Yang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

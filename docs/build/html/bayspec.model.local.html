@@ -1,0 +1,632 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bayspec.model.local package &mdash; bayspec 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=92734c54"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            bayspec
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">bayspec.model.local package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-bayspec.model.local.additive">bayspec.model.local.additive module</a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.additive.band"><code class="docutils literal notranslate"><span class="pre">band</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.additive.band.func"><code class="docutils literal notranslate"><span class="pre">band.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.additive.bb"><code class="docutils literal notranslate"><span class="pre">bb</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.additive.bb.func"><code class="docutils literal notranslate"><span class="pre">bb.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.additive.cband"><code class="docutils literal notranslate"><span class="pre">cband</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.additive.cband.func"><code class="docutils literal notranslate"><span class="pre">cband.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.additive.cpl"><code class="docutils literal notranslate"><span class="pre">cpl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.additive.cpl.func"><code class="docutils literal notranslate"><span class="pre">cpl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.additive.csbpl"><code class="docutils literal notranslate"><span class="pre">csbpl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.additive.csbpl.func"><code class="docutils literal notranslate"><span class="pre">csbpl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.additive.dband"><code class="docutils literal notranslate"><span class="pre">dband</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.additive.dband.func"><code class="docutils literal notranslate"><span class="pre">dband.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.additive.dsbpl"><code class="docutils literal notranslate"><span class="pre">dsbpl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.additive.dsbpl.func"><code class="docutils literal notranslate"><span class="pre">dsbpl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.additive.pl"><code class="docutils literal notranslate"><span class="pre">pl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.additive.pl.func"><code class="docutils literal notranslate"><span class="pre">pl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.additive.ppl"><code class="docutils literal notranslate"><span class="pre">ppl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.additive.ppl.func"><code class="docutils literal notranslate"><span class="pre">ppl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.additive.sbpl"><code class="docutils literal notranslate"><span class="pre">sbpl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.additive.sbpl.func"><code class="docutils literal notranslate"><span class="pre">sbpl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.additive.ssbpl"><code class="docutils literal notranslate"><span class="pre">ssbpl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.additive.ssbpl.func"><code class="docutils literal notranslate"><span class="pre">ssbpl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.additive.tsbpl"><code class="docutils literal notranslate"><span class="pre">tsbpl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.additive.tsbpl.func"><code class="docutils literal notranslate"><span class="pre">tsbpl.func()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-bayspec.model.local.mathematic">bayspec.model.local.mathematic module</a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.mathematic.Const"><code class="docutils literal notranslate"><span class="pre">Const</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.mathematic.Const.func"><code class="docutils literal notranslate"><span class="pre">Const.func()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-bayspec.model.local.tinvolved">bayspec.model.local.tinvolved module</a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.tinvolved.hleband"><code class="docutils literal notranslate"><span class="pre">hleband</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.tinvolved.hleband.func"><code class="docutils literal notranslate"><span class="pre">hleband.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.tinvolved.hlecpl"><code class="docutils literal notranslate"><span class="pre">hlecpl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.tinvolved.hlecpl.func"><code class="docutils literal notranslate"><span class="pre">hlecpl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.tinvolved.katu"><code class="docutils literal notranslate"><span class="pre">katu</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.tinvolved.katu.func"><code class="docutils literal notranslate"><span class="pre">katu.func()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.model.local.tinvolved.katu.set_cfg"><code class="docutils literal notranslate"><span class="pre">katu.set_cfg()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-bayspec.model.local">Module contents</a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.Const"><code class="docutils literal notranslate"><span class="pre">Const</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.Const.func"><code class="docutils literal notranslate"><span class="pre">Const.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.band"><code class="docutils literal notranslate"><span class="pre">band</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.band.func"><code class="docutils literal notranslate"><span class="pre">band.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.bb"><code class="docutils literal notranslate"><span class="pre">bb</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.bb.func"><code class="docutils literal notranslate"><span class="pre">bb.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.cband"><code class="docutils literal notranslate"><span class="pre">cband</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.cband.func"><code class="docutils literal notranslate"><span class="pre">cband.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.cpl"><code class="docutils literal notranslate"><span class="pre">cpl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.cpl.func"><code class="docutils literal notranslate"><span class="pre">cpl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.csbpl"><code class="docutils literal notranslate"><span class="pre">csbpl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.csbpl.func"><code class="docutils literal notranslate"><span class="pre">csbpl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.dband"><code class="docutils literal notranslate"><span class="pre">dband</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.dband.func"><code class="docutils literal notranslate"><span class="pre">dband.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.dsbpl"><code class="docutils literal notranslate"><span class="pre">dsbpl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.dsbpl.func"><code class="docutils literal notranslate"><span class="pre">dsbpl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.hleband"><code class="docutils literal notranslate"><span class="pre">hleband</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.hleband.func"><code class="docutils literal notranslate"><span class="pre">hleband.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.hlecpl"><code class="docutils literal notranslate"><span class="pre">hlecpl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.hlecpl.func"><code class="docutils literal notranslate"><span class="pre">hlecpl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.katu"><code class="docutils literal notranslate"><span class="pre">katu</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.katu.func"><code class="docutils literal notranslate"><span class="pre">katu.func()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.model.local.katu.set_cfg"><code class="docutils literal notranslate"><span class="pre">katu.set_cfg()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.list_local_models"><code class="docutils literal notranslate"><span class="pre">list_local_models()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.model.local.pl"><code class="docutils literal notranslate"><span class="pre">pl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.pl.func"><code class="docutils literal notranslate"><span class="pre">pl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.ppl"><code class="docutils literal notranslate"><span class="pre">ppl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.ppl.func"><code class="docutils literal notranslate"><span class="pre">ppl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.sbpl"><code class="docutils literal notranslate"><span class="pre">sbpl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.sbpl.func"><code class="docutils literal notranslate"><span class="pre">sbpl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.ssbpl"><code class="docutils literal notranslate"><span class="pre">ssbpl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.ssbpl.func"><code class="docutils literal notranslate"><span class="pre">ssbpl.func()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.model.local.tsbpl"><code class="docutils literal notranslate"><span class="pre">tsbpl</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.model.local.tsbpl.func"><code class="docutils literal notranslate"><span class="pre">tsbpl.func()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">bayspec</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">bayspec.model.local package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/bayspec.model.local.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="bayspec-model-local-package">
+<h1>bayspec.model.local package<a class="headerlink" href="#bayspec-model-local-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-bayspec.model.local.additive">
+<span id="bayspec-model-local-additive-module"></span><h2>bayspec.model.local.additive module<a class="headerlink" href="#module-bayspec.model.local.additive" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.band">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.additive.</span></span><span class="sig-name descname"><span class="pre">band</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#band"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.band" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.band.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#band.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.band.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.bb">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.additive.</span></span><span class="sig-name descname"><span class="pre">bb</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#bb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.bb" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.bb.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#bb.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.bb.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.cband">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.additive.</span></span><span class="sig-name descname"><span class="pre">cband</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#cband"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.cband" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.cband.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#cband.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.cband.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.cpl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.additive.</span></span><span class="sig-name descname"><span class="pre">cpl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#cpl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.cpl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.cpl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#cpl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.cpl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.csbpl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.additive.</span></span><span class="sig-name descname"><span class="pre">csbpl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#csbpl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.csbpl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.csbpl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#csbpl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.csbpl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.dband">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.additive.</span></span><span class="sig-name descname"><span class="pre">dband</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#dband"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.dband" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.dband.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#dband.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.dband.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.dsbpl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.additive.</span></span><span class="sig-name descname"><span class="pre">dsbpl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#dsbpl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.dsbpl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.dsbpl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#dsbpl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.dsbpl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.pl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.additive.</span></span><span class="sig-name descname"><span class="pre">pl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#pl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.pl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.pl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#pl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.pl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.ppl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.additive.</span></span><span class="sig-name descname"><span class="pre">ppl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#ppl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.ppl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.ppl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#ppl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.ppl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.sbpl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.additive.</span></span><span class="sig-name descname"><span class="pre">sbpl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#sbpl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.sbpl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.sbpl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#sbpl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.sbpl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.ssbpl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.additive.</span></span><span class="sig-name descname"><span class="pre">ssbpl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#ssbpl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.ssbpl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.ssbpl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#ssbpl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.ssbpl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.tsbpl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.additive.</span></span><span class="sig-name descname"><span class="pre">tsbpl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#tsbpl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.tsbpl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.additive.tsbpl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#tsbpl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.additive.tsbpl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bayspec.model.local.mathematic">
+<span id="bayspec-model-local-mathematic-module"></span><h2>bayspec.model.local.mathematic module<a class="headerlink" href="#module-bayspec.model.local.mathematic" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.mathematic.Const">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.mathematic.</span></span><span class="sig-name descname"><span class="pre">Const</span></span><a class="reference internal" href="_modules/bayspec/model/local/mathematic.html#Const"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.mathematic.Const" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Mathematic" title="bayspec.model.model.Mathematic"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mathematic</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.mathematic.Const.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/mathematic.html#Const.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.mathematic.Const.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bayspec.model.local.tinvolved">
+<span id="bayspec-model-local-tinvolved-module"></span><h2>bayspec.model.local.tinvolved module<a class="headerlink" href="#module-bayspec.model.local.tinvolved" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.tinvolved.hleband">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.tinvolved.</span></span><span class="sig-name descname"><span class="pre">hleband</span></span><a class="reference internal" href="_modules/bayspec/model/local/tinvolved.html#hleband"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.tinvolved.hleband" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Tinvolved" title="bayspec.model.model.Tinvolved"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tinvolved</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.tinvolved.hleband.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/tinvolved.html#hleband.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.tinvolved.hleband.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.tinvolved.hlecpl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.tinvolved.</span></span><span class="sig-name descname"><span class="pre">hlecpl</span></span><a class="reference internal" href="_modules/bayspec/model/local/tinvolved.html#hlecpl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.tinvolved.hlecpl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Tinvolved" title="bayspec.model.model.Tinvolved"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tinvolved</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.tinvolved.hlecpl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/tinvolved.html#hlecpl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.tinvolved.hlecpl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.tinvolved.katu">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.tinvolved.</span></span><span class="sig-name descname"><span class="pre">katu</span></span><a class="reference internal" href="_modules/bayspec/model/local/tinvolved.html#katu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.tinvolved.katu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Tinvolved" title="bayspec.model.model.Tinvolved"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tinvolved</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.tinvolved.katu.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/tinvolved.html#katu.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.tinvolved.katu.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.tinvolved.katu.set_cfg">
+<span class="sig-name descname"><span class="pre">set_cfg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/tinvolved.html#katu.set_cfg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.tinvolved.katu.set_cfg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bayspec.model.local">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-bayspec.model.local" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.Const">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">Const</span></span><a class="reference internal" href="_modules/bayspec/model/local/mathematic.html#Const"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.Const" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Mathematic" title="bayspec.model.model.Mathematic"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mathematic</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.Const.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/mathematic.html#Const.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.Const.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.band">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">band</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#band"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.band" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.band.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#band.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.band.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.bb">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">bb</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#bb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.bb" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.bb.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#bb.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.bb.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.cband">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">cband</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#cband"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.cband" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.cband.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#cband.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.cband.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.cpl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">cpl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#cpl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.cpl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.cpl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#cpl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.cpl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.csbpl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">csbpl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#csbpl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.csbpl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.csbpl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#csbpl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.csbpl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.dband">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">dband</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#dband"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.dband" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.dband.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#dband.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.dband.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.dsbpl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">dsbpl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#dsbpl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.dsbpl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.dsbpl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#dsbpl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.dsbpl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.hleband">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">hleband</span></span><a class="reference internal" href="_modules/bayspec/model/local/tinvolved.html#hleband"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.hleband" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Tinvolved" title="bayspec.model.model.Tinvolved"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tinvolved</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.hleband.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/tinvolved.html#hleband.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.hleband.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.hlecpl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">hlecpl</span></span><a class="reference internal" href="_modules/bayspec/model/local/tinvolved.html#hlecpl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.hlecpl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Tinvolved" title="bayspec.model.model.Tinvolved"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tinvolved</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.hlecpl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/tinvolved.html#hlecpl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.hlecpl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.katu">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">katu</span></span><a class="reference internal" href="_modules/bayspec/model/local/tinvolved.html#katu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.katu" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Tinvolved" title="bayspec.model.model.Tinvolved"><code class="xref py py-class docutils literal notranslate"><span class="pre">Tinvolved</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.katu.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/tinvolved.html#katu.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.katu.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.katu.set_cfg">
+<span class="sig-name descname"><span class="pre">set_cfg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/tinvolved.html#katu.set_cfg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.katu.set_cfg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="bayspec.model.local.list_local_models">
+<span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">list_local_models</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local.html#list_local_models"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.list_local_models" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.pl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">pl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#pl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.pl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.pl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#pl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.pl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.ppl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">ppl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#ppl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.ppl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.ppl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#ppl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.ppl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.sbpl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">sbpl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#sbpl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.sbpl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.sbpl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#sbpl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.sbpl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.ssbpl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">ssbpl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#ssbpl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.ssbpl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.ssbpl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#ssbpl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.ssbpl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.model.local.tsbpl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.model.local.</span></span><span class="sig-name descname"><span class="pre">tsbpl</span></span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#tsbpl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.tsbpl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="bayspec.model.html#bayspec.model.model.Additive" title="bayspec.model.model.Additive"><code class="xref py py-class docutils literal notranslate"><span class="pre">Additive</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.model.local.tsbpl.func">
+<span class="sig-name descname"><span class="pre">func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">O</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/model/local/additive.html#tsbpl.func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.model.local.tsbpl.func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jun Yang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

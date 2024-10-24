@@ -1,0 +1,714 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bayspec.model.local.additive &mdash; bayspec 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=92734c54"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            bayspec
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">bayspec</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../local.html">bayspec.model.local</a></li>
+      <li class="breadcrumb-item active">bayspec.model.local.additive</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bayspec.model.local.additive</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">subprocess</span> <span class="k">as</span> <span class="nn">sp</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">from</span> <span class="nn">..model</span> <span class="kn">import</span> <span class="n">Additive</span>
+<span class="kn">from</span> <span class="nn">...util.param</span> <span class="kn">import</span> <span class="n">Par</span>
+<span class="kn">from</span> <span class="nn">...util.prior</span> <span class="kn">import</span> <span class="n">unif</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">dirname</span><span class="p">,</span> <span class="n">abspath</span>
+<span class="kn">from</span> <span class="nn">astropy.cosmology</span> <span class="kn">import</span> <span class="n">Planck18</span>
+<span class="n">docs_path</span> <span class="o">=</span> <span class="n">dirname</span><span class="p">(</span><span class="n">dirname</span><span class="p">(</span><span class="n">dirname</span><span class="p">(</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))))</span> <span class="o">+</span> <span class="s1">&#39;/docs&#39;</span>
+
+
+
+<div class="viewcode-block" id="pl">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.pl">[docs]</a>
+<span class="k">class</span> <span class="nc">pl</span><span class="p">(</span><span class="n">Additive</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;pl&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;power law model&#39;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="pl.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.pl.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        
+        <span class="n">Amp</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logA</span>
+        
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="p">(</span><span class="n">E</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span> <span class="o">**</span> <span class="n">alpha</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+</div>
+
+
+
+
+<div class="viewcode-block" id="bb">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.bb">[docs]</a>
+<span class="k">class</span> <span class="nc">bb</span><span class="p">(</span><span class="n">Additive</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;bb&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;black-body model&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$kT$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="bb.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.bb.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">logKT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$kT$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">kT</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logKT</span>
+        <span class="n">Amp</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logA</span>
+
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="mf">8.0525</span> <span class="o">*</span> <span class="n">E</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">kT</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">E</span> <span class="o">/</span> <span class="n">kT</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+</div>
+
+
+
+
+<div class="viewcode-block" id="cpl">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.cpl">[docs]</a>
+<span class="k">class</span> <span class="nc">cpl</span><span class="p">(</span><span class="n">Additive</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;cpl&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;cutoff power law model&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{c}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="cpl.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.cpl.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{c}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">Ec</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEc</span>
+        <span class="n">Amp</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logA</span>
+
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="p">(</span><span class="n">E</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span> <span class="o">**</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">E</span> <span class="o">/</span> <span class="n">Ec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+</div>
+
+
+
+
+<div class="viewcode-block" id="ppl">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.ppl">[docs]</a>
+<span class="k">class</span> <span class="nc">ppl</span><span class="p">(</span><span class="n">Additive</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;ppl&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;cutoff power law model with peak energy&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="ppl.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.ppl.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">Ep</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEp</span>
+        <span class="n">Amp</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logA</span>
+
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="n">Ec</span> <span class="o">=</span> <span class="n">Ep</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="p">(</span><span class="n">E</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span> <span class="o">**</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">E</span> <span class="o">/</span> <span class="n">Ec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+</div>
+
+    
+    
+    
+<div class="viewcode-block" id="band">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.band">[docs]</a>
+<span class="k">class</span> <span class="nc">band</span><span class="p">(</span><span class="n">Additive</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;band&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;grb band function&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\beta$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="band.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.band.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\beta$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">Ep</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEp</span>
+        <span class="n">Amp</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logA</span>
+        
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="n">Ec</span> <span class="o">=</span> <span class="n">Ep</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="n">Eb</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">-</span> <span class="n">beta</span><span class="p">)</span> <span class="o">*</span> <span class="n">Ec</span>
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+        <span class="n">i1</span> <span class="o">=</span> <span class="n">E</span> <span class="o">&lt;=</span> <span class="n">Eb</span><span class="p">;</span> <span class="n">i2</span> <span class="o">=</span> <span class="n">E</span> <span class="o">&gt;</span> <span class="n">Eb</span>
+        <span class="n">phtspec</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="p">(</span><span class="n">E</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span> <span class="o">**</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">E</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">/</span> <span class="n">Ec</span><span class="p">)</span>
+        <span class="n">phtspec</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="p">(</span><span class="n">Eb</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">-</span> <span class="n">beta</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">E</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span> <span class="o">**</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">beta</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+</div>
+
+    
+    
+    
+<div class="viewcode-block" id="cband">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.cband">[docs]</a>
+<span class="k">class</span> <span class="nc">cband</span><span class="p">(</span><span class="n">Additive</span><span class="p">):</span>
+    <span class="c1"># 10.1088/0004-637X/751/2/90</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;cband&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;band function with cut-off&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_1$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_2$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{b}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="cband.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.cband.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">alpha1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_1$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">alpha2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_2$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{b}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">Eb</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEb</span>
+        <span class="n">Ep</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEp</span>
+        <span class="n">Amp</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logA</span>
+
+        <span class="k">if</span> <span class="n">alpha1</span> <span class="o">&lt;=</span> <span class="n">alpha2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="n">E2</span> <span class="o">=</span> <span class="n">Ep</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="n">alpha2</span><span class="p">)</span>
+        <span class="n">E1</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">E2</span> <span class="o">+</span> <span class="p">(</span><span class="n">alpha1</span> <span class="o">-</span> <span class="n">alpha2</span><span class="p">)</span> <span class="o">/</span> <span class="n">Eb</span><span class="p">)</span>
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+        <span class="n">i1</span> <span class="o">=</span> <span class="n">E</span> <span class="o">&lt;=</span> <span class="n">Eb</span><span class="p">;</span> <span class="n">i2</span> <span class="o">=</span> <span class="n">E</span> <span class="o">&gt;</span> <span class="n">Eb</span>
+        <span class="n">phtspec</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="n">E</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">**</span> <span class="n">alpha1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span> <span class="n">E</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">/</span> <span class="n">E1</span><span class="p">)</span>
+        <span class="n">phtspec</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="n">Eb</span> <span class="o">**</span> <span class="p">(</span><span class="n">alpha1</span> <span class="o">-</span> <span class="n">alpha2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">alpha2</span> <span class="o">-</span> <span class="n">alpha1</span><span class="p">)</span> <span class="o">*</span> <span class="n">E</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">**</span> <span class="n">alpha2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span> <span class="n">E</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">/</span> <span class="n">E2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+</div>
+
+    
+    
+    
+<div class="viewcode-block" id="dband">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.dband">[docs]</a>
+<span class="k">class</span> <span class="nc">dband</span><span class="p">(</span><span class="n">Additive</span><span class="p">):</span>
+    <span class="c1"># 10.1088/0004-637X/751/2/90</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;dband&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;double band functions&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{1}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{2}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\beta$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{b}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="dband.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.dband.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">alpha1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{1}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">alpha2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{2}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\beta$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{b}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">Eb</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEb</span>
+        <span class="n">Ep</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEp</span>
+        <span class="n">Amp</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logA</span>
+
+        <span class="k">if</span> <span class="n">alpha1</span> <span class="o">&lt;=</span> <span class="n">alpha2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="n">E2</span> <span class="o">=</span> <span class="n">Ep</span> <span class="o">/</span> <span class="p">(</span><span class="n">alpha2</span> <span class="o">-</span> <span class="n">beta</span><span class="p">)</span>
+        <span class="n">E1</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">E2</span> <span class="o">+</span> <span class="p">(</span><span class="n">alpha1</span> <span class="o">-</span> <span class="n">alpha2</span><span class="p">)</span> <span class="o">/</span> <span class="n">Eb</span><span class="p">)</span>
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+        <span class="n">i1</span> <span class="o">=</span> <span class="n">E</span> <span class="o">&lt;=</span> <span class="n">Eb</span><span class="p">;</span> <span class="n">i2</span> <span class="o">=</span> <span class="p">(</span><span class="n">E</span> <span class="o">&gt;</span> <span class="n">Eb</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">E</span> <span class="o">&lt;=</span> <span class="n">Ep</span><span class="p">);</span> <span class="n">i3</span> <span class="o">=</span> <span class="n">E</span> <span class="o">&gt;</span> <span class="n">Ep</span>
+        <span class="n">phtspec</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="n">E</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">**</span> <span class="n">alpha1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span> <span class="n">E</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">/</span> <span class="n">E1</span><span class="p">)</span>
+        <span class="n">phtspec</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="n">Eb</span> <span class="o">**</span> <span class="p">(</span><span class="n">alpha1</span> <span class="o">-</span> <span class="n">alpha2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">alpha2</span> <span class="o">-</span> <span class="n">alpha1</span><span class="p">)</span> <span class="o">*</span> <span class="n">E</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">**</span> <span class="n">alpha2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span> <span class="n">E</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">/</span> <span class="n">E2</span><span class="p">)</span>
+        <span class="n">phtspec</span><span class="p">[</span><span class="n">i3</span><span class="p">]</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="n">Eb</span> <span class="o">**</span> <span class="p">(</span><span class="n">alpha1</span> <span class="o">-</span> <span class="n">alpha2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">alpha2</span> <span class="o">-</span> <span class="n">alpha1</span><span class="p">)</span> <span class="o">*</span> <span class="p">((</span><span class="n">alpha2</span> <span class="o">-</span> <span class="n">beta</span><span class="p">)</span> <span class="o">*</span> <span class="n">E2</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="n">alpha2</span> <span class="o">-</span> <span class="n">beta</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">beta</span> <span class="o">-</span> <span class="n">alpha2</span><span class="p">)</span> <span class="o">*</span> <span class="n">E</span><span class="p">[</span><span class="n">i3</span><span class="p">]</span> <span class="o">**</span> <span class="n">beta</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+</div>
+
+    
+
+
+<div class="viewcode-block" id="sbpl">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.sbpl">[docs]</a>
+<span class="k">class</span> <span class="nc">sbpl</span><span class="p">(</span><span class="n">Additive</span><span class="p">):</span>
+    <span class="c1"># Kaneko_ApJS_2006#</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;sbpl&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;smoothly broken power law&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\beta$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{b}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="sbpl.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.sbpl.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\beta$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{b}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">Eb</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEb</span>
+        <span class="n">Amp</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logA</span>
+
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="n">Delta</span> <span class="o">=</span> <span class="mf">0.3</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">beta</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">+</span> <span class="n">beta</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">E</span> <span class="o">/</span> <span class="n">Eb</span><span class="p">)</span> <span class="o">/</span> <span class="n">Delta</span>
+        <span class="n">qpiv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mi">100</span> <span class="o">/</span> <span class="n">Eb</span><span class="p">)</span> <span class="o">/</span> <span class="n">Delta</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">m</span> <span class="o">*</span> <span class="n">Delta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">e</span> <span class="o">**</span> <span class="n">q</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">e</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">q</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">apiv</span> <span class="o">=</span> <span class="n">m</span> <span class="o">*</span> <span class="n">Delta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">e</span> <span class="o">**</span> <span class="n">qpiv</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">e</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">qpiv</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="p">(</span><span class="n">E</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span> <span class="o">**</span> <span class="n">b</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">**</span> <span class="p">(</span><span class="n">a</span> <span class="o">-</span> <span class="n">apiv</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+</div>
+
+    
+
+
+<div class="viewcode-block" id="ssbpl">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.ssbpl">[docs]</a>
+<span class="k">class</span> <span class="nc">ssbpl</span><span class="p">(</span><span class="n">Additive</span><span class="p">):</span>
+    <span class="c1">#Ravasio_A&amp;A_2018#</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;ssbpl&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;single smoothly broken power law&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\beta$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="ssbpl.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.ssbpl.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\beta$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">Ep</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEp</span>
+        <span class="n">Amp</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logA</span>
+
+        <span class="k">if</span> <span class="n">alpha</span> <span class="o">&lt;=</span> <span class="n">beta</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="mf">2.69</span>
+        <span class="n">Ej</span> <span class="o">=</span> <span class="n">Ep</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">alpha</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">beta</span> <span class="o">+</span> <span class="mi">2</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">((</span><span class="n">beta</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">n</span><span class="p">))</span>
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="n">Ej</span> <span class="o">**</span> <span class="n">alpha</span> <span class="o">*</span> <span class="p">((</span><span class="n">E</span> <span class="o">/</span> <span class="n">Ej</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">E</span> <span class="o">/</span> <span class="n">Ej</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">beta</span> <span class="o">*</span> <span class="n">n</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+</div>
+
+
+
+
+<div class="viewcode-block" id="csbpl">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.csbpl">[docs]</a>
+<span class="k">class</span> <span class="nc">csbpl</span><span class="p">(</span><span class="n">Additive</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;csbpl&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;smoothly broken power law with cutoff&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{1}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{2}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{b}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="csbpl.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.csbpl.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">alpha1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{1}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">alpha2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{2}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{b}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">Eb</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEb</span>
+        <span class="n">Ep</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEp</span>
+        <span class="n">Amp</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logA</span>
+
+        <span class="k">if</span> <span class="n">alpha1</span> <span class="o">&lt;=</span> <span class="n">alpha2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="mf">5.38</span>
+        <span class="n">Ec</span> <span class="o">=</span> <span class="n">Ep</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="n">alpha2</span><span class="p">)</span>
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="n">Eb</span> <span class="o">**</span> <span class="n">alpha1</span> <span class="o">*</span> <span class="p">((</span><span class="n">E</span> <span class="o">/</span> <span class="n">Eb</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">alpha1</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">E</span> <span class="o">/</span> <span class="n">Eb</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">alpha2</span> <span class="o">*</span> <span class="n">n</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">E</span> <span class="o">/</span> <span class="n">Ec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+</div>
+
+    
+    
+    
+<div class="viewcode-block" id="dsbpl">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.dsbpl">[docs]</a>
+<span class="k">class</span> <span class="nc">dsbpl</span><span class="p">(</span><span class="n">Additive</span><span class="p">):</span>
+    <span class="c1"># Ravasio_A&amp;A_2018#</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;dsbpl&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;double smoothly broken power laws&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{1}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{2}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\beta$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{b}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="dsbpl.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.dsbpl.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">alpha1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{1}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">alpha2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{2}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\beta$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{b}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">Eb</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEb</span>
+        <span class="n">Ep</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEp</span>
+        <span class="n">Amp</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logA</span>
+
+        <span class="k">if</span> <span class="n">alpha1</span> <span class="o">&lt;=</span> <span class="n">alpha2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="n">n1</span> <span class="o">=</span> <span class="mf">5.38</span>
+        <span class="n">n2</span> <span class="o">=</span> <span class="mf">2.69</span>
+        <span class="n">Ej</span> <span class="o">=</span> <span class="n">Ep</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">alpha2</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">beta</span> <span class="o">+</span> <span class="mi">2</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">((</span><span class="n">beta</span> <span class="o">-</span> <span class="n">alpha2</span><span class="p">)</span> <span class="o">*</span> <span class="n">n2</span><span class="p">))</span>
+        <span class="n">sbpl1</span> <span class="o">=</span> <span class="p">((</span><span class="n">E</span> <span class="o">/</span> <span class="n">Eb</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">alpha1</span> <span class="o">*</span> <span class="n">n1</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">E</span> <span class="o">/</span> <span class="n">Eb</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">alpha2</span> <span class="o">*</span> <span class="n">n1</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="n">n2</span> <span class="o">/</span> <span class="n">n1</span><span class="p">)</span>
+        <span class="n">sbpl2</span> <span class="o">=</span> <span class="p">((</span><span class="n">Ej</span> <span class="o">/</span> <span class="n">Eb</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">alpha1</span> <span class="o">*</span> <span class="n">n1</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">Ej</span> <span class="o">/</span> <span class="n">Eb</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">alpha2</span> <span class="o">*</span> <span class="n">n1</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="n">n2</span> <span class="o">/</span> <span class="n">n1</span><span class="p">)</span>
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="n">Eb</span> <span class="o">**</span> <span class="n">alpha1</span> <span class="o">*</span> <span class="p">(</span><span class="n">sbpl1</span> <span class="o">+</span> <span class="p">(</span><span class="n">E</span> <span class="o">/</span> <span class="n">Ej</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="n">beta</span> <span class="o">*</span> <span class="n">n2</span><span class="p">)</span> <span class="o">*</span> <span class="n">sbpl2</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="n">n2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+</div>
+
+    
+    
+
+<div class="viewcode-block" id="tsbpl">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.tsbpl">[docs]</a>
+<span class="k">class</span> <span class="nc">tsbpl</span><span class="p">(</span><span class="n">Additive</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;tsbpl&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;triple smoothly broken power laws&#39;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{a}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{m}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\beta$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{a}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{m}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+        
+        
+<div class="viewcode-block" id="tsbpl.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.additive.tsbpl.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">alpha_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{a}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">alpha_m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{m}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">alpha_p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\beta$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEa</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{a}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{m}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_</span><span class="si">{p}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        
+        <span class="n">Ea</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEa</span>
+        <span class="n">Em</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEm</span>
+        <span class="n">Ep</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEp</span>
+        <span class="n">Amp</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logA</span>
+
+        <span class="k">if</span> <span class="n">alpha_m</span> <span class="o">&lt;=</span> <span class="n">alpha_p</span> <span class="ow">or</span> <span class="n">alpha_a</span> <span class="o">&lt;=</span> <span class="n">alpha_m</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="n">n1</span> <span class="o">=</span> <span class="mf">5.38</span>
+        <span class="n">n2</span> <span class="o">=</span> <span class="mf">5.38</span>
+        <span class="n">n3</span> <span class="o">=</span> <span class="mf">2.69</span>
+
+        <span class="n">Ej</span> <span class="o">=</span> <span class="n">Ep</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">alpha_p</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">beta</span> <span class="o">+</span> <span class="mi">2</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="p">((</span><span class="n">beta</span> <span class="o">-</span> <span class="n">alpha_p</span><span class="p">)</span> <span class="o">*</span> <span class="n">n3</span><span class="p">))</span>
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">Amp</span> <span class="o">*</span> <span class="n">Ea</span> <span class="o">**</span> <span class="n">alpha_a</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sb4pl</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">alpha_a</span><span class="p">,</span> <span class="n">alpha_m</span><span class="p">,</span> <span class="n">alpha_p</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">Ea</span><span class="p">,</span> <span class="n">Em</span><span class="p">,</span> <span class="n">Ej</span><span class="p">,</span> <span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">,</span> <span class="n">n3</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+
+
+
+    <span class="k">def</span> <span class="nf">_pl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">P</span><span class="p">):</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">Eb</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">E</span> <span class="o">/</span> <span class="n">Eb</span><span class="p">)</span> <span class="o">**</span> <span class="n">alpha</span>
+
+
+    <span class="k">def</span> <span class="nf">_sb2pl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">P</span><span class="p">):</span>
+        <span class="n">alpha1</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">alpha2</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">Eb</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">omega</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">F1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pl</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">alpha1</span><span class="p">,</span> <span class="n">Eb</span><span class="p">])</span>
+        <span class="n">F2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pl</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">alpha2</span><span class="p">,</span> <span class="n">Eb</span><span class="p">])</span>
+        <span class="n">F12</span> <span class="o">=</span> <span class="p">(</span><span class="n">F1</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span> <span class="n">omega</span><span class="p">)</span> <span class="o">+</span> <span class="n">F2</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span> <span class="n">omega</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">omega</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">F12</span>
+
+
+    <span class="k">def</span> <span class="nf">_sb3pl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">P</span><span class="p">):</span>
+        <span class="n">alpha1</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">alpha2</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">alpha3</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">Eb1</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">Eb2</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">omega1</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+        <span class="n">omega2</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
+        <span class="n">F12</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sb2pl</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">alpha1</span><span class="p">,</span> <span class="n">alpha2</span><span class="p">,</span> <span class="n">Eb1</span><span class="p">,</span> <span class="n">omega1</span><span class="p">])</span>
+        <span class="n">F3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pl</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">alpha3</span><span class="p">,</span> <span class="n">Eb2</span><span class="p">])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sb2pl</span><span class="p">(</span><span class="n">Eb2</span><span class="p">,</span> <span class="p">[</span><span class="n">alpha1</span><span class="p">,</span> <span class="n">alpha2</span><span class="p">,</span> <span class="n">Eb1</span><span class="p">,</span> <span class="n">omega1</span><span class="p">])</span>
+        <span class="n">F123</span> <span class="o">=</span> <span class="p">(</span><span class="n">F12</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span> <span class="n">omega2</span><span class="p">)</span> <span class="o">+</span> <span class="n">F3</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span> <span class="n">omega2</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">omega2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">F123</span>
+
+
+    <span class="k">def</span> <span class="nf">_sb4pl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">P</span><span class="p">):</span>
+        <span class="n">alpha1</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">alpha2</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">alpha3</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">alpha4</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">Eb1</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="n">Eb2</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+        <span class="n">Eb3</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
+        <span class="n">omega1</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span>
+        <span class="n">omega2</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span>
+        <span class="n">omega3</span> <span class="o">=</span> <span class="n">P</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span>
+        <span class="n">F123</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sb3pl</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">alpha1</span><span class="p">,</span> <span class="n">alpha2</span><span class="p">,</span> <span class="n">alpha3</span><span class="p">,</span> <span class="n">Eb1</span><span class="p">,</span> <span class="n">Eb2</span><span class="p">,</span> <span class="n">omega1</span><span class="p">,</span> <span class="n">omega2</span><span class="p">])</span>
+        <span class="n">F4</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pl</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">[</span><span class="n">alpha4</span><span class="p">,</span> <span class="n">Eb3</span><span class="p">])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sb3pl</span><span class="p">(</span><span class="n">Eb3</span><span class="p">,</span> <span class="p">[</span><span class="n">alpha1</span><span class="p">,</span> <span class="n">alpha2</span><span class="p">,</span> <span class="n">alpha3</span><span class="p">,</span> <span class="n">Eb1</span><span class="p">,</span> <span class="n">Eb2</span><span class="p">,</span> <span class="n">omega1</span><span class="p">,</span> <span class="n">omega2</span><span class="p">])</span>
+        <span class="n">F1234</span> <span class="o">=</span> <span class="p">(</span><span class="n">F123</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span> <span class="n">omega3</span><span class="p">)</span> <span class="o">+</span> <span class="n">F4</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span> <span class="n">omega3</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">omega3</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">F1234</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jun Yang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

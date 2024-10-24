@@ -8,7 +8,7 @@
 - **Bayesian inference-based**: implemented by MCMC (e.g., emcee) or nested sampling (e.g., multinest)
 - **Multi-dimensional**: enabling the fit of time-evolving spectra with time-involved physical models
 - **Multi-wavelength**: supporting for the joint fitting to multi-wavelength astronomical spectra
-- **Friendly interface**: Easy-to-use web application developed with streamlit
+- **Friendly interface**: easy-to-use web application developed with streamlit
 - **Others**: simultaneous fitting of multi-spectra and multi-models, freely combining available models and add new model
 
 

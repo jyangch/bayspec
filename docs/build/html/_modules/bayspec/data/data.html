@@ -1,0 +1,1248 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bayspec.data.data &mdash; bayspec 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=92734c54"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bayspec
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bayspec</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bayspec.data.data</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bayspec.data.data</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">special</span>
+<span class="kn">from</span> <span class="nn">..util.info</span> <span class="kn">import</span> <span class="n">Info</span>
+<span class="kn">from</span> <span class="nn">..util.param</span> <span class="kn">import</span> <span class="n">Par</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">.spectrum</span> <span class="kn">import</span> <span class="n">Source</span><span class="p">,</span> <span class="n">Background</span>
+<span class="kn">from</span> <span class="nn">..util.significance</span> <span class="kn">import</span> <span class="n">pgsig</span><span class="p">,</span> <span class="n">ppsig</span>
+<span class="kn">from</span> <span class="nn">.response</span> <span class="kn">import</span> <span class="n">Response</span><span class="p">,</span> <span class="n">Redistribution</span><span class="p">,</span> <span class="n">Auxiliary</span>
+
+
+
+<div class="viewcode-block" id="Data">
+<a class="viewcode-back" href="../../../bayspec.data.html#bayspec.data.data.Data">[docs]</a>
+<span class="k">class</span> <span class="nc">Data</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
+    
+    
+    <span class="nd">@data</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_data</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">new_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">pass</span>
+            
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">new_data</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">new_data</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_setitem</span><span class="p">(</span><span class="o">*</span><span class="n">item</span><span class="p">)</span>
+                    
+            <span class="bp">self</span><span class="o">.</span><span class="n">_extract</span><span class="p">()</span>
+                    
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">new_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">new_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_setitem</span><span class="p">(</span><span class="o">*</span><span class="n">item</span><span class="p">)</span>
+                
+            <span class="bp">self</span><span class="o">.</span><span class="n">_extract</span><span class="p">()</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;unsupported data type&#39;</span><span class="p">)</span>
+
+        
+    <span class="k">def</span> <span class="nf">_setitem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">DataUnit</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;value parameter should be DataUnit type&#39;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="o">.</span><span class="n">completeness</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;failed for completeness check for dataunit&#39;</span><span class="p">)</span>
+        
+        <span class="n">value</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+
+    <span class="k">def</span> <span class="nf">_extract</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;data is None&#39;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">exprs</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">srcs</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">src_ins</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bkgs</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">bkg_ins</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rsps</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">rsp_ins</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">stat</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">unit</span><span class="o">.</span><span class="n">weight</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">npoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">unit</span><span class="o">.</span><span class="n">npoint</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">notcs</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">notc</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">rsp_factor</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">rsp_factor</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_factor</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">src_factor</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bkg_factor</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">bkg_factor</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_efficiency</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">src_efficiency</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bkg_efficiency</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">bkg_efficiency</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_counts</span> <span class="o">=</span> <span class="p">[</span><span class="n">src</span><span class="o">.</span><span class="n">counts</span> <span class="k">for</span> <span class="n">src</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">srcs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_errors</span> <span class="o">=</span> <span class="p">[</span><span class="n">src</span><span class="o">.</span><span class="n">errors</span> <span class="k">for</span> <span class="n">src</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">srcs</span><span class="p">]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">bkg_counts</span> <span class="o">=</span> <span class="p">[</span><span class="n">bkg</span><span class="o">.</span><span class="n">counts</span> <span class="k">for</span> <span class="n">bkg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkgs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bkg_errors</span> <span class="o">=</span> <span class="p">[</span><span class="n">bkg</span><span class="o">.</span><span class="n">errors</span> <span class="k">for</span> <span class="n">bkg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkgs</span><span class="p">]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">rsp_chbin</span> <span class="o">=</span> <span class="p">[</span><span class="n">rsp</span><span class="o">.</span><span class="n">chbin</span> <span class="k">for</span> <span class="n">rsp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsps</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rsp_phbin</span> <span class="o">=</span> <span class="p">[</span><span class="n">rsp</span><span class="o">.</span><span class="n">phbin</span> <span class="k">for</span> <span class="n">rsp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsps</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rsp_drm</span> <span class="o">=</span> <span class="p">[</span><span class="n">rsp</span><span class="o">.</span><span class="n">drm</span> <span class="k">for</span> <span class="n">rsp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsps</span><span class="p">]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">ebin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">unit</span><span class="o">.</span><span class="n">ebin</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tarr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">([</span><span class="n">unit</span><span class="o">.</span><span class="n">tarr</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nbin</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">nbin</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bin_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbin</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bin_stop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbin</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">corr_rsp_drm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">corr_rsp_drm</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">corr_src_efficiency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">corr_src_efficiency</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">corr_bkg_efficiency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">corr_bkg_efficiency</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rsp_chbin_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">rsp_chbin_mean</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rsp_chbin_width</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">rsp_chbin_width</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rsp_chbin_tarr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">rsp_chbin_tarr</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">src_ctsrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">src_ctsrate</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">src_ctsrate_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">src_ctsrate_error</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">src_ctsspec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">src_ctsspec</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">src_ctsspec_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">src_ctsspec_error</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bkg_ctsrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">bkg_ctsrate</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bkg_ctsrate_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">bkg_ctsrate_error</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bkg_ctsspec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">bkg_ctsspec</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bkg_ctsspec_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">bkg_ctsspec_error</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">net_ctsrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">net_ctsrate</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">net_ctsrate_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">net_ctsrate_error</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">net_ctsspec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">net_ctsspec</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">net_ctsspec_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">net_ctsspec_error</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">pdicts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="n">key</span><span class="p">,</span> <span class="n">unit</span><span class="o">.</span><span class="n">pdicts</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="n">info_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;Name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;Noticing&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">notc</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;Statistic&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">stat</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;Grouping&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">grpg</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;Time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">unit</span><span class="o">.</span><span class="n">time</span> <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+        
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">info_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">values</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">info_dict</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span>
+
+        <span class="k">return</span> <span class="n">Info</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">info_dict</span><span class="p">)</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fit_with</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_with</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s1">&#39;no model fit with&#39;</span><span class="p">)</span>
+    
+    
+    <span class="nd">@fit_with</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">fit_with</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_model</span><span class="p">):</span>
+        
+        <span class="kn">from</span> <span class="nn">..model.model</span> <span class="kn">import</span> <span class="n">Model</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fit_with</span> <span class="o">=</span> <span class="n">new_model</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fit_with</span><span class="p">,</span> <span class="n">Model</span><span class="p">):</span> 
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;fit_with argument should be Model type!&#39;</span><span class="p">)</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fit_with</span><span class="o">.</span><span class="n">fit_to</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fit_with</span><span class="o">.</span><span class="n">fit_to</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_with</span><span class="o">.</span><span class="n">fit_to</span> <span class="o">!=</span> <span class="bp">self</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_fit_with</span><span class="o">.</span><span class="n">fit_to</span> <span class="o">=</span> <span class="bp">self</span>
+                
+                
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">expr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_obj_name</span><span class="p">()</span>
+                
+                
+<div class="viewcode-block" id="Data.get_obj_name">
+<a class="viewcode-back" href="../../../bayspec.data.html#bayspec.data.data.Data.get_obj_name">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_obj_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span>
+        
+        <span class="n">possible_var_names</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">while</span> <span class="n">frame</span><span class="p">:</span>
+            <span class="n">local_vars</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">f_locals</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="n">var_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">var_name</span> <span class="k">for</span> <span class="n">var_name</span><span class="p">,</span> <span class="n">var_val</span> <span class="ow">in</span> <span class="n">local_vars</span> <span class="k">if</span> <span class="n">var_val</span> <span class="ow">is</span> <span class="bp">self</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">var_names</span><span class="p">:</span>
+                <span class="n">possible_var_names</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">var_names</span><span class="p">)</span>
+            <span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">f_back</span>
+        
+        <span class="k">if</span> <span class="n">possible_var_names</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">possible_var_names</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setitem</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extract</span><span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extract</span><span class="p">()</span>
+
+
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
+
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">table</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span></div>
+
+
+
+
+<div class="viewcode-block" id="DataUnit">
+<a class="viewcode-back" href="../../../bayspec.data.html#bayspec.data.data.DataUnit">[docs]</a>
+<span class="k">class</span> <span class="nc">DataUnit</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> 
+        <span class="n">src</span><span class="p">,</span> 
+        <span class="n">bkg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">rmf</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">arf</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">rsp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">stat</span><span class="o">=</span><span class="s1">&#39;pgstat&#39;</span><span class="p">,</span> 
+        <span class="n">notc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">grpg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">time</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">weight</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
+        <span class="n">rsp_factor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">src_factor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">bkg_factor</span><span class="o">=</span><span class="kc">None</span>
+        <span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_src</span> <span class="o">=</span> <span class="n">src</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bkg</span> <span class="o">=</span> <span class="n">bkg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rmf</span> <span class="o">=</span> <span class="n">rmf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_arf</span> <span class="o">=</span> <span class="n">arf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rsp</span> <span class="o">=</span> <span class="n">rsp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat</span> <span class="o">=</span> <span class="n">stat</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notc</span> <span class="o">=</span> <span class="n">notc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_grpg</span> <span class="o">=</span> <span class="n">grpg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time</span> <span class="o">=</span> <span class="n">time</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rsp_factor</span> <span class="o">=</span> <span class="n">rsp_factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_factor</span> <span class="o">=</span> <span class="n">src_factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bkg_factor</span> <span class="o">=</span> <span class="n">bkg_factor</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">src</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_src</span>
+
+
+    <span class="nd">@src</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">src</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_src</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_src</span> <span class="o">=</span> <span class="n">new_src</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">()</span>
+        
+        
+    <span class="k">def</span> <span class="nf">_update_src</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_src</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">src_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_ii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_src</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">src_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_src</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">src_ii</span> <span class="o">=</span> <span class="kc">None</span>
+            
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_file</span><span class="p">,</span> <span class="n">BytesIO</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">src_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_file</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">src_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;unsupported src file type&#39;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_ins</span> <span class="o">=</span> <span class="n">Source</span><span class="o">.</span><span class="n">from_plain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_ii</span><span class="p">)</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bkg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bkg</span>
+
+
+    <span class="nd">@bkg</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">bkg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_bkg</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bkg</span> <span class="o">=</span> <span class="n">new_bkg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">()</span>
+        
+    
+    <span class="k">def</span> <span class="nf">_update_bkg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bkg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bkg_file</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ii</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bkg_name</span> <span class="o">=</span> <span class="kc">None</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ins</span> <span class="o">=</span> <span class="n">Background</span><span class="o">.</span><span class="n">from_plain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_ii</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ins</span><span class="o">.</span><span class="n">set_zero</span><span class="p">()</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bkg</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bkg_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bkg</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bkg_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bkg</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ii</span> <span class="o">=</span> <span class="kc">None</span>
+        
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bkg_file</span><span class="p">,</span> <span class="n">BytesIO</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bkg_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_file</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bkg_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bkg_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;unsupported bkg file type&#39;</span><span class="p">)</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ins</span> <span class="o">=</span> <span class="n">Background</span><span class="o">.</span><span class="n">from_plain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bkg_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ii</span><span class="p">)</span>
+            
+            
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rmf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rmf</span>
+    
+    
+    <span class="nd">@rmf</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">rmf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_rmf</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rmf</span> <span class="o">=</span> <span class="n">new_rmf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">()</span>
+        
+        
+    <span class="k">def</span> <span class="nf">_update_rmf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rmf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rmf_file</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rmf_ii</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rmf_name</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rmf_ins</span> <span class="o">=</span> <span class="kc">None</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rmf</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rmf_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmf_ii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rmf</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rmf_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rmf</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rmf_ii</span> <span class="o">=</span> <span class="kc">None</span>
+                
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rmf_file</span><span class="p">,</span> <span class="n">BytesIO</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rmf_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmf_file</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rmf_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rmf_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmf_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;unsupported rmf file type&#39;</span><span class="p">)</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">rmf_ins</span> <span class="o">=</span> <span class="n">Redistribution</span><span class="o">.</span><span class="n">from_plain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rmf_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmf_ii</span><span class="p">)</span>
+            
+            
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">arf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arf</span>
+    
+    
+    <span class="nd">@arf</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">arf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_arf</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_arf</span> <span class="o">=</span> <span class="n">new_arf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">()</span>
+        
+        
+    <span class="k">def</span> <span class="nf">_update_arf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arf</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">arf_file</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">arf_ii</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">arf_name</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">arf_ins</span> <span class="o">=</span> <span class="kc">None</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_arf</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">arf_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">arf_ii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arf</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">arf_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arf</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">arf_ii</span> <span class="o">=</span> <span class="kc">None</span>
+                
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arf_file</span><span class="p">,</span> <span class="n">BytesIO</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">arf_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arf_file</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arf_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">arf_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arf_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;unsupported arf file type&#39;</span><span class="p">)</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">arf_ins</span> <span class="o">=</span> <span class="n">Auxiliary</span><span class="o">.</span><span class="n">from_plain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arf_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">arf_ii</span><span class="p">)</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rsp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rsp</span>
+    
+    
+    <span class="nd">@rsp</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">rsp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_rsp</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rsp</span> <span class="o">=</span> <span class="n">new_rsp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">()</span>
+        
+
+    <span class="k">def</span> <span class="nf">_update_rsp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rsp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rsp_file</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rsp_ii</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rsp_name</span> <span class="o">=</span> <span class="kc">None</span>
+            
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">arf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rsp_ins</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmf_ins</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">arf_ins</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rsp_ins</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;response is missing for spectrum </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">src_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rsp</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rsp_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_ii</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rsp</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rsp_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rsp</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rsp_ii</span> <span class="o">=</span> <span class="kc">None</span>
+                
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rsp_file</span><span class="p">,</span> <span class="n">BytesIO</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rsp_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_file</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rsp_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rsp_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;unsupported rsp file type&#39;</span><span class="p">)</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">rsp_ins</span> <span class="o">=</span> <span class="n">Response</span><span class="o">.</span><span class="n">from_plain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rsp_file</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_ii</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">completeness</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ebin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rsp_ins</span><span class="o">.</span><span class="n">phbin</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nbin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_ins</span><span class="o">.</span><span class="n">phbin</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ebin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbin</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">stat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stat</span>
+    
+    
+    <span class="nd">@stat</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">stat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_stat</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stat</span> <span class="o">=</span> <span class="n">new_stat</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">()</span>
+        
+    
+    <span class="k">def</span> <span class="nf">_update_stat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stat</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;&lt;stat&gt; parameter should be str&#39;</span><span class="p">)</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">qualifying</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># quality flag:</span>
+        <span class="c1"># qual == 0 if the data quality is good -&gt; True</span>
+        <span class="c1"># qual != 0 if the data quality is bad -&gt; False</span>
+        
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_ins</span><span class="o">.</span><span class="n">quality</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">notc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notc</span>
+    
+    
+    <span class="nd">@notc</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">notc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_notc</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notc</span> <span class="o">=</span> <span class="n">new_notc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">()</span>
+        
+        
+    <span class="k">def</span> <span class="nf">_update_notc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_notc</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;&lt;notc&gt; parameter should be list or array&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_notc</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_notc</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_notc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_notc</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_notc</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_notc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_union</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_notc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_notc</span> <span class="o">=</span> <span class="p">[[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rsp_ins</span><span class="o">.</span><span class="n">_chbin</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rsp_ins</span><span class="o">.</span><span class="n">_chbin</span><span class="p">)]]</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">completeness</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">noticing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notice</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rsp_ins</span><span class="o">.</span><span class="n">_chbin</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">noticing</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">grpg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grpg</span>
+
+
+    <span class="nd">@grpg</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">grpg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_grpg</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_grpg</span> <span class="o">=</span> <span class="n">new_grpg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">()</span>
+        
+        
+    <span class="k">def</span> <span class="nf">_update_grpg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grpg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_grpg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;&lt;grpg&gt; parameter should be dict&#39;</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_grpg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">grouping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_ins</span><span class="o">.</span><span class="n">grouping</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">gr_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;min_evt&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;min_sigma&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;max_bin&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+            <span class="n">gr_params</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_grpg</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">completeness</span><span class="p">:</span>
+                <span class="n">ini_flag</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qualifying</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noticing</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                
+                <span class="bp">self</span><span class="o">.</span><span class="n">grouping</span> <span class="o">=</span>  <span class="bp">self</span><span class="o">.</span><span class="n">_group</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">src_ins</span><span class="o">.</span><span class="n">_counts</span><span class="p">,</span> 
+                    <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ins</span><span class="o">.</span><span class="n">_counts</span><span class="p">,</span> 
+                    <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ins</span><span class="o">.</span><span class="n">_errors</span><span class="p">,</span> 
+                    <span class="bp">self</span><span class="o">.</span><span class="n">src_ins</span><span class="o">.</span><span class="n">exposure</span><span class="p">,</span> 
+                    <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ins</span><span class="o">.</span><span class="n">exposure</span><span class="p">,</span> 
+                    <span class="bp">self</span><span class="o">.</span><span class="n">src_ins</span><span class="o">.</span><span class="n">backscale</span><span class="p">,</span> 
+                    <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ins</span><span class="o">.</span><span class="n">backscale</span><span class="p">,</span> 
+                    <span class="n">min_evt</span><span class="o">=</span><span class="n">gr_params</span><span class="p">[</span><span class="s1">&#39;min_evt&#39;</span><span class="p">],</span> 
+                    <span class="n">min_sigma</span><span class="o">=</span><span class="n">gr_params</span><span class="p">[</span><span class="s1">&#39;min_sigma&#39;</span><span class="p">],</span> 
+                    <span class="n">max_bin</span><span class="o">=</span><span class="n">gr_params</span><span class="p">[</span><span class="s1">&#39;max_bin&#39;</span><span class="p">],</span> 
+                    <span class="n">stat</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">,</span> 
+                    <span class="n">ini_flag</span><span class="o">=</span><span class="n">ini_flag</span><span class="p">)</span>
+                
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">grouping</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="k">def</span> <span class="nf">_update_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">completeness</span><span class="p">:</span>
+        
+            <span class="bp">self</span><span class="o">.</span><span class="n">src_ins</span><span class="o">.</span><span class="n">_update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qualifying</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">noticing</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grouping</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ins</span><span class="o">.</span><span class="n">_update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qualifying</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">noticing</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grouping</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rsp_ins</span><span class="o">.</span><span class="n">_update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qualifying</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">noticing</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grouping</span><span class="p">)</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">npoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_ins</span><span class="o">.</span><span class="n">counts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">src_efficiency</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_ins</span><span class="o">.</span><span class="n">exposure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bkg_efficiency</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ins</span><span class="o">.</span><span class="n">exposure</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ins</span><span class="o">.</span><span class="n">backscale</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_ins</span><span class="o">.</span><span class="n">backscale</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_efficiency</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_efficiency</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time</span>
+    
+    
+    <span class="nd">@time</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_time</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time</span> <span class="o">=</span> <span class="n">new_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">()</span>
+        
+        
+    <span class="k">def</span> <span class="nf">_update_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_time</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;&lt;time&gt; parameter should be int or float&#39;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">completeness</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tarr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbin</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tarr</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="k">def</span> <span class="nf">_update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_src</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_bkg</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_rmf</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_arf</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_rsp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_stat</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_notc</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_grpg</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_data</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_time</span><span class="p">()</span>
+        
+        
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">completeness</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_ins</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_ins</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">weight</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span>
+    
+    
+    <span class="nd">@weight</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_weight</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weight</span> <span class="o">=</span> <span class="n">new_weight</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weight</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;&lt;weight&gt; parameter should be int or float&#39;</span><span class="p">)</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rsp_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rsp_factor</span><span class="o">.</span><span class="n">value</span>
+    
+    
+    <span class="nd">@rsp_factor</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">rsp_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_rsp_factor</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="n">new_rsp_factor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rsp_factor</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_rsp_factor</span> <span class="o">=</span> <span class="n">new_rsp_factor</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_rsp_factor</span><span class="p">,</span> <span class="n">Par</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;&lt;rsp_factor&gt; parameter should be Param type&#39;</span><span class="p">)</span>
+        
+        
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">src_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_src_factor</span><span class="o">.</span><span class="n">value</span>
+    
+    
+    <span class="nd">@src_factor</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">src_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_src_factor</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="n">new_src_factor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_src_factor</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_src_factor</span> <span class="o">=</span> <span class="n">new_src_factor</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_src_factor</span><span class="p">,</span> <span class="n">Par</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;&lt;src_factor&gt; parameter should be Param type&#39;</span><span class="p">)</span>
+        
+        
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bkg_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_factor</span><span class="o">.</span><span class="n">value</span>
+    
+    
+    <span class="nd">@bkg_factor</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">bkg_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_bkg_factor</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="n">new_bkg_factor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_factor</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_factor</span> <span class="o">=</span> <span class="n">new_bkg_factor</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bkg_factor</span><span class="p">,</span> <span class="n">Par</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;&lt;bkg_factor&gt; parameter should be Param type&#39;</span><span class="p">)</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">corr_rsp_drm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_ins</span><span class="o">.</span><span class="n">drm</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_factor</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">corr_src_efficiency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_efficiency</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_factor</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">corr_bkg_efficiency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_efficiency</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_factor</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rsp_chbin_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rsp_ins</span><span class="o">.</span><span class="n">chbin</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rsp_chbin_width</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rsp_ins</span><span class="o">.</span><span class="n">chbin</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">rsp_chbin_tarr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_time</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_chbin_mean</span><span class="o">.</span><span class="n">shper</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">src_ctsrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_ins</span><span class="o">.</span><span class="n">counts</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_src_efficiency</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">src_ctsrate_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_ins</span><span class="o">.</span><span class="n">errors</span>  <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_src_efficiency</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">src_ctsspec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_ctsrate</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_chbin_width</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">src_ctsspec_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_ctsrate_error</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_chbin_width</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bkg_ctsrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ins</span><span class="o">.</span><span class="n">counts</span>  <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_bkg_efficiency</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bkg_ctsrate_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ins</span><span class="o">.</span><span class="n">errors</span>  <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_bkg_efficiency</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bkg_ctsspec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ctsrate</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_chbin_width</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bkg_ctsspec_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ctsrate_error</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_chbin_width</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">net_ctsrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_ctsrate</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ctsrate</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">net_ctsrate_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_ctsrate_error</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ctsrate_error</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">net_ctsspec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_ctsspec</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ctsspec</span>
+    
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">net_ctsspec_error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_ctsspec_error</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_ctsspec_error</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    
+    
+<div class="viewcode-block" id="DataUnit.src_counts_upperlimit">
+<a class="viewcode-back" href="../../../bayspec.data.html#bayspec.data.data.DataUnit.src_counts_upperlimit">[docs]</a>
+    <span class="k">def</span> <span class="nf">src_counts_upperlimit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cl</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+        
+        <span class="n">N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">src_ins</span><span class="o">.</span><span class="n">counts</span><span class="p">)</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bkg_ins</span><span class="o">.</span><span class="n">counts</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span>
+        
+        <span class="k">return</span> <span class="n">special</span><span class="o">.</span><span class="n">gammaincinv</span><span class="p">(</span><span class="n">N</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">cl</span> <span class="o">*</span> <span class="n">special</span><span class="o">.</span><span class="n">gammaincc</span><span class="p">(</span><span class="n">N</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span> 
+                                   <span class="o">+</span> <span class="n">special</span><span class="o">.</span><span class="n">gammainc</span><span class="p">(</span><span class="n">N</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">B</span><span class="p">))</span> <span class="o">-</span> <span class="n">B</span></div>
+
+        
+        
+<div class="viewcode-block" id="DataUnit.src_ctsrate_upperlimit">
+<a class="viewcode-back" href="../../../bayspec.data.html#bayspec.data.data.DataUnit.src_ctsrate_upperlimit">[docs]</a>
+    <span class="k">def</span> <span class="nf">src_ctsrate_upperlimit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cl</span><span class="o">=</span><span class="mf">0.9</span><span class="p">):</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_counts_upperlimit</span><span class="p">(</span><span class="n">cl</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">corr_src_efficiency</span></div>
+
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_obj_name</span><span class="p">()</span>
+    
+    
+    <span class="nd">@name</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_name</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">new_name</span>
+        
+        
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">pdicts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="n">pdicts</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rsp_factor</span> <span class="o">==</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="n">pdicts</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;rf@</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rsp_factor</span>
+            
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_src_factor</span> <span class="o">==</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="n">pdicts</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;sf@</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_src_factor</span>
+            
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_factor</span> <span class="o">==</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="n">pdicts</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;bf@</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bkg_factor</span>
+        
+        <span class="k">return</span> <span class="n">pdicts</span>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="n">info_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_name</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;bkg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_name</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;rmf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rmf_name</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;arf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arf_name</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;rsp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_name</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;notc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">notc</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;stat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;grpg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grpg</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;weight&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;rsp_factor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rsp_factor</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;src_factor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">src_factor</span>
+        <span class="n">info_dict</span><span class="p">[</span><span class="s1">&#39;bkg_factor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bkg_factor</span>
+        
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">info_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">info_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span>
+
+        <span class="n">info_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([(</span><span class="s1">&#39;property&#39;</span><span class="p">,</span> <span class="n">info_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> 
+                                 <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">info_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())])</span>
+        
+        <span class="k">return</span> <span class="n">Info</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">info_dict</span><span class="p">)</span>
+
+        
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">table</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span>
+
+
+<div class="viewcode-block" id="DataUnit.get_obj_name">
+<a class="viewcode-back" href="../../../bayspec.data.html#bayspec.data.data.DataUnit.get_obj_name">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_obj_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="n">frame</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span>
+        
+        <span class="n">possible_var_names</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="k">while</span> <span class="n">frame</span><span class="p">:</span>
+            <span class="n">local_vars</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">f_locals</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="n">var_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">var_name</span> <span class="k">for</span> <span class="n">var_name</span><span class="p">,</span> <span class="n">var_val</span> <span class="ow">in</span> <span class="n">local_vars</span> <span class="k">if</span> <span class="n">var_val</span> <span class="ow">is</span> <span class="bp">self</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">var_names</span><span class="p">:</span>
+                <span class="n">possible_var_names</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">var_names</span><span class="p">)</span>
+            <span class="n">frame</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">f_back</span>
+        
+        <span class="k">if</span> <span class="n">possible_var_names</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">possible_var_names</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+    
+    
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_union</span><span class="p">(</span><span class="n">bins</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="n">bins1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">bin_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">bin_</span> <span class="ow">in</span> <span class="n">bins</span><span class="p">])</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">bins</span><span class="p">)[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">bins1</span><span class="p">)]</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">bins</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="p">[</span><span class="n">bins</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">)):</span>
+            <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">b1</span><span class="p">,</span> <span class="n">b2</span> <span class="o">=</span> <span class="n">bins</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">bins</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">b2</span> <span class="o">&gt;=</span> <span class="n">a1</span> <span class="ow">and</span> <span class="n">a2</span> <span class="o">&gt;=</span> <span class="n">b1</span><span class="p">:</span>
+                <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">b1</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">a2</span><span class="p">,</span> <span class="n">b2</span><span class="p">)]</span>
+            <span class="k">else</span><span class="p">:</span> <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">res</span>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_notice</span><span class="p">(</span><span class="n">chbin</span><span class="p">,</span> <span class="n">notc</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="n">notc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">notc</span> <span class="o">=</span> <span class="p">[[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">chbin</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">chbin</span><span class="p">)]]</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">notc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="n">notc</span> <span class="o">=</span> <span class="p">[</span><span class="n">notc</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">notc</span> <span class="o">=</span> <span class="n">notc</span>
+
+        <span class="n">flag</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">chbin</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="p">(</span><span class="n">low</span><span class="p">,</span> <span class="n">upp</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">notc</span><span class="p">):</span>
+            <span class="n">flag_i</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">l</span><span class="p">,</span> <span class="n">u</span><span class="p">:</span> <span class="n">low</span> <span class="o">&lt;=</span> <span class="n">l</span> <span class="ow">and</span> <span class="n">upp</span> <span class="o">&gt;=</span> <span class="n">u</span><span class="p">,</span> <span class="n">chbin</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">chbin</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]))</span>
+            <span class="n">flag</span> <span class="o">=</span> <span class="p">[</span><span class="n">pre</span> <span class="ow">or</span> <span class="n">now</span> <span class="k">for</span> <span class="n">pre</span><span class="p">,</span> <span class="n">now</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">flag_i</span><span class="p">)]</span>
+            
+        <span class="k">return</span> <span class="n">flag</span>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_group</span><span class="p">(</span>
+        <span class="n">s</span><span class="p">,</span> 
+        <span class="n">b</span><span class="p">,</span> 
+        <span class="n">berr</span><span class="p">,</span> 
+        <span class="n">ts</span><span class="p">,</span> 
+        <span class="n">tb</span><span class="p">,</span> 
+        <span class="n">ss</span><span class="p">,</span> 
+        <span class="n">sb</span><span class="p">,</span> 
+        <span class="n">min_sigma</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">min_evt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">max_bin</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">stat</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> 
+        <span class="n">ini_flag</span><span class="o">=</span><span class="kc">None</span>
+        <span class="p">):</span>
+        
+        <span class="c1"># grouping flag:</span>
+        <span class="c1"># grpg = 0 if the channel is not allowed to group, including the not qualified noticed channels</span>
+        <span class="c1"># grpg = +1 if the channel is the start of a new bin</span>
+        <span class="c1"># grpg = -1 if the channel is part of a continuing bin</span>
+        
+        <span class="k">if</span> <span class="n">ini_flag</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ini_flag</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="n">min_sigma</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">min_sigma</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        
+        <span class="k">if</span> <span class="n">min_evt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">min_evt</span> <span class="o">=</span> <span class="mi">0</span>
+            
+        <span class="k">if</span> <span class="n">max_bin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_bin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+            
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">ts</span> <span class="o">*</span> <span class="n">ss</span> <span class="o">/</span> <span class="p">(</span><span class="n">tb</span> <span class="o">*</span> <span class="n">sb</span><span class="p">)</span>
+
+        <span class="n">flag</span><span class="p">,</span> <span class="n">gs</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="n">nowbin</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">cs</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">cberr</span><span class="p">,</span> <span class="n">cp</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">ini_flag</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">flag</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">nowbin</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gs</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="k">pass</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">flag</span><span class="p">[</span><span class="n">gs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="n">nowbin</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">cs</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">cberr</span><span class="p">,</span> <span class="n">cp</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">nowbin</span><span class="p">:</span>
+                    <span class="n">flag</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">gs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                    <span class="n">cp</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">flag</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">cp</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="n">si</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">bi</span> <span class="o">=</span> <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">bierr</span> <span class="o">=</span> <span class="n">berr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">cs</span> <span class="o">+=</span> <span class="n">si</span>
+                <span class="n">cb</span> <span class="o">+=</span> <span class="n">bi</span>
+                <span class="n">cberr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">cberr</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">bierr</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">stat</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">stat</span> <span class="o">=</span> <span class="s1">&#39;pgstat&#39;</span>
+                <span class="k">if</span> <span class="n">stat</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;pstat&#39;</span><span class="p">,</span> <span class="s1">&#39;cstat&#39;</span><span class="p">,</span> <span class="s1">&#39;ppstat&#39;</span><span class="p">,</span> <span class="s1">&#39;Xppstat&#39;</span><span class="p">,</span> <span class="s1">&#39;Xcstat&#39;</span><span class="p">,</span> <span class="s1">&#39;ULppstat&#39;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">cb</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">cs</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">cb</span> <span class="o">!=</span> <span class="n">cs</span><span class="p">):</span>
+                        <span class="n">sigma</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">sigma</span> <span class="o">=</span> <span class="n">ppsig</span><span class="p">(</span><span class="n">cs</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">stat</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;gstat&#39;</span><span class="p">,</span> <span class="s1">&#39;chi2&#39;</span><span class="p">,</span> <span class="s1">&#39;pgstat&#39;</span><span class="p">,</span> <span class="s1">&#39;Xpgstat&#39;</span><span class="p">,</span> <span class="s1">&#39;ULpgstat&#39;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">cs</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">cberr</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">sigma</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">sigma</span> <span class="o">=</span> <span class="n">pgsig</span><span class="p">(</span><span class="n">cs</span><span class="p">,</span> <span class="n">cb</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">cberr</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;unsupported stat: </span><span class="si">{</span><span class="n">stat</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                
+                <span class="n">evt</span> <span class="o">=</span> <span class="n">cs</span> <span class="o">-</span> <span class="n">cb</span> <span class="o">*</span> <span class="n">alpha</span>
+                
+                <span class="k">if</span> <span class="p">((</span><span class="n">sigma</span> <span class="o">&gt;=</span> <span class="n">min_sigma</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">evt</span> <span class="o">&gt;=</span> <span class="n">min_evt</span><span class="p">))</span> <span class="ow">or</span> <span class="n">cp</span> <span class="o">==</span> <span class="n">max_bin</span><span class="p">:</span>
+                    <span class="n">nowbin</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="n">cs</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">cberr</span><span class="p">,</span> <span class="n">cp</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">nowbin</span> <span class="o">=</span> <span class="kc">True</span>
+
+                <span class="k">if</span> <span class="n">nowbin</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">==</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gs</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="k">pass</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">flag</span><span class="p">[</span><span class="n">gs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">flag</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jun Yang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

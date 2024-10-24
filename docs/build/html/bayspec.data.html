@@ -1,0 +1,819 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bayspec.data package &mdash; bayspec 0.1.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=92734c54"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            bayspec
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">bayspec.data package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-bayspec.data.data">bayspec.data.data module</a><ul>
+<li><a class="reference internal" href="#bayspec.data.data.Data"><code class="docutils literal notranslate"><span class="pre">Data</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.data.data.Data.bkg_ctsrate"><code class="docutils literal notranslate"><span class="pre">Data.bkg_ctsrate</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.bkg_ctsrate_error"><code class="docutils literal notranslate"><span class="pre">Data.bkg_ctsrate_error</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.bkg_ctsspec"><code class="docutils literal notranslate"><span class="pre">Data.bkg_ctsspec</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.bkg_ctsspec_error"><code class="docutils literal notranslate"><span class="pre">Data.bkg_ctsspec_error</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.corr_bkg_efficiency"><code class="docutils literal notranslate"><span class="pre">Data.corr_bkg_efficiency</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.corr_rsp_drm"><code class="docutils literal notranslate"><span class="pre">Data.corr_rsp_drm</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.corr_src_efficiency"><code class="docutils literal notranslate"><span class="pre">Data.corr_src_efficiency</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.data"><code class="docutils literal notranslate"><span class="pre">Data.data</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.expr"><code class="docutils literal notranslate"><span class="pre">Data.expr</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.fit_with"><code class="docutils literal notranslate"><span class="pre">Data.fit_with</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.get_obj_name"><code class="docutils literal notranslate"><span class="pre">Data.get_obj_name()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.info"><code class="docutils literal notranslate"><span class="pre">Data.info</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.net_ctsrate"><code class="docutils literal notranslate"><span class="pre">Data.net_ctsrate</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.net_ctsrate_error"><code class="docutils literal notranslate"><span class="pre">Data.net_ctsrate_error</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.net_ctsspec"><code class="docutils literal notranslate"><span class="pre">Data.net_ctsspec</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.net_ctsspec_error"><code class="docutils literal notranslate"><span class="pre">Data.net_ctsspec_error</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.pdicts"><code class="docutils literal notranslate"><span class="pre">Data.pdicts</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.rsp_chbin_mean"><code class="docutils literal notranslate"><span class="pre">Data.rsp_chbin_mean</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.rsp_chbin_tarr"><code class="docutils literal notranslate"><span class="pre">Data.rsp_chbin_tarr</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.rsp_chbin_width"><code class="docutils literal notranslate"><span class="pre">Data.rsp_chbin_width</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.src_ctsrate"><code class="docutils literal notranslate"><span class="pre">Data.src_ctsrate</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.src_ctsrate_error"><code class="docutils literal notranslate"><span class="pre">Data.src_ctsrate_error</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.src_ctsspec"><code class="docutils literal notranslate"><span class="pre">Data.src_ctsspec</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.Data.src_ctsspec_error"><code class="docutils literal notranslate"><span class="pre">Data.src_ctsspec_error</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit"><code class="docutils literal notranslate"><span class="pre">DataUnit</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.arf"><code class="docutils literal notranslate"><span class="pre">DataUnit.arf</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.bkg"><code class="docutils literal notranslate"><span class="pre">DataUnit.bkg</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.bkg_ctsrate"><code class="docutils literal notranslate"><span class="pre">DataUnit.bkg_ctsrate</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.bkg_ctsrate_error"><code class="docutils literal notranslate"><span class="pre">DataUnit.bkg_ctsrate_error</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.bkg_ctsspec"><code class="docutils literal notranslate"><span class="pre">DataUnit.bkg_ctsspec</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.bkg_ctsspec_error"><code class="docutils literal notranslate"><span class="pre">DataUnit.bkg_ctsspec_error</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.bkg_factor"><code class="docutils literal notranslate"><span class="pre">DataUnit.bkg_factor</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.completeness"><code class="docutils literal notranslate"><span class="pre">DataUnit.completeness</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.corr_bkg_efficiency"><code class="docutils literal notranslate"><span class="pre">DataUnit.corr_bkg_efficiency</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.corr_rsp_drm"><code class="docutils literal notranslate"><span class="pre">DataUnit.corr_rsp_drm</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.corr_src_efficiency"><code class="docutils literal notranslate"><span class="pre">DataUnit.corr_src_efficiency</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.get_obj_name"><code class="docutils literal notranslate"><span class="pre">DataUnit.get_obj_name()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.grpg"><code class="docutils literal notranslate"><span class="pre">DataUnit.grpg</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.info"><code class="docutils literal notranslate"><span class="pre">DataUnit.info</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.name"><code class="docutils literal notranslate"><span class="pre">DataUnit.name</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.net_ctsrate"><code class="docutils literal notranslate"><span class="pre">DataUnit.net_ctsrate</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.net_ctsrate_error"><code class="docutils literal notranslate"><span class="pre">DataUnit.net_ctsrate_error</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.net_ctsspec"><code class="docutils literal notranslate"><span class="pre">DataUnit.net_ctsspec</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.net_ctsspec_error"><code class="docutils literal notranslate"><span class="pre">DataUnit.net_ctsspec_error</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.notc"><code class="docutils literal notranslate"><span class="pre">DataUnit.notc</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.pdicts"><code class="docutils literal notranslate"><span class="pre">DataUnit.pdicts</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.qualifying"><code class="docutils literal notranslate"><span class="pre">DataUnit.qualifying</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.rmf"><code class="docutils literal notranslate"><span class="pre">DataUnit.rmf</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.rsp"><code class="docutils literal notranslate"><span class="pre">DataUnit.rsp</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.rsp_chbin_mean"><code class="docutils literal notranslate"><span class="pre">DataUnit.rsp_chbin_mean</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.rsp_chbin_tarr"><code class="docutils literal notranslate"><span class="pre">DataUnit.rsp_chbin_tarr</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.rsp_chbin_width"><code class="docutils literal notranslate"><span class="pre">DataUnit.rsp_chbin_width</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.rsp_factor"><code class="docutils literal notranslate"><span class="pre">DataUnit.rsp_factor</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.src"><code class="docutils literal notranslate"><span class="pre">DataUnit.src</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.src_counts_upperlimit"><code class="docutils literal notranslate"><span class="pre">DataUnit.src_counts_upperlimit()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.src_ctsrate"><code class="docutils literal notranslate"><span class="pre">DataUnit.src_ctsrate</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.src_ctsrate_error"><code class="docutils literal notranslate"><span class="pre">DataUnit.src_ctsrate_error</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.src_ctsrate_upperlimit"><code class="docutils literal notranslate"><span class="pre">DataUnit.src_ctsrate_upperlimit()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.src_ctsspec"><code class="docutils literal notranslate"><span class="pre">DataUnit.src_ctsspec</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.src_ctsspec_error"><code class="docutils literal notranslate"><span class="pre">DataUnit.src_ctsspec_error</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.src_factor"><code class="docutils literal notranslate"><span class="pre">DataUnit.src_factor</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.stat"><code class="docutils literal notranslate"><span class="pre">DataUnit.stat</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.time"><code class="docutils literal notranslate"><span class="pre">DataUnit.time</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.data.DataUnit.weight"><code class="docutils literal notranslate"><span class="pre">DataUnit.weight</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-bayspec.data.response">bayspec.data.response module</a><ul>
+<li><a class="reference internal" href="#bayspec.data.response.Auxiliary"><code class="docutils literal notranslate"><span class="pre">Auxiliary</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.data.response.Auxiliary.from_arf"><code class="docutils literal notranslate"><span class="pre">Auxiliary.from_arf()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Auxiliary.from_arf2"><code class="docutils literal notranslate"><span class="pre">Auxiliary.from_arf2()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Auxiliary.from_plain"><code class="docutils literal notranslate"><span class="pre">Auxiliary.from_plain()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Auxiliary.from_rmf_arf"><code class="docutils literal notranslate"><span class="pre">Auxiliary.from_rmf_arf()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Auxiliary.from_rsp"><code class="docutils literal notranslate"><span class="pre">Auxiliary.from_rsp()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Auxiliary.from_rsp2"><code class="docutils literal notranslate"><span class="pre">Auxiliary.from_rsp2()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Auxiliary.info"><code class="docutils literal notranslate"><span class="pre">Auxiliary.info</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Auxiliary.methods_to_disable"><code class="docutils literal notranslate"><span class="pre">Auxiliary.methods_to_disable</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.data.response.DisableMethodsMeta"><code class="docutils literal notranslate"><span class="pre">DisableMethodsMeta</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.data.response.DisableMethodsMeta.disable_method"><code class="docutils literal notranslate"><span class="pre">DisableMethodsMeta.disable_method()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.data.response.Redistribution"><code class="docutils literal notranslate"><span class="pre">Redistribution</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.data.response.Redistribution.from_plain"><code class="docutils literal notranslate"><span class="pre">Redistribution.from_plain()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Redistribution.from_rmf"><code class="docutils literal notranslate"><span class="pre">Redistribution.from_rmf()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Redistribution.from_rmf2"><code class="docutils literal notranslate"><span class="pre">Redistribution.from_rmf2()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Redistribution.from_rmf_arf"><code class="docutils literal notranslate"><span class="pre">Redistribution.from_rmf_arf()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Redistribution.info"><code class="docutils literal notranslate"><span class="pre">Redistribution.info</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Redistribution.methods_to_disable"><code class="docutils literal notranslate"><span class="pre">Redistribution.methods_to_disable</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.data.response.Response"><code class="docutils literal notranslate"><span class="pre">Response</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.data.response.Response.chbin_mean"><code class="docutils literal notranslate"><span class="pre">Response.chbin_mean</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Response.chbin_width"><code class="docutils literal notranslate"><span class="pre">Response.chbin_width</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Response.from_plain"><code class="docutils literal notranslate"><span class="pre">Response.from_plain()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Response.from_rmf_arf"><code class="docutils literal notranslate"><span class="pre">Response.from_rmf_arf()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Response.from_rsp"><code class="docutils literal notranslate"><span class="pre">Response.from_rsp()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Response.from_rsp2"><code class="docutils literal notranslate"><span class="pre">Response.from_rsp2()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Response.get_obj_name"><code class="docutils literal notranslate"><span class="pre">Response.get_obj_name()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Response.info"><code class="docutils literal notranslate"><span class="pre">Response.info</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.response.Response.name"><code class="docutils literal notranslate"><span class="pre">Response.name</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-bayspec.data.spectrum">bayspec.data.spectrum module</a><ul>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Background"><code class="docutils literal notranslate"><span class="pre">Background</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Background.from_bkg"><code class="docutils literal notranslate"><span class="pre">Background.from_bkg()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Background.from_bkg2"><code class="docutils literal notranslate"><span class="pre">Background.from_bkg2()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Background.from_plain"><code class="docutils literal notranslate"><span class="pre">Background.from_plain()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Source"><code class="docutils literal notranslate"><span class="pre">Source</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Source.from_plain"><code class="docutils literal notranslate"><span class="pre">Source.from_plain()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Source.from_src"><code class="docutils literal notranslate"><span class="pre">Source.from_src()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Source.from_src2"><code class="docutils literal notranslate"><span class="pre">Source.from_src2()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Spectrum"><code class="docutils literal notranslate"><span class="pre">Spectrum</span></code></a><ul>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Spectrum.backscale"><code class="docutils literal notranslate"><span class="pre">Spectrum.backscale</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Spectrum.exposure"><code class="docutils literal notranslate"><span class="pre">Spectrum.exposure</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Spectrum.get_obj_name"><code class="docutils literal notranslate"><span class="pre">Spectrum.get_obj_name()</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Spectrum.grouping"><code class="docutils literal notranslate"><span class="pre">Spectrum.grouping</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Spectrum.info"><code class="docutils literal notranslate"><span class="pre">Spectrum.info</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Spectrum.name"><code class="docutils literal notranslate"><span class="pre">Spectrum.name</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Spectrum.quality"><code class="docutils literal notranslate"><span class="pre">Spectrum.quality</span></code></a></li>
+<li><a class="reference internal" href="#bayspec.data.spectrum.Spectrum.set_zero"><code class="docutils literal notranslate"><span class="pre">Spectrum.set_zero()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-bayspec.data">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">bayspec</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">bayspec.data package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/bayspec.data.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="bayspec-data-package">
+<h1>bayspec.data package<a class="headerlink" href="#bayspec-data-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-bayspec.data.data">
+<span id="bayspec-data-data-module"></span><h2>bayspec.data.data module<a class="headerlink" href="#module-bayspec.data.data" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.data.data.Data">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.data.data.</span></span><span class="sig-name descname"><span class="pre">Data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/data.html#Data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.data.Data" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.bkg_ctsrate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bkg_ctsrate</span></span><a class="headerlink" href="#bayspec.data.data.Data.bkg_ctsrate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.bkg_ctsrate_error">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bkg_ctsrate_error</span></span><a class="headerlink" href="#bayspec.data.data.Data.bkg_ctsrate_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.bkg_ctsspec">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bkg_ctsspec</span></span><a class="headerlink" href="#bayspec.data.data.Data.bkg_ctsspec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.bkg_ctsspec_error">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bkg_ctsspec_error</span></span><a class="headerlink" href="#bayspec.data.data.Data.bkg_ctsspec_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.corr_bkg_efficiency">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">corr_bkg_efficiency</span></span><a class="headerlink" href="#bayspec.data.data.Data.corr_bkg_efficiency" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.corr_rsp_drm">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">corr_rsp_drm</span></span><a class="headerlink" href="#bayspec.data.data.Data.corr_rsp_drm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.corr_src_efficiency">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">corr_src_efficiency</span></span><a class="headerlink" href="#bayspec.data.data.Data.corr_src_efficiency" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#bayspec.data.data.Data.data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.expr">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">expr</span></span><a class="headerlink" href="#bayspec.data.data.Data.expr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.fit_with">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fit_with</span></span><a class="headerlink" href="#bayspec.data.data.Data.fit_with" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.get_obj_name">
+<span class="sig-name descname"><span class="pre">get_obj_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/data.html#Data.get_obj_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.data.Data.get_obj_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><a class="headerlink" href="#bayspec.data.data.Data.info" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.net_ctsrate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">net_ctsrate</span></span><a class="headerlink" href="#bayspec.data.data.Data.net_ctsrate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.net_ctsrate_error">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">net_ctsrate_error</span></span><a class="headerlink" href="#bayspec.data.data.Data.net_ctsrate_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.net_ctsspec">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">net_ctsspec</span></span><a class="headerlink" href="#bayspec.data.data.Data.net_ctsspec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.net_ctsspec_error">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">net_ctsspec_error</span></span><a class="headerlink" href="#bayspec.data.data.Data.net_ctsspec_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.pdicts">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pdicts</span></span><a class="headerlink" href="#bayspec.data.data.Data.pdicts" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.rsp_chbin_mean">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rsp_chbin_mean</span></span><a class="headerlink" href="#bayspec.data.data.Data.rsp_chbin_mean" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.rsp_chbin_tarr">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rsp_chbin_tarr</span></span><a class="headerlink" href="#bayspec.data.data.Data.rsp_chbin_tarr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.rsp_chbin_width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rsp_chbin_width</span></span><a class="headerlink" href="#bayspec.data.data.Data.rsp_chbin_width" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.src_ctsrate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">src_ctsrate</span></span><a class="headerlink" href="#bayspec.data.data.Data.src_ctsrate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.src_ctsrate_error">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">src_ctsrate_error</span></span><a class="headerlink" href="#bayspec.data.data.Data.src_ctsrate_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.src_ctsspec">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">src_ctsspec</span></span><a class="headerlink" href="#bayspec.data.data.Data.src_ctsspec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.Data.src_ctsspec_error">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">src_ctsspec_error</span></span><a class="headerlink" href="#bayspec.data.data.Data.src_ctsspec_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.data.data.</span></span><span class="sig-name descname"><span class="pre">DataUnit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rmf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rsp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'pgstat'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grpg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rsp_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/data.html#DataUnit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.data.DataUnit" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.arf">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">arf</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.arf" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.bkg">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bkg</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.bkg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.bkg_ctsrate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bkg_ctsrate</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.bkg_ctsrate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.bkg_ctsrate_error">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bkg_ctsrate_error</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.bkg_ctsrate_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.bkg_ctsspec">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bkg_ctsspec</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.bkg_ctsspec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.bkg_ctsspec_error">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bkg_ctsspec_error</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.bkg_ctsspec_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.bkg_factor">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">bkg_factor</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.bkg_factor" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.completeness">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">completeness</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.completeness" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.corr_bkg_efficiency">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">corr_bkg_efficiency</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.corr_bkg_efficiency" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.corr_rsp_drm">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">corr_rsp_drm</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.corr_rsp_drm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.corr_src_efficiency">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">corr_src_efficiency</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.corr_src_efficiency" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.get_obj_name">
+<span class="sig-name descname"><span class="pre">get_obj_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/data.html#DataUnit.get_obj_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.data.DataUnit.get_obj_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.grpg">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">grpg</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.grpg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.info" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.net_ctsrate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">net_ctsrate</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.net_ctsrate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.net_ctsrate_error">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">net_ctsrate_error</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.net_ctsrate_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.net_ctsspec">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">net_ctsspec</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.net_ctsspec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.net_ctsspec_error">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">net_ctsspec_error</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.net_ctsspec_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.notc">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">notc</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.notc" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.pdicts">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pdicts</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.pdicts" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.qualifying">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">qualifying</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.qualifying" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.rmf">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rmf</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.rmf" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.rsp">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rsp</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.rsp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.rsp_chbin_mean">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rsp_chbin_mean</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.rsp_chbin_mean" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.rsp_chbin_tarr">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rsp_chbin_tarr</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.rsp_chbin_tarr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.rsp_chbin_width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rsp_chbin_width</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.rsp_chbin_width" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.rsp_factor">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rsp_factor</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.rsp_factor" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.src">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">src</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.src" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.src_counts_upperlimit">
+<span class="sig-name descname"><span class="pre">src_counts_upperlimit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/data.html#DataUnit.src_counts_upperlimit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.data.DataUnit.src_counts_upperlimit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.src_ctsrate">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">src_ctsrate</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.src_ctsrate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.src_ctsrate_error">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">src_ctsrate_error</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.src_ctsrate_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.src_ctsrate_upperlimit">
+<span class="sig-name descname"><span class="pre">src_ctsrate_upperlimit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/data.html#DataUnit.src_ctsrate_upperlimit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.data.DataUnit.src_ctsrate_upperlimit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.src_ctsspec">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">src_ctsspec</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.src_ctsspec" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.src_ctsspec_error">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">src_ctsspec_error</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.src_ctsspec_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.src_factor">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">src_factor</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.src_factor" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.stat">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stat</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.stat" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">time</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.time" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.data.DataUnit.weight">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">weight</span></span><a class="headerlink" href="#bayspec.data.data.DataUnit.weight" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bayspec.data.response">
+<span id="bayspec-data-response-module"></span><h2>bayspec.data.response module<a class="headerlink" href="#module-bayspec.data.response" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.data.response.Auxiliary">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.data.response.</span></span><span class="sig-name descname"><span class="pre">Auxiliary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phbin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">srp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#Auxiliary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.Auxiliary" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bayspec.data.response.Response" title="bayspec.data.response.Response"><code class="xref py py-class docutils literal notranslate"><span class="pre">Response</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Auxiliary.from_arf">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_arf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arf_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#Auxiliary.from_arf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.Auxiliary.from_arf" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Auxiliary.from_arf2">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_arf2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arf_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#Auxiliary.from_arf2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.Auxiliary.from_arf2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Auxiliary.from_plain">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_plain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arf_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#Auxiliary.from_plain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.Auxiliary.from_plain" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Auxiliary.from_rmf_arf">
+<span class="sig-name descname"><span class="pre">from_rmf_arf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayspec.data.response.Auxiliary.from_rmf_arf" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Auxiliary.from_rsp">
+<span class="sig-name descname"><span class="pre">from_rsp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayspec.data.response.Auxiliary.from_rsp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Auxiliary.from_rsp2">
+<span class="sig-name descname"><span class="pre">from_rsp2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayspec.data.response.Auxiliary.from_rsp2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.response.Auxiliary.info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><a class="headerlink" href="#bayspec.data.response.Auxiliary.info" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bayspec.data.response.Auxiliary.methods_to_disable">
+<span class="sig-name descname"><span class="pre">methods_to_disable</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['from_rsp',</span> <span class="pre">'from_rsp2',</span> <span class="pre">'from_rmf_arf',</span> <span class="pre">'_update']</span></em><a class="headerlink" href="#bayspec.data.response.Auxiliary.methods_to_disable" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.data.response.DisableMethodsMeta">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.data.response.</span></span><span class="sig-name descname"><span class="pre">DisableMethodsMeta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bases</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dct</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#DisableMethodsMeta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.DisableMethodsMeta" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">type</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.DisableMethodsMeta.disable_method">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">disable_method</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#DisableMethodsMeta.disable_method"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.DisableMethodsMeta.disable_method" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.data.response.Redistribution">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.data.response.</span></span><span class="sig-name descname"><span class="pre">Redistribution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chbin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phbin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#Redistribution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.Redistribution" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bayspec.data.response.Response" title="bayspec.data.response.Response"><code class="xref py py-class docutils literal notranslate"><span class="pre">Response</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Redistribution.from_plain">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_plain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rmf_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#Redistribution.from_plain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.Redistribution.from_plain" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Redistribution.from_rmf">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_rmf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rmf_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#Redistribution.from_rmf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.Redistribution.from_rmf" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Redistribution.from_rmf2">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_rmf2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rmf_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#Redistribution.from_rmf2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.Redistribution.from_rmf2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Redistribution.from_rmf_arf">
+<span class="sig-name descname"><span class="pre">from_rmf_arf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#bayspec.data.response.Redistribution.from_rmf_arf" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.response.Redistribution.info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><a class="headerlink" href="#bayspec.data.response.Redistribution.info" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="bayspec.data.response.Redistribution.methods_to_disable">
+<span class="sig-name descname"><span class="pre">methods_to_disable</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['from_rmf_arf',</span> <span class="pre">'_update']</span></em><a class="headerlink" href="#bayspec.data.response.Redistribution.methods_to_disable" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.data.response.Response">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.data.response.</span></span><span class="sig-name descname"><span class="pre">Response</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chbin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phbin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#Response"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.Response" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.response.Response.chbin_mean">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">chbin_mean</span></span><a class="headerlink" href="#bayspec.data.response.Response.chbin_mean" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.response.Response.chbin_width">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">chbin_width</span></span><a class="headerlink" href="#bayspec.data.response.Response.chbin_width" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Response.from_plain">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_plain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rsp_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#Response.from_plain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.Response.from_plain" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Response.from_rmf_arf">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_rmf_arf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rmf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arf</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#Response.from_rmf_arf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.Response.from_rmf_arf" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Response.from_rsp">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_rsp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rsp_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#Response.from_rsp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.Response.from_rsp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Response.from_rsp2">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_rsp2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rsp_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#Response.from_rsp2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.Response.from_rsp2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.response.Response.get_obj_name">
+<span class="sig-name descname"><span class="pre">get_obj_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/response.html#Response.get_obj_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.response.Response.get_obj_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.response.Response.info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><a class="headerlink" href="#bayspec.data.response.Response.info" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.response.Response.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#bayspec.data.response.Response.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bayspec.data.spectrum">
+<span id="bayspec-data-spectrum-module"></span><h2>bayspec.data.spectrum module<a class="headerlink" href="#module-bayspec.data.spectrum" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Background">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.data.spectrum.</span></span><span class="sig-name descname"><span class="pre">Background</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exposure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grouping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backscale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/spectrum.html#Background"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.spectrum.Background" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bayspec.data.spectrum.Spectrum" title="bayspec.data.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Background.from_bkg">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_bkg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bkg_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/spectrum.html#Background.from_bkg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.spectrum.Background.from_bkg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Background.from_bkg2">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_bkg2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bkg_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/spectrum.html#Background.from_bkg2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.spectrum.Background.from_bkg2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Background.from_plain">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_plain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bkg_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/spectrum.html#Background.from_plain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.spectrum.Background.from_plain" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Source">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.data.spectrum.</span></span><span class="sig-name descname"><span class="pre">Source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exposure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grouping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backscale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/spectrum.html#Source"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.spectrum.Source" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#bayspec.data.spectrum.Spectrum" title="bayspec.data.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Source.from_plain">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_plain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/spectrum.html#Source.from_plain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.spectrum.Source.from_plain" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Source.from_src">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_src</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/spectrum.html#Source.from_src"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.spectrum.Source.from_src" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Source.from_src2">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_src2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/spectrum.html#Source.from_src2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.spectrum.Source.from_src2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Spectrum">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">bayspec.data.spectrum.</span></span><span class="sig-name descname"><span class="pre">Spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exposure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grouping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backscale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/spectrum.html#Spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.spectrum.Spectrum" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Spectrum.backscale">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">backscale</span></span><a class="headerlink" href="#bayspec.data.spectrum.Spectrum.backscale" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Spectrum.exposure">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">exposure</span></span><a class="headerlink" href="#bayspec.data.spectrum.Spectrum.exposure" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Spectrum.get_obj_name">
+<span class="sig-name descname"><span class="pre">get_obj_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/spectrum.html#Spectrum.get_obj_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.spectrum.Spectrum.get_obj_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Spectrum.grouping">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">grouping</span></span><a class="headerlink" href="#bayspec.data.spectrum.Spectrum.grouping" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Spectrum.info">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">info</span></span><a class="headerlink" href="#bayspec.data.spectrum.Spectrum.info" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Spectrum.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#bayspec.data.spectrum.Spectrum.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Spectrum.quality">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quality</span></span><a class="headerlink" href="#bayspec.data.spectrum.Spectrum.quality" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="bayspec.data.spectrum.Spectrum.set_zero">
+<span class="sig-name descname"><span class="pre">set_zero</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/bayspec/data/spectrum.html#Spectrum.set_zero"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#bayspec.data.spectrum.Spectrum.set_zero" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-bayspec.data">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-bayspec.data" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jun Yang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
