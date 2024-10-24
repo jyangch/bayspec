@@ -1,0 +1,415 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bayspec.infer.statistic &mdash; bayspec 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            bayspec
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">bayspec</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">bayspec.infer.statistic</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bayspec.infer.statistic</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">..util.significance</span> <span class="kn">import</span> <span class="n">ppsig</span><span class="p">,</span> <span class="n">pgsig</span>
+
+
+
+<div class="viewcode-block" id="Statistic">
+<a class="viewcode-back" href="../../../bayspec.infer.html#bayspec.infer.statistic.Statistic">[docs]</a>
+<span class="k">class</span> <span class="nc">Statistic</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    
+<div class="viewcode-block" id="Statistic.xlogy">
+<a class="viewcode-back" href="../../../bayspec.infer.html#bayspec.infer.statistic.Statistic.xlogy">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">xlogy</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+
+        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float128</span><span class="p">)</span>
+        
+        <span class="n">zero</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">res</span><span class="p">[</span><span class="o">~</span><span class="n">zero</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">zero</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="o">~</span><span class="n">zero</span><span class="p">])</span>
+        
+        <span class="k">return</span> <span class="n">res</span></div>
+
+    
+    
+<div class="viewcode-block" id="Statistic.xdivy">
+<a class="viewcode-back" href="../../../bayspec.infer.html#bayspec.infer.statistic.Statistic.xdivy">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">xdivy</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        
+        <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float128</span><span class="p">)</span>
+        
+        <span class="n">zero</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">res</span><span class="p">[</span><span class="o">~</span><span class="n">zero</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="n">zero</span><span class="p">]</span> <span class="o">/</span> <span class="n">y</span><span class="p">[</span><span class="o">~</span><span class="n">zero</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="n">res</span></div>
+
+    
+    
+<div class="viewcode-block" id="Statistic.poisson_logpmf">
+<a class="viewcode-back" href="../../../bayspec.infer.html#bayspec.infer.statistic.Statistic.poisson_logpmf">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">poisson_logpmf</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">mu</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        NOTE</span>
+<span class="sd">        logpmf (for poisson) = klogmu - mu - log(k!)</span>
+<span class="sd">        Stirling&#39;s approximation: ln(K!) ~ klogk - k + log(2πk) / 2</span>
+<span class="sd">        Here omit the term log(2πk) / 2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">return</span> <span class="n">Statistic</span><span class="o">.</span><span class="n">xlogy</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span> <span class="o">-</span> <span class="n">mu</span> <span class="o">-</span> <span class="n">Statistic</span><span class="o">.</span><span class="n">xlogy</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="o">+</span> <span class="n">k</span></div>
+
+    
+    
+<div class="viewcode-block" id="Statistic.gaussian_logpdf">
+<a class="viewcode-back" href="../../../bayspec.infer.html#bayspec.infer.statistic.Statistic.gaussian_logpdf">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">gaussian_logpdf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        NOTE</span>
+<span class="sd">        logpdf (for gaussian) = -0.5 * ((x-loc)^2/scale^2 + log(2π*scale^2))</span>
+<span class="sd">        Here omit the term log(2π*scale^2)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">Statistic</span><span class="o">.</span><span class="n">xdivy</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">loc</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span></div>
+
+
+    
+<div class="viewcode-block" id="Statistic.Gstat">
+<a class="viewcode-back" href="../../../bayspec.infer.html#bayspec.infer.statistic.Statistic.Gstat">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">Gstat</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        
+        <span class="n">S</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;S&#39;</span><span class="p">]</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;B&#39;</span><span class="p">]</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;m&#39;</span><span class="p">]</span>
+        
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ts&#39;</span><span class="p">]</span>
+        <span class="n">tb</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tb&#39;</span><span class="p">]</span>
+        
+        <span class="n">sigma_S</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;sigma_S&#39;</span><span class="p">]</span>
+        <span class="n">sigma_B</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;sigma_B&#39;</span><span class="p">]</span>
+        
+        <span class="k">if</span> <span class="n">tb</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">B</span> <span class="o">=</span> <span class="n">B</span> <span class="o">/</span> <span class="n">tb</span> <span class="o">*</span> <span class="n">ts</span>
+            <span class="n">sigma_B</span> <span class="o">=</span> <span class="n">sigma_B</span> <span class="o">/</span> <span class="n">tb</span> <span class="o">*</span> <span class="n">ts</span>
+        
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sigma_S</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">sigma_B</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Statistic</span><span class="o">.</span><span class="n">gaussian_logpdf</span><span class="p">(</span><span class="n">S</span> <span class="o">-</span> <span class="n">B</span><span class="p">,</span> <span class="n">m</span> <span class="o">*</span> <span class="n">ts</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span></div>
+
+    
+    
+<div class="viewcode-block" id="Statistic.Pstat">
+<a class="viewcode-back" href="../../../bayspec.infer.html#bayspec.infer.statistic.Statistic.Pstat">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">Pstat</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        
+        <span class="n">S</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;S&#39;</span><span class="p">]</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;m&#39;</span><span class="p">]</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ts&#39;</span><span class="p">]</span>
+        
+        <span class="k">return</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Statistic</span><span class="o">.</span><span class="n">poisson_logpmf</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">m</span> <span class="o">*</span> <span class="n">ts</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Statistic.PPstat">
+<a class="viewcode-back" href="../../../bayspec.infer.html#bayspec.infer.statistic.Statistic.PPstat">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">PPstat</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        
+        <span class="n">S</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;S&#39;</span><span class="p">]</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;B&#39;</span><span class="p">]</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;m&#39;</span><span class="p">]</span>
+        
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ts&#39;</span><span class="p">]</span>
+        <span class="n">tb</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tb&#39;</span><span class="p">]</span>
+        
+        <span class="n">aa</span> <span class="o">=</span> <span class="n">ts</span> <span class="o">+</span> <span class="n">tb</span>
+        <span class="n">bb</span> <span class="o">=</span> <span class="p">(</span><span class="n">ts</span> <span class="o">+</span> <span class="n">tb</span><span class="p">)</span> <span class="o">*</span> <span class="n">m</span> <span class="o">-</span> <span class="n">S</span> <span class="o">-</span> <span class="n">B</span>
+        <span class="n">cc</span> <span class="o">=</span> <span class="o">-</span><span class="n">B</span> <span class="o">*</span> <span class="n">m</span>
+        <span class="n">dd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">bb</span> <span class="o">*</span> <span class="n">bb</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">aa</span> <span class="o">*</span> <span class="n">cc</span><span class="p">)</span>
+        
+        <span class="n">po</span> <span class="o">=</span> <span class="n">bb</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float128</span><span class="p">)</span>
+        
+        <span class="n">b</span><span class="p">[</span><span class="n">po</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">cc</span><span class="p">[</span><span class="n">po</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">bb</span><span class="p">[</span><span class="n">po</span><span class="p">]</span> <span class="o">+</span> <span class="n">dd</span><span class="p">[</span><span class="n">po</span><span class="p">])</span>
+        <span class="n">b</span><span class="p">[</span><span class="o">~</span><span class="n">po</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">bb</span><span class="p">[</span><span class="o">~</span><span class="n">po</span><span class="p">]</span> <span class="o">-</span> <span class="n">dd</span><span class="p">[</span><span class="o">~</span><span class="n">po</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">aa</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">Statistic</span><span class="o">.</span><span class="n">poisson_logpmf</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">ts</span> <span class="o">*</span> <span class="p">(</span><span class="n">b</span> <span class="o">+</span> <span class="n">m</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> \
+            <span class="o">+</span> <span class="n">Statistic</span><span class="o">.</span><span class="n">poisson_logpmf</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">tb</span> <span class="o">*</span> <span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span></div>
+
+
+
+<div class="viewcode-block" id="Statistic.PGstat">
+<a class="viewcode-back" href="../../../bayspec.infer.html#bayspec.infer.statistic.Statistic.PGstat">[docs]</a>
+    <span class="k">def</span> <span class="nf">PGstat</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        
+        <span class="n">S</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;S&#39;</span><span class="p">]</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;B&#39;</span><span class="p">]</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;m&#39;</span><span class="p">]</span>
+        
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ts&#39;</span><span class="p">]</span>
+        <span class="n">tb</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tb&#39;</span><span class="p">]</span>
+        
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;sigma_B&#39;</span><span class="p">]</span>
+        
+        <span class="n">aa</span> <span class="o">=</span> <span class="n">tb</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">bb</span> <span class="o">=</span> <span class="n">ts</span> <span class="o">*</span> <span class="n">sigma</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">tb</span> <span class="o">*</span> <span class="n">B</span> <span class="o">+</span> <span class="n">tb</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">m</span>
+        <span class="n">cc</span> <span class="o">=</span> <span class="n">ts</span> <span class="o">*</span> <span class="n">sigma</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">m</span> <span class="o">-</span> <span class="n">S</span> <span class="o">*</span> <span class="n">sigma</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">tb</span> <span class="o">*</span> <span class="n">B</span> <span class="o">*</span> <span class="n">m</span>
+        <span class="n">dd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">bb</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">aa</span> <span class="o">*</span> <span class="n">cc</span><span class="p">)</span>
+        
+        <span class="n">sign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">bb</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">qq</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">bb</span> <span class="o">+</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">dd</span><span class="p">)</span>
+        
+        <span class="n">b1</span> <span class="o">=</span> <span class="n">qq</span> <span class="o">/</span> <span class="n">aa</span>
+        <span class="n">b2</span> <span class="o">=</span> <span class="n">cc</span> <span class="o">/</span> <span class="n">qq</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">b1</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">b1</span><span class="p">,</span> <span class="n">b2</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">Statistic</span><span class="o">.</span><span class="n">poisson_logpmf</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">ts</span> <span class="o">*</span> <span class="p">(</span><span class="n">b</span> <span class="o">+</span> <span class="n">m</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> \
+            <span class="o">+</span> <span class="n">Statistic</span><span class="o">.</span><span class="n">gaussian_logpdf</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">tb</span> <span class="o">*</span> <span class="n">b</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span></div>
+
+
+    
+<div class="viewcode-block" id="Statistic.PPstat_Xspec">
+<a class="viewcode-back" href="../../../bayspec.infer.html#bayspec.infer.statistic.Statistic.PPstat_Xspec">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">PPstat_Xspec</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        
+        <span class="n">S</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;S&#39;</span><span class="p">]</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;B&#39;</span><span class="p">]</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;m&#39;</span><span class="p">]</span>
+        
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ts&#39;</span><span class="p">]</span>
+        <span class="n">tb</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tb&#39;</span><span class="p">]</span>
+        
+        <span class="n">FLOOR</span> <span class="o">=</span> <span class="mf">1.0e-5</span>
+        <span class="n">stat</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">)):</span>
+            <span class="n">si</span> <span class="o">=</span> <span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">bi</span> <span class="o">=</span> <span class="n">B</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">mi</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">tt</span> <span class="o">=</span> <span class="n">ts</span> <span class="o">+</span> <span class="n">tb</span>
+            <span class="n">mi</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">mi</span><span class="p">,</span> <span class="n">FLOOR</span> <span class="o">/</span> <span class="n">ts</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">si</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="n">stat</span> <span class="o">+=</span> <span class="n">ts</span> <span class="o">*</span> <span class="n">mi</span> <span class="o">-</span> <span class="n">bi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">tb</span> <span class="o">/</span> <span class="n">tt</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">bi</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">mi</span> <span class="o">&lt;=</span> <span class="n">si</span> <span class="o">/</span> <span class="n">tt</span><span class="p">:</span>
+                        <span class="n">stat</span> <span class="o">+=</span> <span class="o">-</span><span class="n">tb</span> <span class="o">*</span> <span class="n">mi</span> <span class="o">-</span> <span class="n">si</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ts</span> <span class="o">/</span> <span class="n">tt</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">stat</span> <span class="o">+=</span> <span class="n">ts</span> <span class="o">*</span> <span class="n">mi</span> <span class="o">+</span> <span class="n">si</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">si</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ts</span> <span class="o">*</span> <span class="n">mi</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># now the main case where both data and background !=0</span>
+                    <span class="c1"># Solve quadratic equation for f. Use the positive root to ensure</span>
+                    <span class="c1"># that f &gt; 0.</span>
+                    <span class="n">a</span> <span class="o">=</span> <span class="n">tt</span>
+                    <span class="n">b</span> <span class="o">=</span> <span class="n">tt</span> <span class="o">*</span> <span class="n">mi</span> <span class="o">-</span> <span class="n">si</span> <span class="o">-</span> <span class="n">bi</span>
+                    <span class="n">c</span> <span class="o">=</span> <span class="o">-</span><span class="n">bi</span> <span class="o">*</span> <span class="n">mi</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">b</span> <span class="o">-</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">c</span><span class="p">)</span>
+                    <span class="c1"># Avoid round-off error problems if b^2 &gt;&gt; 4ac (see eg Num.Recipes)</span>
+                    <span class="k">if</span> <span class="n">b</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">fi</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">c</span> <span class="o">/</span> <span class="p">(</span><span class="n">b</span> <span class="o">+</span> <span class="n">d</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">fi</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">d</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">a</span><span class="p">)</span>
+                    <span class="c1"># note that at this point f must be &gt; 0 so the log</span>
+                    <span class="c1"># functions below will be valid.</span>
+                    <span class="n">stat</span> <span class="o">+=</span> <span class="n">ts</span> <span class="o">*</span> <span class="n">mi</span> <span class="o">+</span> <span class="n">tt</span> <span class="o">*</span> <span class="n">fi</span> <span class="o">-</span> <span class="n">si</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ts</span> <span class="o">*</span> <span class="n">mi</span> <span class="o">+</span> <span class="n">ts</span> <span class="o">*</span> <span class="n">fi</span><span class="p">)</span> <span class="o">-</span> <span class="n">bi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">tb</span> <span class="o">*</span> <span class="n">fi</span><span class="p">)</span> \
+                            <span class="o">-</span> <span class="n">si</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">si</span><span class="p">))</span> <span class="o">-</span> <span class="n">bi</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">bi</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">stat</span></div>
+
+
+
+<div class="viewcode-block" id="Statistic.PGstat_Xspec">
+<a class="viewcode-back" href="../../../bayspec.infer.html#bayspec.infer.statistic.Statistic.PGstat_Xspec">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">PGstat_Xspec</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        
+        <span class="n">S</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;S&#39;</span><span class="p">]</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;B&#39;</span><span class="p">]</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;m&#39;</span><span class="p">]</span>
+        
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ts&#39;</span><span class="p">]</span>
+        <span class="n">tb</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tb&#39;</span><span class="p">]</span>
+        
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;sigma_B&#39;</span><span class="p">]</span>
+
+        <span class="n">FLOOR</span> <span class="o">=</span> <span class="mf">1.0e-5</span>
+        <span class="n">stat</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">S</span><span class="p">)):</span>
+            <span class="n">si</span> <span class="o">=</span> <span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">bi</span> <span class="o">=</span> <span class="n">B</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">mi</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">sigmai</span> <span class="o">=</span> <span class="n">sigma</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">tr</span> <span class="o">=</span> <span class="n">ts</span> <span class="o">/</span> <span class="n">tb</span>
+
+            <span class="c1"># special case for sigmai = 0</span>
+            <span class="k">if</span> <span class="n">sigmai</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="n">mbi</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">mi</span> <span class="o">+</span> <span class="n">bi</span> <span class="o">/</span> <span class="n">tb</span><span class="p">,</span> <span class="n">FLOOR</span> <span class="o">/</span> <span class="n">ts</span><span class="p">)</span>
+                <span class="n">stat</span> <span class="o">+=</span> <span class="n">ts</span> <span class="o">*</span> <span class="n">mbi</span>
+                <span class="k">if</span> <span class="n">si</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                    <span class="n">stat</span> <span class="o">+=</span> <span class="n">si</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">si</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ts</span> <span class="o">*</span> <span class="n">mbi</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">si</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                    <span class="n">stat</span> <span class="o">+=</span> <span class="n">ts</span> <span class="o">*</span> <span class="n">mi</span> <span class="o">+</span> <span class="n">bi</span> <span class="o">*</span> <span class="n">tr</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">sigmai</span> <span class="o">*</span> <span class="n">tr</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Solve quadratic equation for fi, using Numerical Recipes technique</span>
+                    <span class="c1"># to avoid round-off error that can easily cause problems here</span>
+                    <span class="c1"># when b^2 &gt;&gt; ac.</span>
+                    <span class="n">a</span> <span class="o">=</span> <span class="n">tb</span> <span class="o">**</span> <span class="mi">2</span>
+                    <span class="n">b</span> <span class="o">=</span> <span class="n">ts</span> <span class="o">*</span> <span class="n">sigmai</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">tb</span> <span class="o">*</span> <span class="n">bi</span> <span class="o">+</span> <span class="n">tb</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">mi</span>
+                    <span class="n">c</span> <span class="o">=</span> <span class="n">ts</span> <span class="o">*</span> <span class="n">sigmai</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">mi</span> <span class="o">-</span> <span class="n">si</span> <span class="o">*</span> <span class="n">sigmai</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">tb</span> <span class="o">*</span> <span class="n">bi</span> <span class="o">*</span> <span class="n">mi</span>
+                    <span class="k">if</span> <span class="n">b</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+                        <span class="n">sign</span> <span class="o">=</span> <span class="mf">1.0</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">sign</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
+                    <span class="n">q</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">b</span> <span class="o">+</span> <span class="n">sign</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">c</span><span class="p">))</span>
+                    <span class="n">fi</span> <span class="o">=</span> <span class="n">q</span> <span class="o">/</span> <span class="n">a</span>
+                    <span class="k">if</span> <span class="n">fi</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                        <span class="n">fi</span> <span class="o">=</span> <span class="n">c</span> <span class="o">/</span> <span class="n">q</span>
+                    <span class="c1"># note that at this point fi must be &gt; 0 so the log</span>
+                    <span class="c1"># functions below will be valid.</span>
+                    <span class="n">stat</span> <span class="o">+=</span> <span class="n">ts</span> <span class="o">*</span> <span class="p">(</span><span class="n">mi</span> <span class="o">+</span> <span class="n">fi</span><span class="p">)</span> <span class="o">-</span> <span class="n">si</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ts</span> <span class="o">*</span> <span class="n">mi</span> <span class="o">+</span> <span class="n">ts</span> <span class="o">*</span> <span class="n">fi</span><span class="p">)</span> <span class="o">+</span> \
+                            <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">bi</span> <span class="o">-</span> <span class="n">tb</span> <span class="o">*</span> <span class="n">fi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">bi</span> <span class="o">-</span> <span class="n">tb</span> <span class="o">*</span> <span class="n">fi</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigmai</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">si</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">si</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">stat</span></div>
+
+
+
+<div class="viewcode-block" id="Statistic.PPstat_UL">
+<a class="viewcode-back" href="../../../bayspec.infer.html#bayspec.infer.statistic.Statistic.PPstat_UL">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">PPstat_UL</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        
+        <span class="n">B</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;B&#39;</span><span class="p">]</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;m&#39;</span><span class="p">]</span>
+        
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ts&#39;</span><span class="p">]</span>
+        <span class="n">tb</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tb&#39;</span><span class="p">]</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">ts</span> <span class="o">/</span> <span class="n">tb</span>
+        
+        <span class="n">bkg_cts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+        <span class="n">mo_cts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m</span> <span class="o">*</span> <span class="n">ts</span><span class="p">)</span>
+        
+        <span class="n">ul_sigma</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">ppsig</span><span class="p">(</span><span class="n">mo_cts</span> <span class="o">+</span> <span class="n">bkg_cts</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">bkg_cts</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">-</span> <span class="n">ul_sigma</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span></div>
+
+    
+    
+<div class="viewcode-block" id="Statistic.PGstat_UL">
+<a class="viewcode-back" href="../../../bayspec.infer.html#bayspec.infer.statistic.Statistic.PGstat_UL">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">PGstat_UL</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        
+        <span class="n">B</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;B&#39;</span><span class="p">]</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;m&#39;</span><span class="p">]</span>
+        
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;ts&#39;</span><span class="p">]</span>
+        <span class="n">tb</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tb&#39;</span><span class="p">]</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">ts</span> <span class="o">/</span> <span class="n">tb</span>
+        
+        <span class="n">sigma_B</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;sigma_B&#39;</span><span class="p">]</span>
+        
+        <span class="n">bkg_cts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
+        <span class="n">mo_cts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">m</span> <span class="o">*</span> <span class="n">ts</span><span class="p">)</span>
+        <span class="n">bkg_err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sigma_B</span> <span class="o">*</span> <span class="n">sigma_B</span><span class="p">))</span>
+        
+        <span class="n">ul_sigma</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">pgsig</span><span class="p">(</span><span class="n">mo_cts</span> <span class="o">+</span> <span class="n">bkg_cts</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">bkg_cts</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">bkg_err</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">-</span> <span class="n">ul_sigma</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jun Yang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

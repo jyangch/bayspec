@@ -1,0 +1,353 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bayspec.model.local.tinvolved &mdash; bayspec 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            bayspec
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"></div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">bayspec</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../local.html">bayspec.model.local</a></li>
+      <li class="breadcrumb-item active">bayspec.model.local.tinvolved</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for bayspec.model.local.tinvolved</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">toml</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">subprocess</span> <span class="k">as</span> <span class="nn">sp</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">from</span> <span class="nn">..model</span> <span class="kn">import</span> <span class="n">Tinvolved</span>
+<span class="kn">from</span> <span class="nn">...util.prior</span> <span class="kn">import</span> <span class="n">unif</span>
+<span class="kn">from</span> <span class="nn">...util.param</span> <span class="kn">import</span> <span class="n">Par</span><span class="p">,</span> <span class="n">Cfg</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">dirname</span><span class="p">,</span> <span class="n">abspath</span>
+<span class="kn">from</span> <span class="nn">astropy.cosmology</span> <span class="kn">import</span> <span class="n">Planck18</span>
+<span class="n">docs_path</span> <span class="o">=</span> <span class="n">dirname</span><span class="p">(</span><span class="n">dirname</span><span class="p">(</span><span class="n">dirname</span><span class="p">(</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))))</span> <span class="o">+</span> <span class="s1">&#39;/docs&#39;</span>
+
+
+
+<div class="viewcode-block" id="hlecpl">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.tinvolved.hlecpl">[docs]</a>
+<span class="k">class</span> <span class="nc">hlecpl</span><span class="p">(</span><span class="n">Tinvolved</span><span class="p">):</span>
+    <span class="c1"># 10.1088/0004-637X/690/1/L10</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;hlecpl&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;curvature effect model for cpl function&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_{p,c}$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A_</span><span class="si">{c}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$t_</span><span class="si">{0}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$t_</span><span class="si">{c}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="hlecpl.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.tinvolved.hlecpl.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEpc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_{p,c}$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logAc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A_</span><span class="si">{c}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$t_</span><span class="si">{0}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$t_</span><span class="si">{c}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">Epc</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEpc</span>
+        <span class="n">Ac</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logAc</span>
+
+        <span class="k">if</span> <span class="n">tc</span> <span class="o">&lt;=</span> <span class="n">t0</span> <span class="ow">or</span> <span class="n">tc</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">T</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="n">Ept</span> <span class="o">=</span> <span class="n">Epc</span> <span class="o">*</span> <span class="p">((</span><span class="n">T</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">tc</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">At</span> <span class="o">=</span> <span class="n">Ac</span> <span class="o">*</span> <span class="p">((</span><span class="n">T</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">tc</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">At</span> <span class="o">*</span> <span class="p">(</span><span class="n">E</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span> <span class="o">**</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">E</span> <span class="o">/</span> <span class="n">Ept</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+</div>
+
+
+
+
+<div class="viewcode-block" id="hleband">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.tinvolved.hleband">[docs]</a>
+<span class="k">class</span> <span class="nc">hleband</span><span class="p">(</span><span class="n">Tinvolved</span><span class="p">):</span>
+    <span class="c1"># 10.1088/0004-637X/690/1/L10</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;hleband&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;curvature effect model for band function&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\beta$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_{p,c}$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A_</span><span class="si">{c}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$t_</span><span class="si">{0}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="o">-</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$t_</span><span class="si">{c}</span><span class="s1">$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="hleband.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.tinvolved.hleband.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\alpha$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\beta$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logEpc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$E_{p,c}$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logAc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;log$A_</span><span class="si">{c}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$t_</span><span class="si">{0}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">tc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$t_</span><span class="si">{c}</span><span class="s1">$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">Epc</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logEpc</span>
+        <span class="n">Ac</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logAc</span>
+
+        <span class="k">if</span> <span class="n">tc</span> <span class="o">&lt;=</span> <span class="n">t0</span> <span class="ow">or</span> <span class="n">tc</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">T</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="n">Ept</span> <span class="o">=</span> <span class="n">Epc</span> <span class="o">*</span> <span class="p">((</span><span class="n">T</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">tc</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">At</span> <span class="o">=</span> <span class="n">Ac</span> <span class="o">*</span> <span class="p">((</span><span class="n">T</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">tc</span> <span class="o">-</span> <span class="n">t0</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">Ebt</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">-</span> <span class="n">beta</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">Ept</span>
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+        <span class="n">i1</span> <span class="o">=</span> <span class="n">E</span> <span class="o">&lt;</span> <span class="n">Ebt</span><span class="p">;</span> <span class="n">i2</span> <span class="o">=</span> <span class="n">E</span> <span class="o">&gt;=</span> <span class="n">Ebt</span>
+        <span class="n">phtspec</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">=</span> <span class="n">At</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">E</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span> <span class="o">**</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="mi">2</span> <span class="o">+</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">E</span><span class="p">[</span><span class="n">i1</span><span class="p">]</span> <span class="o">/</span> <span class="n">Ept</span><span class="p">[</span><span class="n">i1</span><span class="p">])</span>
+        <span class="n">phtspec</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="n">At</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">Ebt</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">-</span> <span class="n">beta</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">E</span><span class="p">[</span><span class="n">i2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span> <span class="o">**</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">beta</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+</div>
+
+
+
+
+<div class="viewcode-block" id="katu">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.tinvolved.katu">[docs]</a>
+<span class="k">class</span> <span class="nc">katu</span><span class="p">(</span><span class="n">Tinvolved</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">expr</span> <span class="o">=</span> <span class="s1">&#39;katu&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comment</span> <span class="o">=</span> <span class="s1">&#39;katu model&#39;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">mo_prefix</span> <span class="o">=</span> <span class="n">docs_path</span> <span class="o">+</span> <span class="s1">&#39;/Katu&#39;</span>
+
+        <span class="c1">############ path of katu ############</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mo_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mo_prefix</span> <span class="o">+</span> <span class="s1">&#39;/katu.sh&#39;</span>
+        <span class="c1">############ path of katu ############</span>
+
+        <span class="c1">############ path of katu configuration ############</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mo_cfg_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mo_prefix</span> <span class="o">+</span> <span class="s1">&#39;/config.toml&#39;</span>
+        <span class="c1">############ path of katu configuration ############</span>
+        
+        <span class="c1"># load the default configuration file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mo_cfg_dir</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_obj</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mo_cfg</span> <span class="o">=</span> <span class="n">toml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f_obj</span><span class="p">)</span>
+
+        <span class="c1">############ model parameters ############</span>
+        <span class="c1"># model parameters and their ranges</span>
+        <span class="c1"># the first one is log$B_0$, its range is [0, 2]</span>
+        <span class="c1"># ......</span>
+        <span class="c1"># the last one is log$E_0$, its range is [40, 60]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;log$B_0$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">alpha$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;$p$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;log$R_0$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">17</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;log$E_0$&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Par</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="n">unif</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">60</span><span class="p">))</span>
+        <span class="c1">############ model parameters ############</span>
+
+
+<div class="viewcode-block" id="katu.func">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.tinvolved.katu.func">[docs]</a>
+    <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">E</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1">########################</span>
+        <span class="c1"># This function is used to calculate the fv for </span>
+        <span class="c1"># given model parameters (see __init__), observed time (T) and energy list (E).</span>
+        <span class="c1"># katu can be a black box, which can take in energy, parameters, and time, </span>
+        <span class="c1"># and output the corresponding spectrum.</span>
+        <span class="c1">########################</span>
+
+        <span class="c1">############ inputs ############</span>
+        <span class="c1"># E: energy (or frequency) array in unit of keV, for example, [1, 10, 100, 1000]</span>
+        <span class="c1"># T: the observation time array in unit of second, for example, [2, 5]</span>
+        <span class="c1">############ inputs ############</span>
+
+        <span class="c1"># take out parameters from theta</span>
+        <span class="n">logB0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;log$B_0$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;$</span><span class="se">\\</span><span class="s1">alpha$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;$p$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logR0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;log$R_0$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">logE0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;log$E_0$&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">B_0</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logB0</span>
+        <span class="n">R_0</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logR0</span>
+        <span class="n">E_0</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">logE0</span>
+
+        <span class="n">redshift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;redshift&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="n">zi</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">redshift</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span> <span class="o">*</span> <span class="n">zi</span>
+
+        <span class="c1"># update configuration file based on parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_cfg</span><span class="p">(</span><span class="s1">&#39;Prompt.B_0&#39;</span><span class="p">,</span> <span class="n">B_0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_cfg</span><span class="p">(</span><span class="s1">&#39;Prompt.alpha&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_cfg</span><span class="p">(</span><span class="s1">&#39;Zone.p&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_cfg</span><span class="p">(</span><span class="s1">&#39;Prompt.R_0&#39;</span><span class="p">,</span> <span class="n">R_0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_cfg</span><span class="p">(</span><span class="s1">&#39;Jet.E_0&#39;</span><span class="p">,</span> <span class="n">E_0</span><span class="p">)</span>
+
+        <span class="c1"># save the updated configuration file</span>
+        <span class="n">mo_cfg_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mo_prefix</span> <span class="o">+</span> <span class="s1">&#39;/config_</span><span class="si">%d</span><span class="s1">.toml&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1e10</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">mo_cfg_dir</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_obj</span><span class="p">:</span>
+            <span class="n">toml</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mo_cfg</span><span class="p">,</span> <span class="n">f_obj</span><span class="p">)</span>
+
+        <span class="c1"># frenquency and time list</span>
+        <span class="n">E_str</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">Ei</span><span class="p">)</span> <span class="k">for</span> <span class="n">Ei</span> <span class="ow">in</span> <span class="n">E</span><span class="p">])</span>
+        <span class="n">T_str</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">Ti</span><span class="p">)</span> <span class="k">for</span> <span class="n">Ti</span> <span class="ow">in</span> <span class="n">T</span><span class="p">])</span>
+
+        <span class="c1">############ command that runs in terminal ############</span>
+        <span class="c1"># katu running command: path_of_katu path_of_toml --t_obs t_list --nu_obs nu_list</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mo_dir</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">mo_cfg_dir</span> <span class="o">+</span> <span class="s1">&#39; --t_obs &#39;</span> <span class="o">+</span> <span class="n">T_str</span> <span class="o">+</span> <span class="s1">&#39; --nu_obs &#39;</span> <span class="o">+</span> <span class="n">E_str</span>
+        <span class="c1">############ command that runs in terminal ############</span>
+
+        <span class="c1">############ run command in terminal ############</span>
+        <span class="n">process</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">universal_newlines</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1">############ run command in terminal ############</span>
+
+        <span class="c1">############ get outputs from terminal ############</span>
+        <span class="c1"># output should be 2D fv (erg/s/cm^2/keV) or NE (photons/s/cm^2/keV) grid </span>
+        <span class="c1"># at given t_list and nu_list</span>
+        <span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+        <span class="c1">############ get outputs from terminal ############</span>
+
+        <span class="k">if</span> <span class="n">out</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;+++++ Error Message +++++&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;out: &#39;</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;err: &#39;</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;cmd: &#39;</span><span class="p">,</span> <span class="n">cmd</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;+++++ +++++++++++++ +++++&#39;</span><span class="p">)</span>
+            
+        <span class="n">phtspec</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">phtspec</span></div>
+
+
+
+<div class="viewcode-block" id="katu.set_cfg">
+<a class="viewcode-back" href="../../../../bayspec.model.local.html#bayspec.model.local.tinvolved.katu.set_cfg">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_cfg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="c1"># this function is used to update configuration</span>
+        <span class="c1"># 1) based on the free parameters generated by sampler</span>
+        <span class="c1"># 2) bsed on the settings provided by user, like:</span>
+        <span class="c1"># General.t_obs_end, default 100</span>
+        <span class="c1"># General.IC_switch, default True</span>
+        <span class="c1"># General.IC_KN, default True</span>
+        <span class="c1"># Jet.jet_type, default Top_hat</span>
+        <span class="c1"># Prompt.Enable_prompt, default True</span>
+        <span class="c1"># Flux.z, default 1</span>
+        <span class="n">key_list</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+        <span class="n">n_key</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">key_list</span><span class="p">)</span>
+
+        <span class="n">cfg_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mo_cfg</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">key_i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">key_list</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="n">key_i</span> <span class="ow">in</span> <span class="n">cfg_</span><span class="p">,</span> <span class="s1">&#39;no key (</span><span class="si">%s</span><span class="s1">) in cfg&#39;</span> <span class="o">%</span> <span class="n">key_i</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n_key</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">cfg_</span> <span class="o">=</span> <span class="n">cfg_</span><span class="p">[</span><span class="n">key_i</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cfg_</span><span class="p">[</span><span class="n">key_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jun Yang.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
