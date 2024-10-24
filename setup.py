@@ -32,6 +32,8 @@ setup(
         "streamlit>=1.36.0",
         "st-pages>=0.4.5",
         "streamlit_code_editor>=0.1.20",
+        "sphinx>=8.1.3",
+        "sphinx-rtd-theme>=3.0.1"
     ],
     packages=find_packages(),
     include_package_data=True,
