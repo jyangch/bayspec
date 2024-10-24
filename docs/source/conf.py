@@ -9,7 +9,7 @@
 project = 'bayspec'
 copyright = '2024, Jun Yang'
 author = 'Jun Yang'
-release = '0.1.0'
+release = '0.1.3'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

@@ -8,5 +8,6 @@ sphinx:
 python:
   version: 3.10
   install:
-    - method: setuptools
+    - method: pip
       path: .
+    - requirements: docs/requirements.txt
