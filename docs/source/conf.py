@@ -9,15 +9,15 @@
 project = 'bayspec'
 copyright = '2024, Jun Yang'
 author = 'Jun Yang'
-release = '0.1.2'
+release = '0.1.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'sphinx.ext.autodoc',       # 自动生成 API 文档
-    'sphinx.ext.napoleon',      # 支持 Google 和 NumPy 风格的 docstring
-    'sphinx.ext.viewcode',      # 允许在文档中显示源代码
+    'sphinx.ext.autodoc',
+    'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
 ]
 
 templates_path = ['_templates']

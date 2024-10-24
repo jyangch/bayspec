@@ -1,5 +1,5 @@
 .. bayspec documentation master file, created by
-   sphinx-quickstart on Thu Oct 24 13:56:48 2024.
+   sphinx-quickstart on Thu Oct 24 15:25:26 2024.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
