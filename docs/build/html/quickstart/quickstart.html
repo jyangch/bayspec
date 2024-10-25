@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>A Quick Start Tutorial &#8212; bayspec 0.1.3 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <script src="../_static/documentation_options.js?v=360bc84d"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API Documentation" href="../modules.html" />
+    <link rel="prev" title="Quickstart Guide" href="../quickstart.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="a-quick-start-tutorial">
+<h1>A Quick Start Tutorial<a class="headerlink" href="#a-quick-start-tutorial" title="Link to this heading">¶</a></h1>
+<p>This tutorial offers a quick-start guide for using <em>BaySpec</em> to fit a
+spectral model to gamma-ray data. It can be broadly divided into the
+following three sections:</p>
+<ul class="simple">
+<li><p>Data: The spectra from Fermi/GBM’s NaI detector and BGO detector.</p></li>
+<li><p>Model: A simple cutoff power-law function.</p></li>
+<li><p>Fitting: Bayesian inference implemented using <em>multinest</em>.</p></li>
+</ul>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">bayspec.model.local</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">bayspec</span> <span class="kn">import</span> <span class="n">DataUnit</span><span class="p">,</span> <span class="n">Data</span><span class="p">,</span> <span class="n">Infer</span><span class="p">,</span> <span class="n">Plot</span>
+</pre></div>
+</div>
+<ol class="arabic simple">
+<li><p>Load spectra and response data.</p></li>
+</ol>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nai</span> <span class="o">=</span> <span class="n">DataUnit</span><span class="p">(</span>
+    <span class="n">src</span><span class="o">=</span><span class="s1">&#39;./ME/me.src&#39;</span><span class="p">,</span>
+    <span class="n">bkg</span><span class="o">=</span><span class="s1">&#39;./ME/me.bkg&#39;</span><span class="p">,</span>
+    <span class="n">rsp</span><span class="o">=</span><span class="s1">&#39;./ME/me.rsp&#39;</span><span class="p">,</span>
+    <span class="n">notc</span><span class="o">=</span><span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">900</span><span class="p">],</span>
+    <span class="n">stat</span><span class="o">=</span><span class="s1">&#39;pgstat&#39;</span><span class="p">,</span>
+    <span class="n">grpg</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;min_sigma&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;max_bin&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">})</span>
+
+<span class="n">bgo</span> <span class="o">=</span> <span class="n">DataUnit</span><span class="p">(</span>
+    <span class="n">src</span><span class="o">=</span><span class="s1">&#39;./HE/he.src&#39;</span><span class="p">,</span>
+    <span class="n">bkg</span><span class="o">=</span><span class="s1">&#39;./HE/he.bkg&#39;</span><span class="p">,</span>
+    <span class="n">rsp</span><span class="o">=</span><span class="s1">&#39;./HE/he.rsp&#39;</span><span class="p">,</span>
+    <span class="n">notc</span><span class="o">=</span><span class="p">[</span><span class="mi">300</span><span class="p">,</span> <span class="mi">38000</span><span class="p">],</span>
+    <span class="n">stat</span><span class="o">=</span><span class="s1">&#39;pgstat&#39;</span><span class="p">,</span>
+    <span class="n">grpg</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;min_sigma&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;max_bin&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">})</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">Data</span><span class="p">([(</span><span class="s1">&#39;nai&#39;</span><span class="p">,</span> <span class="n">nai</span><span class="p">),</span>
+             <span class="p">(</span><span class="s1">&#39;bgo&#39;</span><span class="p">,</span> <span class="n">bgo</span><span class="p">)])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>╒════════╤════════════════╤═════════════╤═════════════════════════════════╤════════╕
+│  Name  │    Noticing    │  Statistic  │            Grouping             │  Time  │
+╞════════╪════════════════╪═════════════╪═════════════════════════════════╪════════╡
+│  nai   │   [[8, 900]]   │   pgstat    │ {&#39;min_sigma&#39;: 3, &#39;max_bin&#39;: 10} │  None  │
+├────────┼────────────────┼─────────────┼─────────────────────────────────┼────────┤
+│  bgo   │ [[300, 38000]] │   pgstat    │ {&#39;min_sigma&#39;: 3, &#39;max_bin&#39;: 10} │  None  │
+╘════════╧════════════════╧═════════════╧═════════════════════════════════╧════════╛
+</pre></div>
+</div>
+<p>2.Define spectral model.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">cpl</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+<pre class="literal-block">cpl [add]
+cutoff power law model
+╒════════╤═════════════╤═════════════╤═════════╕
+│  cfg#  │  Component  │  Parameter  │  Value  │
+╞════════╪═════════════╪═════════════╪═════════╡
+│   1    │     cpl     │  redshift   │    0    │
+╘════════╧═════════════╧═════════════╧═════════╛
+╒════════╤═════════════╤═════════════╤═════════╤═════════════╤══════════╕
+│  par#  │  Component  │  Parameter  │  Value  │    Prior    │  Frozen  │
+╞════════╪═════════════╪═════════════╪═════════╪═════════════╪══════════╡
+│   1    │     cpl     │  $alpha$   │   -1    │ unif(-8, 4) │  False   │
+├────────┼─────────────┼─────────────┼─────────┼─────────────┼──────────┤
+│   2    │     cpl     │ log$E_{c}$  │    2    │ unif(0, 4)  │  False   │
+├────────┼─────────────┼─────────────┼─────────┼─────────────┼──────────┤
+│   3    │     cpl     │   log$A$    │   -1    │ unif(-6, 5) │  False   │
+╘════════╧═════════════╧═════════════╧═════════╧═════════════╧══════════╛</pre>
+<p>3.Run bayesian inference.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">infer</span> <span class="o">=</span> <span class="n">Infer</span><span class="p">([(</span><span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">)])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">infer</span><span class="p">)</span>
+</pre></div>
+</div>
+<pre class="literal-block">╒════════╤══════════════╤═════════════╤═════════════╤═════════╕
+│  cfg#  │  Expression  │  Component  │  Parameter  │  Value  │
+╞════════╪══════════════╪═════════════╪═════════════╪═════════╡
+│   1    │     cpl      │     cpl     │  redshift   │    0    │
+╘════════╧══════════════╧═════════════╧═════════════╧═════════╛
+╒════════╤══════════════╤═════════════╤═════════════╤═════════╤═════════════╕
+│  par#  │  Expression  │  Component  │  Parameter  │  Value  │    Prior    │
+╞════════╪══════════════╪═════════════╪═════════════╪═════════╪═════════════╡
+│   1*   │     cpl      │     cpl     │  $alpha$   │   -1    │ unif(-8, 4) │
+├────────┼──────────────┼─────────────┼─────────────┼─────────┼─────────────┤
+│   2*   │     cpl      │     cpl     │ log$E_{c}$  │    2    │ unif(0, 4)  │
+├────────┼──────────────┼─────────────┼─────────────┼─────────┼─────────────┤
+│   3*   │     cpl      │     cpl     │   log$A$    │   -1    │ unif(-6, 5) │
+╘════════╧══════════════╧═════════════╧═════════════╧═════════╧═════════════╛</pre>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">post</span> <span class="o">=</span> <span class="n">infer</span><span class="o">.</span><span class="n">multinest</span><span class="p">(</span><span class="n">nlive</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">resume</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">savepath</span><span class="o">=</span><span class="s1">&#39;./multinest&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">post</span><span class="p">)</span>
+</pre></div>
+</div>
+<pre class="literal-block"> <strong>*************************************************</strong>
+ MultiNest v3.10
+ Copyright Farhan Feroz &amp; Mike Hobson
+ Release Jul 2015
+
+ no. of live points =  300
+ dimensionality =    3
+ resuming from previous job
+ <strong>*************************************************</strong>
+ Starting MultiNest
+Acceptance Rate:                        0.562397
+Replacements:                               6165
+Total Samples:                             10962
+Nested Sampling ln(Z):               -229.153983
+Importance Nested Sampling ln(Z):    -229.261712 +/-  0.022377
+  analysing data from ./multinest/1-.txt
+ ln(ev)=  -228.86015520780347      +/-  0.23816955101640733
+ Total Likelihood Evaluations:        10962
+ Sampling finished. Exiting MultiNest
+╒════════╤══════════════╤═════════════╤═════════════╤════════╤══════════╤════════╤══════════════════╕
+│  par#  │  Expression  │  Component  │  Parameter  │  Mean  │  Median  │  Best  │    1sigma CI     │
+╞════════╪══════════════╪═════════════╪═════════════╪════════╪══════════╪════════╪══════════════════╡
+│   1    │     cpl      │     cpl     │  $alpha$   │ -1.563 │  -1.562  │ -1.562 │ [-1.573, -1.552] │
+├────────┼──────────────┼─────────────┼─────────────┼────────┼──────────┼────────┼──────────────────┤
+│   2    │     cpl      │     cpl     │ log$E_{c}$  │ 2.691  │   2.69   │  2.69  │  [2.673, 2.709]  │
+├────────┼──────────────┼─────────────┼─────────────┼────────┼──────────┼────────┼──────────────────┤
+│   3    │     cpl      │     cpl     │   log$A$    │ -0.771 │  -0.771  │ -0.771 │ [-0.778, -0.765] │
+╘════════╧══════════════╧═════════════╧═════════════╧════════╧══════════╧════════╧══════════════════╛
+╒════════╤═════════╤═════════════╤════════════╤════════╕
+│  Data  │  Model  │  Statistic  │   Value    │  Bins  │
+╞════════╪═════════╪═════════════╪════════════╪════════╡
+│  nai   │   cpl   │   pgstat    │   388.43   │  106   │
+├────────┼─────────┼─────────────┼────────────┼────────┤
+│  bgo   │   cpl   │   pgstat    │   32.18    │   26   │
+├────────┼─────────┼─────────────┼────────────┼────────┤
+│ Total  │  Total  │  stat/dof   │ 420.61/129 │  132   │
+╘════════╧═════════╧═════════════╧════════════╧════════╛
+╒════════╤════════╤════════╤═════════╕
+│  AIC   │  AICc  │  BIC   │   lnZ   │
+╞════════╪════════╪════════╪═════════╡
+│ 426.61 │ 426.8  │ 435.26 │ -229.26 │
+╘════════╧════════╧════════╧═════════╛</pre>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">Plot</span><span class="o">.</span><span class="n">infer_ctsspec</span><span class="p">(</span><span class="n">post</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s1">&#39;CE&#39;</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+:file: ./ctsspec.html<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">Plot</span><span class="o">.</span><span class="n">post_corner</span><span class="p">(</span><span class="n">post</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+:file: ./corner.html<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">earr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mf">0.5</span><span class="p">),</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+
+<span class="n">modelplot</span> <span class="o">=</span> <span class="n">Plot</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">ploter</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s1">&#39;vFv&#39;</span><span class="p">,</span> <span class="n">CI</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">modelplot</span><span class="o">.</span><span class="n">add_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">E</span><span class="o">=</span><span class="n">earr</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+:file: ./model.html</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">bayspec</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../quickstart.html">Quickstart Guide</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">A Quick Start Tutorial</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">API Documentation</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../quickstart.html">Quickstart Guide</a><ul>
+      <li>Previous: <a href="../quickstart.html" title="previous chapter">Quickstart Guide</a></li>
+      <li>Next: <a href="../modules.html" title="next chapter">API Documentation</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Jun Yang.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/quickstart/quickstart.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
