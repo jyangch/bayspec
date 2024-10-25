@@ -170,7 +170,7 @@ following three sections:
 
 .. raw:: html
 
-    :file: ./ctsspec.html
+    <iframe src="ctsspec.html" width="100%" height="600px" frameborder="0"></iframe>
 
 
 
@@ -182,7 +182,7 @@ following three sections:
 
 .. raw:: html
 
-    :file: ./corner.html
+    <iframe src="corner.html" width="100%" height="600px" frameborder="0"></iframe>
 
 
 
@@ -197,5 +197,5 @@ following three sections:
 
 .. raw:: html
 
-    :file: ./model.html
+    <iframe src="model.html" width="100%" height="600px" frameborder="0"></iframe>
     

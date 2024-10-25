@@ -18,8 +18,10 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
-    'nbsphinx',
     'sphinx.ext.mathjax',
+    'sphinx.ext.autosummary',
+    'sphinxcontrib.rawfiles',
+    'nbsphinx',
     'myst_nb',
 ]
 
