@@ -609,7 +609,7 @@ class Infer(object):
         return lp + self._loglike(theta)
     
     
-    def emcee(self, nstep=1000, resume=True, savepath='./'):
+    def emcee(self, nstep=1000, discard=100, resume=True, savepath='./'):
 
         import emcee
         from .posterior import Posterior
@@ -617,6 +617,7 @@ class Infer(object):
         self._you_free()
         
         self.nstep = nstep
+        self.discard = discard
         self.resume = resume
         self.prefix = savepath + '/1-'
         
@@ -632,24 +633,29 @@ class Infer(object):
             sampler = emcee.EnsembleSampler(nwalkers, ndim, self.emcee_logprob)
             sampler.run_mcmc(pos, self.nstep, progress=True)
             
-            self.samples = sampler.get_chain()
-            np.savez(self.prefix, samples=self.samples)
+            self.params_samples = sampler.get_chain()
+            np.savez(self.prefix, samples=self.params_samples)
+            
+            self.logprob_sample = sampler.get_log_prob()
+            np.savetxt(self.prefix + 'logprob.dat', self.logprob_sample)
             
             try:
-                self.tau = sampler.get_autocorr_time()
-                json.dump(self.tau, open(self.prefix + 'tau.json', 'w'), indent=4, cls=JsonEncoder)
+                self.autocorr_time = sampler.get_autocorr_time()
+                json.dump(self.autocorr_time, open(self.prefix + 'autocorr_time.json', 'w'), indent=4, cls=JsonEncoder)
             except:
                 pass
-                
-            log_prob = sampler.get_log_prob(flat=True, discard=100)
-            flat_samples = sampler.get_chain(flat=True, discard=100)
-            self.posterior_sample = np.hstack((flat_samples, np.reshape(log_prob, (-1, 1))))
-            np.savetxt(self.prefix + 'post_equal_weights.dat', self.posterior_sample)
 
-        self.samples = np.load(self.prefix + '.npz')['samples']
-        self.posterior_sample = np.loadtxt(self.prefix + 'post_equal_weights.dat')
+        self.params_samples = np.load(self.prefix + '.npz')['samples']
+        self.logprob_sample = np.loadtxt(self.prefix + 'logprob.dat')
         
+        flat_params_sample = self.params_samples[self.discard:, :, :].reshape(-1, ndim)
+        flat_logprob_sample = self.logprob_sample[self.discard:, :].reshape(-1)
+        
+        self.posterior_sample = np.hstack((flat_params_sample, np.reshape(flat_logprob_sample, (-1, 1))))
+        
+        np.savetxt(self.prefix + 'post_equal_weights.dat', self.posterior_sample)
         json.dump(self.nstep, open(self.prefix + 'nstep.json', 'w'), indent=4, cls=JsonEncoder)
+        json.dump(self.discard, open(self.prefix + 'discard.json', 'w'), indent=4, cls=JsonEncoder)
         
         return Posterior(self)
     

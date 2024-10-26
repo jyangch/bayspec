@@ -687,8 +687,8 @@ class Plot(object):
         fig, axes = plt.subplots(cls.free_nparams, figsize=(10, 2 * cls.free_nparams), sharex='all')
         for i in range(cls.free_nparams):
             ax = axes[i]
-            ax.plot(cls.samples[:, :, i], "k", alpha=0.3)
-            ax.set_xlim(0, len(cls.samples))
+            ax.plot(cls.params_samples[:, :, i], "k", alpha=0.3)
+            ax.set_xlim(0, len(cls.params_samples))
             ax.set_ylabel(cls.free_plabels[i])
             ax.yaxis.set_label_coords(-0.1, 0.5)
         axes[-1].set_xlabel("step number")
