@@ -9,7 +9,7 @@ with open("bayspec/__version__.py", "r") as f:
 setup(
     name="bayspec",
     version=_version_['__version__'],
-    description="Astronomical spectrum fitting tool"
+    description="Astronomical spectrum fitting tool",
     long_description="A Bayesian inference-based spectral fitting tool for multi-dimensional and multi-wavelength astrophysical data",
     author="Jun Yang",
     author_email="jyang@smail.nju.edu.cn",
