@@ -609,7 +609,7 @@ class Infer(object):
         return lp + self._loglike(theta)
     
     
-    def emcee(self, nstep=1000, discard=100, resume=True, savepath='./'):
+    def emcee(self, nstep=1000, resume=True, savepath='./'):
 
         import emcee
         from .posterior import Posterior
@@ -635,14 +635,19 @@ class Infer(object):
             self.samples = sampler.get_chain()
             np.savez(self.prefix, samples=self.samples)
             
-            log_prob = sampler.get_log_prob(flat=True)
-            flat_samples = sampler.get_chain(flat=True)
+            try:
+                self.tau = sampler.get_autocorr_time()
+                json.dump(self.tau, open(self.prefix + 'tau.json', 'w'), indent=4, cls=JsonEncoder)
+            except:
+                pass
+                
+            log_prob = sampler.get_log_prob(flat=True, discard=100)
+            flat_samples = sampler.get_chain(flat=True, discard=100)
             self.posterior_sample = np.hstack((flat_samples, np.reshape(log_prob, (-1, 1))))
             np.savetxt(self.prefix + 'post_equal_weights.dat', self.posterior_sample)
 
         self.samples = np.load(self.prefix + '.npz')['samples']
         self.posterior_sample = np.loadtxt(self.prefix + 'post_equal_weights.dat')
-        self.posterior_sample = self.posterior_sample[discard:, :]
         
         json.dump(self.nstep, open(self.prefix + 'nstep.json', 'w'), indent=4, cls=JsonEncoder)
         

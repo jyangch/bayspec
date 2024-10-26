@@ -31,6 +31,11 @@ To utilize models from [`Xspec`](https://heasarc.gsfc.nasa.gov/xanadu/xspec/manu
 **NOTE**: _BaySpec_ currently only supports `Additive` and `Multiplicative` models in `Xspec`.
 
 
+## Documentation
+
+If you wish to learn about the usage, you may check the `examples` or read the [`documentation`](https://bayspec.readthedocs.io)
+
+
 ## License
 
 _BaySpec_ is distributed under the terms of the [`GPL-3.0`](https://www.gnu.org/licenses/gpl-3.0-standalone.html) license.
