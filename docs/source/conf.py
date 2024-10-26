@@ -6,10 +6,16 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../..'))
+from bayspec import __version__
+
+
 project = 'bayspec'
 copyright = '2024, Jun Yang'
 author = 'Jun Yang'
-release = '0.1.3'
+release = __version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -38,3 +44,5 @@ exclude_patterns = []
 
 html_theme = 'alabaster'
 html_static_path = ['_static']
+html_extra_path = ['_static']
+html_css_files = ['custom.css']

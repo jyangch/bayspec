@@ -16,7 +16,7 @@ Contents
    :maxdepth: 4
 
    installation.rst
-   quickstart.rst
+   tutorials.rst
    modules.rst
 
 
