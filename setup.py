@@ -1,10 +1,14 @@
 from setuptools import setup, find_packages
-from bayspec import __version__
+
+
+_version_ = {}
+with open("bayspec/__version__.py", "r") as f:
+    exec(f.read(), _version_)
 
 
 setup(
     name="bayspec",
-    version=__version__,
+    version=_version_['__version__'],
     description="A Bayesian inference-based spectral fitting tool for multi-dimensional and multi-wavelength astrophysical data.",
     author="Jun Yang",
     author_email="jyang@smail.nju.edu.cn",
