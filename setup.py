@@ -9,7 +9,8 @@ with open("bayspec/__version__.py", "r") as f:
 setup(
     name="bayspec",
     version=_version_['__version__'],
-    description="A Bayesian inference-based spectral fitting tool for multi-dimensional and multi-wavelength astrophysical data.",
+    description="Astronomical spectrum fitting tool"
+    long_description="A Bayesian inference-based spectral fitting tool for multi-dimensional and multi-wavelength astrophysical data",
     author="Jun Yang",
     author_email="jyang@smail.nju.edu.cn",
     url="https://github.com/jyangch/bayspec",
@@ -19,7 +20,7 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS",
-        "Programming Language :: Python :: 3.8",
+        "Topic :: Scientific/Engineering :: Astronomy",
     ],
     python_requires=">=3.8",
     install_requires=[
@@ -38,6 +39,9 @@ setup(
         "st-pages>=0.4.5",
         "streamlit_code_editor>=0.1.20"
     ],
-    packages=find_packages(),
+    packages=find_packages(exclude=["examples*", "docs*"]),
     include_package_data=True,
+    project_urls={
+        "Source Code": "https://github.com/jyangch/bayspec",
+        "Documentation": "https://bayspec.readthedocs.io"}
 )
