@@ -170,7 +170,7 @@ following three sections:
 
 .. raw:: html
 
-    <iframe src="_static/qs_ctsspec.html" width="100%" height="600px" frameborder="0"></iframe>
+    <iframe src="_static/qs_ctsspec.html"></iframe>
 
 
 
@@ -182,7 +182,7 @@ following three sections:
 
 .. raw:: html
 
-    <iframe src="_static/qs_corner.html" width="100%" height="600px" frameborder="0"></iframe>
+    <iframe src="_static/qs_corner.html"></iframe>
 
 
 
@@ -197,5 +197,5 @@ following three sections:
 
 .. raw:: html
 
-    <iframe src="_static/qs_model.html" width="100%" height="600px" frameborder="0"></iframe>
+    <iframe src="_static/qs_model.html"></iframe>
     
