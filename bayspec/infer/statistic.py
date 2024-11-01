@@ -69,7 +69,7 @@ class Statistic(object):
         
         sigma = np.sqrt(sigma_S ** 2 + sigma_B ** 2)
         
-        return -2 * Statistic.gaussian_logpdf(S - B, m * ts, sigma)
+        return -2 * Statistic.gaussian_logpdf(S - B, m * ts, sigma).sum()
     
     
     @staticmethod
@@ -79,7 +79,7 @@ class Statistic(object):
         m = kwargs['m']
         ts = kwargs['ts']
         
-        return -2 * Statistic.poisson_logpmf(S, m * ts)
+        return -2 * Statistic.poisson_logpmf(S, m * ts).sum()
 
 
     @staticmethod
