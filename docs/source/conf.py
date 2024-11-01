@@ -7,15 +7,15 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 
-_version_ = {}
-with open("../../bayspec/__version__.py", "r") as f:
-    exec(f.read(), _version_)
+_info_ = {}
+with open("../../bayspec/__info__.py", "r") as f:
+    exec(f.read(), _info_)
 
 
 project = 'bayspec'
 copyright = '2024, Jun Yang'
 author = 'Jun Yang'
-release = _version_['__version__']
+release = _info_['__version__']
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
