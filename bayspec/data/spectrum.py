@@ -180,17 +180,25 @@ class Source(Spectrum):
         try:
             SrcCounts = specData['COUNTS'].astype(float)
             try:
-                SrcErr = specData['STAT_ERR'].astype(float)
+                Src_StatErr = specData['STAT_ERR'].astype(float)
             except KeyError:
-                warnings.warn(f'{src_file} -> src error is not specified and will default to Poisson error')
-                SrcErr = np.sqrt(SrcCounts)
+                Src_StatErr = np.sqrt(SrcCounts)
+            try:
+                Src_SysErr = specData['SYS_ERR'].astype(float)
+            except KeyError:
+                Src_SysErr = 0
+            SrcErr = np.sqrt(Src_StatErr ** 2 + (SrcCounts * Src_SysErr) ** 2)
         except KeyError:
             SrcCounts = specData['RATE'].astype(float) * SrcExpo
             try:
-                SrcErr = specData['STAT_ERR'].astype(float) * SrcExpo
+                Src_StatErr = specData['STAT_ERR'].astype(float) * SrcExpo
             except KeyError:
-                warnings.warn(f'{src_file} -> src error is not specified and will default to Poisson error')
-                SrcErr = np.sqrt(SrcCounts)
+                Src_StatErr = np.sqrt(SrcCounts)
+            try:
+                Src_SysErr = specData['SYS_ERR'].astype(float)
+            except KeyError:
+                Src_SysErr = 0
+            SrcErr = np.sqrt(Src_StatErr ** 2 + (SrcCounts * Src_SysErr) ** 2)
 
         try:
             SrcQual = specData['QUALITY'].astype(int)
@@ -240,17 +248,25 @@ class Source(Spectrum):
         try:
             SrcCounts = specData['COUNTS'][ii].astype(float)
             try:
-                SrcErr = specData['STAT_ERR'][ii].astype(float)
+                Src_StatErr = specData['STAT_ERR'][ii].astype(float)
             except KeyError:
-                warnings.warn(f'{src_file}:{ii} -> src error is not specified and will default to Poisson error')
-                SrcErr = np.sqrt(SrcCounts)
+                Src_StatErr = np.sqrt(SrcCounts)
+            try:
+                Src_SysErr = specData['SYS_ERR'][ii].astype(float)
+            except KeyError:
+                Src_SysErr = 0
+            SrcErr = np.sqrt(Src_StatErr ** 2 + (SrcCounts * Src_SysErr) ** 2)
         except KeyError:
             SrcCounts = specData['RATE'][ii].astype(float) * SrcExpo
             try:
-                SrcErr = specData['STAT_ERR'][ii].astype(float) * SrcExpo
+                Src_StatErr = specData['STAT_ERR'][ii].astype(float) * SrcExpo
             except KeyError:
-                warnings.warn(f'{src_file}:{ii} -> src error is not specified and will default to Poisson error')
-                SrcErr = np.sqrt(SrcCounts)
+                Src_StatErr = np.sqrt(SrcCounts)
+            try:
+                Src_SysErr = specData['SYS_ERR'][ii].astype(float)
+            except KeyError:
+                Src_SysErr = 0
+            SrcErr = np.sqrt(Src_StatErr ** 2 + (SrcCounts * Src_SysErr) ** 2)
 
         try:
             SrcQual = specData['QUALITY'][ii].astype(int)
@@ -309,17 +325,25 @@ class Background(Spectrum):
         try:
             BkgCounts = specData['COUNTS'].astype(float)
             try:
-                BkgErr = specData['STAT_ERR'].astype(float)
+                Bkg_StatErr = specData['STAT_ERR'].astype(float)
             except KeyError:
-                warnings.warn(f'{bkg_file} -> bkg error is not specified and will default to Poisson error')
-                BkgErr = np.sqrt(BkgCounts)
+                Bkg_StatErr = np.sqrt(BkgCounts)
+            try:
+                Bkg_SysErr = specData['SYS_ERR'].astype(float)
+            except KeyError:
+                Bkg_SysErr = 0
+            BkgErr = np.sqrt(Bkg_StatErr ** 2 + (BkgCounts * Bkg_SysErr) ** 2)
         except KeyError:
             BkgCounts = specData['RATE'].astype(float) * BkgExpo
             try:
-                BkgErr = specData['STAT_ERR'].astype(float) * BkgExpo
+                Bkg_StatErr = specData['STAT_ERR'].astype(float) * BkgExpo
             except KeyError:
-                warnings.warn(f'{bkg_file} -> bkg error is not specified and will default to Poisson error')
-                BkgErr = np.sqrt(BkgCounts)
+                Bkg_StatErr = np.sqrt(BkgCounts)
+            try:
+                Bkg_SysErr = specData['SYS_ERR'].astype(float)
+            except KeyError:
+                Bkg_SysErr = 0
+            BkgErr = np.sqrt(Bkg_StatErr ** 2 + (BkgCounts * Bkg_SysErr) ** 2)
 
         try:
             BkgBackSc = specData['BACKSCAL'].astype(float)
@@ -359,17 +383,25 @@ class Background(Spectrum):
         try:
             BkgCounts = specData['COUNTS'][ii].astype(float)
             try:
-                BkgErr = specData['STAT_ERR'][ii].astype(float)
+                Bkg_StatErr = specData['STAT_ERR'][ii].astype(float)
             except KeyError:
-                warnings.warn(f'{bkg_file}:{ii} -> bkg error is not specified and will default to Poisson error')
-                BkgErr = np.sqrt(BkgCounts)
+                Bkg_StatErr = np.sqrt(BkgCounts)
+            try:
+                Bkg_SysErr = specData['SYS_ERR'][ii].astype(float)
+            except KeyError:
+                Bkg_SysErr = 0
+            BkgErr = np.sqrt(Bkg_StatErr ** 2 + (BkgCounts * Bkg_SysErr) ** 2)
         except KeyError:
             BkgCounts = specData['RATE'][ii].astype(float) * BkgExpo
             try:
-                BkgErr = specData['STAT_ERR'][ii].astype(float) * BkgExpo
+                Bkg_StatErr = specData['STAT_ERR'][ii].astype(float) * BkgExpo
             except KeyError:
-                warnings.warn(f'{bkg_file}:{ii} -> bkg error is not specified and will default to Poisson error')
-                BkgErr = np.sqrt(BkgCounts)
+                Bkg_StatErr = np.sqrt(BkgCounts)
+            try:
+                Bkg_SysErr = specData['SYS_ERR'][ii].astype(float)
+            except KeyError:
+                Bkg_SysErr = 0
+            BkgErr = np.sqrt(Bkg_StatErr ** 2 + (BkgCounts * Bkg_SysErr) ** 2)
 
         try:
             BkgBackSc = specData['BACKSCAL'][ii].astype(float)
