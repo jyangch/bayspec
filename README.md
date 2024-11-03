@@ -1,4 +1,4 @@
-# Welcome To *BAYSPEC* 👋
+# *Welcome* *To* *BAYSPEC* 👋
 
 ### A Bayesian Inference-based Spectral Fitting Tool for High-energy Astrophysical Data.
 
