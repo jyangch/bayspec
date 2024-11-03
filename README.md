@@ -38,7 +38,7 @@ To utilize models from [`Xspec`](https://heasarc.gsfc.nasa.gov/xanadu/xspec/manu
 If you wish to learn about the usage, you may check the [`examples`](https://github.com/jyangch/bayspec/tree/main/examples) or read the [`documentation`](https://bayspec.readthedocs.io).
 
 
-## Streamlit App
+## BaySpec App
 
 [_BaySpec App_](https://github.com/jyangch/bayspec_app) provides an easy-to-use web application implemented using [`streamlit`](https://streamlit.io/).
 
