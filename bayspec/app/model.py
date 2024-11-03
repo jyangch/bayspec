@@ -131,13 +131,23 @@ for mi, model_key in enumerate(st.session_state.model.keys()):
                         library_dict = local_models
                         library_keys = list(local_models.keys())
                     elif library == 'astro':
-                        from bayspec.model.astro import *
-                        library_dict = astro_models
-                        library_keys = list(astro_models.keys())
+                        try:
+                            from bayspec.model.astro import *
+                        except:
+                            library_keys = []
+                            st.warning('To utilize models from Astromodels, ensure Astromodels is installed!', icon="⚠️")
+                        else:
+                            library_dict = astro_models
+                            library_keys = list(astro_models.keys())
                     elif library == 'xspec':
-                        from bayspec.model.xspec import *
-                        library_dict = xspec_models
-                        library_keys = list(xspec_models.keys())
+                        try:
+                            from bayspec.model.xspec import *
+                        except:
+                            library_keys = []
+                            st.warning('To utilize models from Xspec, ensure HEASoft and Xspec are installed!', icon="⚠️")
+                        else:
+                            library_dict = xspec_models
+                            library_keys = list(xspec_models.keys())
                     elif library == 'user': library_keys = []
                     else: pass
                     
