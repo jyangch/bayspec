@@ -18,6 +18,6 @@ st.markdown(readme)
 
 st.markdown(
     """
-    ## ⭐ Star the project on Github <iframe src="https://ghbtns.com/github-btn.html?user=jyangch&repo=bayspec&type=star&count=true" width="150" height="20" title="GitHub"></iframe> 
+    ### ⭐ Star the project on Github <iframe src="https://ghbtns.com/github-btn.html?user=jyangch&repo=bayspec&type=star&count=true" width="150" height="20" title="GitHub"></iframe> 
     """, 
     unsafe_allow_html=True)
