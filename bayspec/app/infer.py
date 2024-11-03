@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from io import StringIO
+from pathlib import Path
 from bayspec.util.plot import Plot
 from threading import current_thread
 from contextlib import contextmanager
@@ -79,6 +80,12 @@ def get_idx(key, options):
         return None
     else:
         return options.index(value)
+
+def get_download_folder():
+    if os.name == "nt":  # Windows
+        return Path(os.getenv("USERPROFILE")) / "Downloads"
+    else:  # macOS and Linux
+        return Path.home() / "Downloads"
 
 st.session_state.infer = None
 st.session_state.infer_state['infer_pair_flag'] = False
@@ -229,6 +236,14 @@ with st.expander('***Bayesian inference***', expanded=False):
             if resume == 'No': resume = False
 
             if sampler == 'multinest':
+                try:
+                    import pymultinest
+                except:
+                    sampler_exist = False
+                    st.warning('To utilize Multinest for Bayesian inference, ensure Multinest is installed!', icon="⚠️")
+                else:
+                    sampler_exist = True
+                
                 key = 'infer_multinest_nlive'; ini = 300; set_ini(key, ini)
                 multinest_nlive = st.slider('Select the number of live point', 
                                             50, 1000, 
@@ -237,6 +252,14 @@ with st.expander('***Bayesian inference***', expanded=False):
                                             key=key)
 
             if sampler == 'emcee':
+                try:
+                    import emcee
+                except:
+                    sampler_exist = False
+                    st.warning('To utilize Emcee for Bayesian inference, ensure Emcee is installed!', icon="⚠️")
+                else:
+                    sampler_exist = True
+                
                 key = 'infer_emcee_nstep'; ini = 2000; set_ini(key, ini)
                 emcee_nstep = st.slider('Select the number of steps', 
                                         0, 10000, 
@@ -252,15 +275,14 @@ with st.expander('***Bayesian inference***', expanded=False):
                                           key=key)
                 
         key = 'infer_savepath'; ini = None; set_ini(key, ini)
-        savepath = st.text_input('Input folder name of results', 
+        savepath = st.text_input('Input the path to save the results', 
                                  value=get_val(key), 
-                                 placeholder='bsp', 
+                                 placeholder='/Users/jyang/Downloads/bsp', 
                                  key=key)
         if savepath == '' or savepath is None: 
-            savepath = 'bsp_%d' % (np.random.uniform() * 1e10)
-        savepath = os.path.dirname(os.path.dirname(
-            os.path.dirname(os.path.abspath(__file__)))) \
-                + '/results/' + savepath
+            dirpath = get_download_folder()
+            folder = 'bsp_%d' % (np.random.uniform() * 1e10)
+            savepath = f'{dirpath}/{folder}'
         if os.path.exists(savepath):
             st.info('Note: the folder of results has already existed!')
 
@@ -273,18 +295,20 @@ with st.expander('***Bayesian inference***', expanded=False):
         if run:
             if not st.session_state.infer_state['infer_pair_flag']:
                 st.warning('No infer pair!', icon="⚠️")
+            elif not sampler_exist:
+                st.warning('Sampler does not exist!', icon="⚠️")
             else:
                 with st.sidebar.status('Running...', expanded=True) as status:
                     st.write('Start: %s' % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
                     with st_stdout("info"):
                         if sampler == 'multinest':
                             post = infer.multinest(nlive=multinest_nlive, 
-                                                    resume=resume, 
-                                                    savepath=savepath)
+                                                   resume=resume, 
+                                                   savepath=savepath)
                         if sampler == 'emcee':
                             post = infer.emcee(nstep=emcee_nstep, 
-                                                resume=resume, 
-                                                savepath=savepath)
+                                               resume=resume, 
+                                               savepath=savepath)
                     st.write('Stop: %s' % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
                     st.session_state.infer_state['run_state'] = True
                     status.update(label="Run complete!", state="complete", expanded=False)
