@@ -215,6 +215,28 @@ for mi, model_key in enumerate(st.session_state.model.keys()):
                             expr = component_key
                             component = None
                         else:
+                            if library == 'xspec':
+                                
+                                options = ['angr', 'aspl', 'feld', 'aneb', 'grsa', 'wilm', 'lodd', 'lpgp']
+                                key = f'{model_key}_{component_key}_abund'; ini = None; set_ini(key, ini)
+                                abundance = st.selectbox('Choose xspec abundance', 
+                                                         options, 
+                                                         index=get_idx(key, options), 
+                                                         key=key)
+                                if abundance is None: abundance = 'wilm'
+                                if abundance is not None:
+                                    abund(abundance)
+                                
+                                options = ['bcmc', 'obcm', 'vern']
+                                key = f'{model_key}_{component_key}_xsect'; ini = None; set_ini(key, ini)
+                                section = st.selectbox('Choose xspec cross-section', 
+                                                       options, 
+                                                       index=get_idx(key, options), 
+                                                       key=key)
+                                if section is None: section = 'vern'
+                                if section is not None:
+                                    xsect(section)
+                                    
                             component = library_dict[name]()
 
                             key = f'{model_key}_{component_key}_expr'; ini = component.expr; set_ini(key, ini)

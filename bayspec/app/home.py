@@ -1,4 +1,5 @@
 import streamlit as st
+from bayspec import __readme__
 
 
 css='''
@@ -8,20 +9,13 @@ css='''
 '''
 st.markdown(css, unsafe_allow_html=True)
 
-st.write("# Welcome to :rainbow[*BAYSPEC*] 👋")
+with open(__readme__) as file:
+    readme = file.read()
+
+st.markdown(readme)
 
 st.markdown(
     """
-    BaySpec is a Bayesian inference-based spectral fitting tool for multi-dimensional (time and energy) 
-    and multi-wavelength (X-ray and gamma-ray) astrophysical data.
-    ### Features:
-    - Bayesian inference-based: implemented by MCMC (e.g., emcee) or nested sampling (e.g., multinest)
-    - Multi-dimensional: enabling the fit of time-evolving spectra with time-involved physical models
-    - Multi-wavelength: supporting for the joint fitting to multi-wavelength astronomical spectra
-    - Others: simultaneous fitting of multi-spectra and multi-models, freely combining available models and add new model
-    ### Available models:
-    - ***local*** models
-    - ***astromodels*** models
-    - ***Xspec*** models
-    """
-    )
+    ## ⭐ Star the project on Github <iframe src="https://ghbtns.com/github-btn.html?user=jyangch&repo=bayspec&type=star&count=true" width="150" height="20" title="GitHub"></iframe> 
+    """, 
+    unsafe_allow_html=True)

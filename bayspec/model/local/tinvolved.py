@@ -104,6 +104,7 @@ class hleband(Tinvolved):
 
 
 
+"""
 class katu(Tinvolved):
 
     def __init__(self):
@@ -231,3 +232,4 @@ class katu(Tinvolved):
                 cfg_ = cfg_[key_i]
             else:
                 cfg_[key_i] = value
+"""
