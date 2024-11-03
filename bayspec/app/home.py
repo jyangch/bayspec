@@ -11,6 +11,8 @@ st.markdown(css, unsafe_allow_html=True)
 
 with open(__readme__) as file:
     readme = file.read()
+    
+readme.replace('*BAYSPEC*', ':rainbow[*BAYSPEC*]')
 
 st.markdown(readme)
 
