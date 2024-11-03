@@ -1,4 +1,4 @@
-# Welcome to :rainbow[*BAYSPEC*] 👋
+# Welcome to *BAYSPEC* 👋
 
 ## A Bayesian Inference-based Spectral Fitting Tool for High-energy Astrophysical Data.
 
