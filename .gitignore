@@ -49,3 +49,7 @@ Icon?
 *.egg-info/
 build/
 dist/
+
+# private models
+bayspec/docs/Katu
+bayspec/docs/ZXHSYNC

@@ -103,8 +103,113 @@ class hleband(Tinvolved):
         return phtspec
 
 
+    
+class zxhsync(Tinvolved):
 
-"""
+    def __init__(self):
+        super().__init__()
+        
+        self.expr = 'zxhsync'
+        self.comment = "zxh's synchrotron model"
+        
+        self.mo_prefix = docs_path + '/ZXHSYNC'
+        
+        self.mo_dir = self.mo_prefix + '/spec_lc_ele_z_dL_gm_gmax_injpl_v2.o'
+
+        self.params = OrderedDict()
+        self.params['log$B_0$'] = Par(1, unif(0, 2))
+        self.params['$\\alpha_B$'] = Par(2, unif(0, 3))
+        self.params['log$\\gamma_{min}$'] = Par(5, unif(3, 7))
+        self.params['log$\\gamma_{max}$'] = Par(7, unif(5, 9))
+        self.params['log$\\Gamma$'] = Par(2, unif(1, 3))
+        self.params['$p$'] = Par(2, unif(1.5, 3.5))
+        self.params['$t_{inj}$'] = Par(10, unif(-0.5, 26.00))
+        self.params['$q$'] = Par(5, unif(0, 10))
+        self.params['log$R_0$'] = Par(15, unif(12, 17))
+        self.params['log$Q_0$'] = Par(40, unif(30, 50))
+        
+        self.config = OrderedDict()
+        self.config['redshift'] = Cfg(1.0)
+        self.config['max_time'] = Cfg(26.0)
+        self.config['zero_offset'] = Cfg(0.5)
+        self.config['spec_prec'] = Cfg(2)
+        self.config['temp_prec'] = Cfg(25)
+
+
+    def func(self, E, T, O=None):
+        logB0 = self.params['log$B_0$'].value
+        alphaB = self.params['$\\alpha_B$'].value
+        loggamma_min = self.params['log$\\gamma_{min}$'].value
+        loggamma_max = self.params['log$\\gamma_{max}$'].value
+        logGamma = self.params['log$\\Gamma$'].value
+        p = self.params['$p$'].value
+        tinj = self.params['$t_{inj}$'].value
+        q = self.params['$q$'].value
+        logR0 = self.params['log$R_0$'].value
+        logQ0 = self.params['log$Q_0$'].value   # in unit of s^-1
+
+        B0 = 10 ** logB0
+        gamma_min = 10 ** loggamma_min
+        gamma_max = 10 ** loggamma_max
+        Gamma = 10 ** logGamma
+        R0 = 10 ** logR0
+        Q0 = 10 ** logQ0
+
+        B0_str = str(B0)
+        alphaB_str = str(alphaB)
+        gamma_min_str = str(gamma_min)
+        gamma_max_str = str(gamma_max)
+        Gamma_str = str(Gamma)
+        p_str = str(p)
+        
+        zero_dt_str = '%.4f'%self.config['zero_offset'].value
+        tinj_str = str(tinj)
+        q_str = str(q)
+        max_time_str = '%.4f'%self.config['max_time'].value
+        R0_str = str(R0)
+        Q0_str = str(Q0)
+        z_str = '%.4f'%self.config['redshift'].value
+        dL_str = '%.4e'%self.luminosity_distance
+        spec_prec_str = '%.2f'%self.config['spec_prec'].value
+        temp_prec_str = '%.2f' % self.config['temp_prec'].value
+
+        phtspec = np.zeros_like(E)
+        
+        for Ti in set(T):
+            idx = np.where(T == Ti)[0]
+            t_obs_str = str(Ti)
+            E_str = ' '.join([str(Ei) for Ei in E[idx]])
+            n_str = str(len(E[idx]))
+            it_str = '0'
+            ielec_str = '0'
+
+            cmd = self.mo_dir + ' ' + self.mo_prefix + ' ' + B0_str + ' ' + alphaB_str + ' ' + gamma_min_str \
+                + ' ' + gamma_max_str + ' ' + Gamma_str + ' ' + p_str + ' ' + t_obs_str + ' ' + zero_dt_str \
+                + ' ' + tinj_str + ' ' + q_str + ' ' + max_time_str + ' ' + R0_str + ' ' + Q0_str + ' ' + z_str \
+                + ' ' + dL_str + ' ' + n_str + ' ' + it_str + ' ' + ielec_str + ' ' + spec_prec_str \
+                + ' ' + temp_prec_str + ' ' + E_str
+
+            process = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+            (out, err) = process.communicate()
+            Fd_str = out.split()
+            if out == '' or len(Fd_str) != len(E):
+                print('+++++ Error Message +++++')
+                print('out: ', out)
+                print('err: ', err)
+                print('cmd: ', cmd)
+                print('+++++ +++++++++++++ +++++')
+            Fd = np.array([float(Fdi) for Fdi in Fd_str])   # in unit of mJy
+            Fv = Fd / (E * 1.6022e-9) / (6.62607e-34 * 6.2415e15) / 1.e26   # in unit of photons/s/cm^2/keV
+            phtspec[idx] = Fv
+        return phtspec
+    
+    
+    @property
+    def luminosity_distance(self):
+        return Planck18.luminosity_distance(self.config['redshift'].value).to(u.cm).value
+
+
+
 class katu(Tinvolved):
 
     def __init__(self):
@@ -115,113 +220,81 @@ class katu(Tinvolved):
         
         self.mo_prefix = docs_path + '/Katu'
 
-        ############ path of katu ############
-        self.mo_dir = self.mo_prefix + '/katu.sh'
-        ############ path of katu ############
-
-        ############ path of katu configuration ############
-        self.mo_cfg_dir = self.mo_prefix + '/config.toml'
-        ############ path of katu configuration ############
+        self.mo_dir = self.mo_prefix + '/GRB_MZ'
+        self.mo_cfg_dir = self.mo_prefix + '/prompt.toml'
         
         # load the default configuration file
         with open(self.mo_cfg_dir, 'r') as f_obj:
             self.mo_cfg = toml.load(f_obj)
-
-        ############ model parameters ############
-        # model parameters and their ranges
-        # the first one is log$B_0$, its range is [0, 2]
-        # ......
-        # the last one is log$E_0$, its range is [40, 60]
+            
         self.params = OrderedDict()
         self.params['log$B_0$'] = Par(1, unif(0, 2))
-        self.params['$\\alpha$'] = Par(1, unif(0, 3))
-        self.params['$p$'] = Par(2, unif(1.5, 3.5))
+        self.params['$\\alpha_B$'] = Par(1, unif(0, 3))
+        self.params['log$\\gamma_{min}$'] = Par(5, unif(3, 7))
+        self.params['log$\\Gamma$'] = Par(2, unif(1, 3))
+        self.params['$p$'] = Par(3, unif(1.5, 3.5))
+        self.params['$t_{inj}$'] = Par(10, unif(0, 20))
+        self.params['$p_{inj}$'] = Par(5, unif(0, 10))
         self.params['log$R_0$'] = Par(15, unif(12, 17))
-        self.params['log$E_0$'] = Par(50, unif(40, 60))
-        ############ model parameters ############
+        self.params['log$Q_0$'] = Par(40, unif(30, 50))
+        
+        self.config = OrderedDict()
+        self.config['redshift'] = Cfg(1.0)
+        self.config['t_obs_start'] = Cfg(0)
+        self.config['t_obs_end'] = Cfg(20)
 
 
     def func(self, E, T, O=None):
-        ########################
-        # This function is used to calculate the fv for 
-        # given model parameters (see __init__), observed time (T) and energy list (E).
-        # katu can be a black box, which can take in energy, parameters, and time, 
-        # and output the corresponding spectrum.
-        ########################
-
-        ############ inputs ############
-        # E: energy (or frequency) array in unit of keV, for example, [1, 10, 100, 1000]
-        # T: the observation time array in unit of second, for example, [2, 5]
-        ############ inputs ############
-
-        # take out parameters from theta
         logB0 = self.params['log$B_0$'].value
-        alpha = self.params['$\\alpha$'].value
+        alphaB = self.params['$\\alpha_B$'].value
+        loggamma_min = self.params['log$\\gamma_{min}$'].value
+        logGamma = self.params['log$\\Gamma$'].value
         p = self.params['$p$'].value
+        tinj = self.params['$t_{inj}$'].value
+        pinj = self.params['$p_{inj}$'].value
         logR0 = self.params['log$R_0$'].value
-        logE0 = self.params['log$E_0$'].value
+        logQ0 = self.params['log$Q_0$'].value
 
-        B_0 = 10 ** logB0
-        R_0 = 10 ** logR0
-        E_0 = 10 ** logE0
-
-        redshift = self.config['redshift'].value
-
-        zi = 1 + redshift
-        E = E * zi
-
-        # update configuration file based on parameters
-        self.set_cfg('Prompt.B_0', B_0)
-        self.set_cfg('Prompt.alpha', alpha)
+        self.set_cfg('Prompt.B_0', logB0)
+        self.set_cfg('Prompt.alpha', alphaB)
+        self.set_cfg('Prompt.prompt_gmin', loggamma_min)
+        self.set_cfg('Prompt.Gamma_init', logGamma)
         self.set_cfg('Zone.p', p)
-        self.set_cfg('Prompt.R_0', R_0)
-        self.set_cfg('Jet.E_0', E_0)
+        self.set_cfg('Prompt.t_inj', tinj)
+        self.set_cfg('Prompt.prompt_p', pinj)
+        self.set_cfg('Prompt.R_0', logR0)
+        self.set_cfg('Prompt.Q_0', logQ0)
+        
+        redshift = self.config['redshift'].value
+        t_obs_start = self.config['t_obs_start'].value
+        t_obs_end = self.config['t_obs_end'].value
+        
+        self.set_cfg('Flux.z', redshift)
+        self.set_cfg('General.t_obs_start', t_obs_start)
+        self.set_cfg('General.t_obs_end', t_obs_end)
 
         # save the updated configuration file
-        mo_cfg_dir = self.mo_prefix + '/config_%d.toml' % (np.random.uniform() * 1e10)
-        with open(mo_cfg_dir, 'w') as f_obj:
+        with open(self.mo_cfg_dir, 'w') as f_obj:
             toml.dump(self.mo_cfg, f_obj)
 
-        # frenquency and time list
         E_str = ' '.join([str(Ei) for Ei in E])
         T_str = ' '.join([str(Ti) for Ti in T])
 
-        ############ command that runs in terminal ############
-        # katu running command: path_of_katu path_of_toml --t_obs t_list --nu_obs nu_list
-        cmd = self.mo_dir + ' ' + mo_cfg_dir + ' --t_obs ' + T_str + ' --nu_obs ' + E_str
-        ############ command that runs in terminal ############
+        cmd = self.mo_dir + ' ' + self.mo_cfg_dir + ' --energy ' + E_str + ' --time ' + T_str
 
-        ############ run command in terminal ############
         process = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
-        ############ run command in terminal ############
-
-        ############ get outputs from terminal ############
-        # output should be 2D fv (erg/s/cm^2/keV) or NE (photons/s/cm^2/keV) grid 
-        # at given t_list and nu_list
         (out, err) = process.communicate()
-        ############ get outputs from terminal ############
-
         if out == '':
             print('+++++ Error Message +++++')
             print('out: ', out)
             print('err: ', err)
             print('cmd: ', cmd)
             print('+++++ +++++++++++++ +++++')
-            
         phtspec = out.split()
         return phtspec
 
 
     def set_cfg(self, key, value):
-        # this function is used to update configuration
-        # 1) based on the free parameters generated by sampler
-        # 2) bsed on the settings provided by user, like:
-        # General.t_obs_end, default 100
-        # General.IC_switch, default True
-        # General.IC_KN, default True
-        # Jet.jet_type, default Top_hat
-        # Prompt.Enable_prompt, default True
-        # Flux.z, default 1
         key_list = key.split('.')
         n_key = len(key_list)
 
@@ -232,4 +305,3 @@ class katu(Tinvolved):
                 cfg_ = cfg_[key_i]
             else:
                 cfg_[key_i] = value
-"""
