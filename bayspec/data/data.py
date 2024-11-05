@@ -210,6 +210,16 @@ class Data(object):
         return [unit.net_ctsspec_error for unit in self.data.values()]
     
     
+    def net_counts_upperlimit(self, cl=0.9):
+        
+        return [unit.net_counts_upperlimit(cl) for unit in self.data.values()]
+        
+        
+    def net_ctsrate_upperlimit(self, cl=0.9):
+        
+        return [unit.net_ctsrate_upperlimit(cl) for unit in self.data.values()]
+    
+    
     @property
     def pdicts(self):
         
@@ -898,7 +908,7 @@ class DataUnit(object):
         return np.sqrt(self.src_ctsspec_error ** 2 + self.bkg_ctsspec_error ** 2)
     
     
-    def src_counts_upperlimit(self, cl=0.9):
+    def net_counts_upperlimit(self, cl=0.9):
         
         N = np.sum(self.src_ins.counts)
         B = np.sum(self.bkg_ins.counts) * self.alpha
@@ -907,9 +917,9 @@ class DataUnit(object):
                                    + special.gammainc(N + 1, B)) - B
         
         
-    def src_ctsrate_upperlimit(self, cl=0.9):
+    def net_ctsrate_upperlimit(self, cl=0.9):
         
-        return self.src_counts_upperlimit(cl) / self.corr_src_efficiency
+        return self.net_counts_upperlimit(cl) / self.corr_src_efficiency
 
 
     @property

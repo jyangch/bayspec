@@ -330,13 +330,13 @@ class Infer(object):
     @property
     def model_ctsrate(self):
         
-        return [value for model in self.Model for value in model.ctsrate]
+        return [value for model in self.Model for value in model.conv_ctsrate]
     
     
     @property
     def model_ctsspec(self):
         
-        return [value for model in self.Model for value in model.ctsspec]
+        return [value for model in self.Model for value in model.conv_ctsspec]
     
     
     @property

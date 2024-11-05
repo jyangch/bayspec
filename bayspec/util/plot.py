@@ -565,7 +565,7 @@ class Plot(object):
             
             obs_y = cls.data.net_ctsrate
             obs_y_err = cls.data.net_ctsrate_error
-            mo_y = cls.model.ctsrate
+            mo_y = cls.model.conv_ctsrate
             res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
             
         elif style == 'CE':
@@ -573,7 +573,7 @@ class Plot(object):
             
             obs_y = cls.data.net_ctsspec
             obs_y_err = cls.data.net_ctsspec_error
-            mo_y = cls.model.ctsspec
+            mo_y = cls.model.conv_ctsspec
             res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
             
         else:
@@ -1072,7 +1072,7 @@ class ModelPlot(object):
                 upp = go.Scatter(x=x, 
                                  y=y_ci[1], 
                                  mode='lines', 
-                                 name=f'{model.expr} upper', 
+                                 name=f'{model.expr} CI', 
                                  fill='tonexty', 
                                  line_color='rgba(0,0,0,0)', 
                                  fillcolor=ModelPlot.get_rgb(ModelPlot.colors[self.model_index], 0.5), 
