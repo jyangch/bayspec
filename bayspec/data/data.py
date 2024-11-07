@@ -833,7 +833,7 @@ class DataUnit(object):
     @property
     def rsp_chbin_tarr(self):
         
-        return np.repeat(self._time, self.rsp_chbin_mean.shper[0])
+        return np.repeat(self._time, self.rsp_chbin_mean.shape[0])
     
     
     @property

@@ -69,12 +69,7 @@ class Response(object):
         else:
             nchan = [[nc] for nc in matData.field(4)]
             
-        # The fchan of some missions, like fermi/gbm, starts at 1, 
-        # but chanindex starts at 0, which is weird. 
-        # Here's an arbitrary operation.
-        min_fchan = min([fc for fcs in fchan for fc in fcs])
-        min_chan = min(ChanIndex)
-        chan_off = int(min_fchan - min_chan)
+        mchan = int(matHeader['TLMIN4'])
             
         matrix = matData.field(5)
         drm = np.zeros([numEnerBins, numDetChans])
@@ -82,11 +77,11 @@ class Response(object):
         for fc, nc, i in zip(fchan, nchan, range(numEnerBins)):
             idx = []
             for fc_i, nc_i in zip(fc, nc):
-                fc_i = int(fc_i - chan_off)
+                fc_i = int(fc_i)
                 nc_i = int(nc_i)
                 tc_i = fc_i + nc_i
                 
-                idx_i = np.where((ChanIndex >= fc_i) & (ChanIndex < tc_i))[0].tolist()
+                idx_i = np.arange(fc_i - mchan, tc_i - mchan).tolist()
                 idx = idx + idx_i
 
             drm[i, idx] = matrix[i][:]

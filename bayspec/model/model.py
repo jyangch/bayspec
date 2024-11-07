@@ -143,6 +143,8 @@ class Model(object):
         scale = np.linspace(0, 1, ngrid)
         egrid = (ebin[:, 0].reshape(-1, 1) + (ebin[:, 1] - ebin[:, 0]).reshape(-1, 1) * scale).flatten()
         
+        egrid = np.where(egrid == 0, 1e-10, egrid)
+        
         if self.type == 'add':
             fgrid = self.func(egrid)
             
