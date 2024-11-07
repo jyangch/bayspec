@@ -1,0 +1,32 @@
+[
+    {
+        "Name": "nai",
+        "Noticing": [
+            [
+                8,
+                900
+            ]
+        ],
+        "Statistic": "pgstat",
+        "Grouping": {
+            "min_sigma": 3,
+            "max_bin": 10
+        },
+        "Time": "None"
+    },
+    {
+        "Name": "bgo",
+        "Noticing": [
+            [
+                300,
+                38000
+            ]
+        ],
+        "Statistic": "pgstat",
+        "Grouping": {
+            "min_sigma": 3,
+            "max_bin": 10
+        },
+        "Time": "None"
+    }
+]

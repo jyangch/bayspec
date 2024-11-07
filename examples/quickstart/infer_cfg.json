@@ -1,0 +1,9 @@
+[
+    {
+        "cfg#": "1",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "redshift",
+        "Value": 0.0
+    }
+]

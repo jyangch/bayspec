@@ -28,6 +28,10 @@ class JsonEncoder(json.JSONEncoder):
             return super(JsonEncoder, self).default(obj)
         
         
+def json_dump(data, filepath):
+    with open(filepath, 'w') as f:
+        json.dump(data, f, indent=4, cls=JsonEncoder)
+        
 
 class SuperDict(OrderedDict):
     

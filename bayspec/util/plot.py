@@ -579,8 +579,9 @@ class Plot(object):
         else:
             raise ValueError(f'unsupported style argument: {style}')
         
-        # ymin = np.quantile(list(chain.from_iterable(obs_y)), 0.05).astype(float)
-        # ymax = 2 * np.max(list(chain.from_iterable(obs_y))).astype(float)
+        yall = np.array(list(chain.from_iterable(obs_y)))
+        ymin = np.min(yall[yall > 0]).astype(float)
+        ymax = 2 * np.max(yall[yall > 0]).astype(float)
             
         for i, expr in enumerate(cls.data.exprs):
                 
@@ -644,7 +645,7 @@ class Plot(object):
             ax1.set_xscale('log')
             ax1.set_yscale('log')
             ax1.set_ylabel(ylabel)
-            # ax1.set_ylim([ymin, ymax])
+            ax1.set_ylim([ymin, ymax])
             ax1.minorticks_on()
             ax1.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
             ax1.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
@@ -747,8 +748,9 @@ class Plot(object):
         else:
             raise ValueError(f'unsupported style argument: {style}')
         
-        # ymin = np.quantile(list(chain.from_iterable(obs_y)), 0.05).astype(float)
-        # ymax = 2 * np.max(list(chain.from_iterable(obs_y))).astype(float)
+        yall = np.array(list(chain.from_iterable(obs_y)))
+        ymin = np.min(yall[yall > 0]).astype(float)
+        ymax = 2 * np.max(yall[yall > 0]).astype(float)
             
         for i, expr in enumerate(cls.data_exprs):
                 
@@ -812,7 +814,7 @@ class Plot(object):
             ax1.set_xscale('log')
             ax1.set_yscale('log')
             ax1.set_ylabel(ylabel)
-            # ax1.set_ylim([ymin, ymax])
+            ax1.set_ylim([ymin, ymax])
             ax1.minorticks_on()
             ax1.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
             ax1.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')

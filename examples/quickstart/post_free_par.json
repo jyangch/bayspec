@@ -1,0 +1,32 @@
+[
+    {
+        "par#": "1",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "$\\alpha$",
+        "Mean": "-1.561",
+        "Median": "-1.561",
+        "Best": "-1.562",
+        "1sigma CI": "[-1.572, -1.551]"
+    },
+    {
+        "par#": "2",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "log$E_{c}$",
+        "Mean": "2.688",
+        "Median": "2.688",
+        "Best": "2.689",
+        "1sigma CI": "[2.670, 2.706]"
+    },
+    {
+        "par#": "3",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "log$A$",
+        "Mean": "-0.770",
+        "Median": "-0.770",
+        "Best": "-0.771",
+        "1sigma CI": "[-0.777, -0.764]"
+    }
+]

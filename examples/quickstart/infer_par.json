@@ -1,0 +1,26 @@
+[
+    {
+        "par#": "1*",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "$\\alpha$",
+        "Value": -1.0,
+        "Prior": "unif(-8, 4)"
+    },
+    {
+        "par#": "2*",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "log$E_{c}$",
+        "Value": 2.0,
+        "Prior": "unif(0, 4)"
+    },
+    {
+        "par#": "3*",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "log$A$",
+        "Value": -1.0,
+        "Prior": "unif(-6, 5)"
+    }
+]
