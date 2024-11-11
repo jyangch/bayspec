@@ -12,7 +12,4 @@ This video demonstrates an introductory guide to using the *BaySpec App*.
 
 .. raw:: html
 
-   <video width="600" height="400" controls autoplay loop>
-       <source src="_static/app.mov" type="video/quicktime">
-       <p>Your browser does not support HTML5 video.</p>
-   </video>
+   <iframe src="https://www.youtube.com/watch?v=aBRc_AB6464" allow="autoplay; encrypted-media" allowfullscreen></iframe>
