@@ -5,3 +5,4 @@ Tutorials
    :maxdepth: 4
 
    tutorials.quickstart.rst
+   turorials.videodemo.rst

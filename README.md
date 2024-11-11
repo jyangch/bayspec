@@ -33,16 +33,16 @@ To utilize models from [`Xspec`](https://heasarc.gsfc.nasa.gov/xanadu/xspec/manu
 **NOTE**: _BaySpec_ currently only supports `Additive` and `Multiplicative` models in `Xspec`.
 
 
-## Documentation
-
-If you wish to learn about the usage, you may check the [`examples`](https://github.com/jyangch/bayspec/tree/main/examples) or read the [`documentation`](https://bayspec.readthedocs.io).
-
-
 ## BaySpec App
 
 [_BaySpec App_](https://github.com/jyangch/bayspec_app) provides an easy-to-use web application implemented using [`streamlit`](https://streamlit.io/).
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://bayspec.streamlit.app)
+
+
+## Documentation
+
+If you wish to learn about the usage, you may check the [`examples`](https://github.com/jyangch/bayspec/tree/main/examples) or read the [`documentation`](https://bayspec.readthedocs.io).
 
 
 ## License
