@@ -12,4 +12,4 @@ This video demonstrates an introductory guide to using the *BaySpec App*.
 
 .. raw:: html
 
-   <iframe src="https://www.youtube.com/watch?v=aBRc_AB6464" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+   <iframe src="https://www.youtube.com/embed/aBRc_AB6464" allow="autoplay; encrypted-media" allowfullscreen></iframe>
