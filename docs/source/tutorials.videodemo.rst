@@ -1,5 +1,5 @@
 A Video Demo of BaySpec App
-======================
+=============================
 
 *BaySpec App* provides an easy-to-use web application implemented using streamlit. 
 This video demonstrates an introductory guide to using the *BaySpec App*.
@@ -12,5 +12,5 @@ This video demonstrates an introductory guide to using the *BaySpec App*.
 
 .. raw:: html
 
-    <iframe src="https://www.youtube.com/embed/your_video_id" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    <iframe src="_static/app.mov" allow="autoplay; encrypted-media" allowfullscreen></iframe>
     
