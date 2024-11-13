@@ -39,7 +39,7 @@ json_dump(infer.par_info.data_list_dict, savepath + '/infer_par.json')
 print('<infer information>')
 print(infer)
 
-post = infer.emcee(nstep=1000, resume=True, savepath='./quickstart')
+post = infer.emcee(nstep=1000, resume=True, savepath=savepath)
 json_dump(post.free_par_info.data_list_dict, savepath + '/post_free_par.json')
 json_dump(post.stat_info.data_list_dict, savepath + '/post_stat.json')
 json_dump(post.IC_info.data_list_dict, savepath + '/post_IC.json')

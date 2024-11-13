@@ -365,7 +365,7 @@ class csbpl(Additive):
         self.params = OrderedDict()
         self.params[r'$\alpha_{1}$'] = Par(1, unif(-2, 2))
         self.params[r'$\alpha_{2}$'] = Par(-1, unif(-2, 2))
-        self.params[r'log$E_{b}$'] = Par(1, unif(0, 3))
+        self.params[r'log$E_{b}$'] = Par(1, unif(-1, 2))
         self.params[r'log$E_{p}$'] = Par(3, unif(1, 4))
         self.params[r'log$A$'] = Par(0, unif(-6, 6))
 
