@@ -192,14 +192,14 @@ class zxhsync(Tinvolved):
             process = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
             (out, err) = process.communicate()
             Fd_str = out.split()
-            if out == '' or len(Fd_str) != len(E):
+            if out == '' or len(Fd_str) != len(E[idx]):
                 print('+++++ Error Message +++++')
                 print('out: ', out)
                 print('err: ', err)
                 print('cmd: ', cmd)
                 print('+++++ +++++++++++++ +++++')
             Fd = np.array([float(Fdi) for Fdi in Fd_str])   # in unit of mJy
-            Fv = Fd / (E * 1.6022e-9) / (6.62607e-34 * 6.2415e15) / 1.e26   # in unit of photons/s/cm^2/keV
+            Fv = Fd / (E[idx] * 1.6022e-9) / (6.62607e-34 * 6.2415e15) / 1.e26   # in unit of photons/s/cm^2/keV
             phtspec[idx] = Fv
         return phtspec
     
