@@ -155,9 +155,9 @@ class Pair(object):
         
         return lambda S, B, m, ts, tb, sigma_S, sigma_B, stat: \
             np.inf if np.isnan(m).any() or np.isinf(m).any() else \
-                self._allowed_stats[stat](**{'S': np.float128(S), 'B': np.float128(B), \
-                    'm': np.float128(m), 'ts': np.float128(ts), 'tb': np.float128(tb), \
-                    'sigma_S': np.float128(sigma_S), 'sigma_B': np.float128(sigma_B)})
+                self._allowed_stats[stat](**{'S': np.float64(S), 'B': np.float64(B), \
+                    'm': np.float64(m), 'ts': np.float64(ts), 'tb': np.float64(tb), \
+                    'sigma_S': np.float64(sigma_S), 'sigma_B': np.float64(sigma_B)})
 
 
     def _stat_calculate(self):

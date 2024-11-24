@@ -8,7 +8,7 @@ class Statistic(object):
     @staticmethod
     def xlogy(x, y):
 
-        res = np.zeros_like(x, dtype=np.float128)
+        res = np.zeros_like(x, dtype=np.float64)
         
         zero = (x == 0)
         res[~zero] = x[~zero] * np.log(y[~zero])
@@ -19,7 +19,7 @@ class Statistic(object):
     @staticmethod
     def xdivy(x, y):
         
-        res = np.zeros_like(x, dtype=np.float128)
+        res = np.zeros_like(x, dtype=np.float64)
         
         zero = (x == 0) & (y == 0)
         res[~zero] = x[~zero] / y[~zero]
@@ -98,7 +98,7 @@ class Statistic(object):
         dd = np.sqrt(bb * bb - 4 * aa * cc)
         
         po = bb >= 0
-        b = np.empty_like(B, dtype=np.float128)
+        b = np.empty_like(B, dtype=np.float64)
         
         b[po] = -2 * cc[po] / (bb[po] + dd[po])
         b[~po] = -(bb[~po] - dd[~po]) / (2 * aa)
