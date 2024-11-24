@@ -69,7 +69,10 @@ class Response(object):
         else:
             nchan = [[nc] for nc in matData.field(4)]
             
-        mchan = int(matHeader['TLMIN4'])
+        try:
+            mchan = int(matHeader['TLMIN4'])
+        except KeyError:
+            mchan = 1
             
         matrix = matData.field(5)
         drm = np.zeros([numEnerBins, numDetChans])

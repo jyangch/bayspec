@@ -580,7 +580,7 @@ class Plot(object):
             raise ValueError(f'unsupported style argument: {style}')
         
         yall = np.array(list(chain.from_iterable(obs_y)))
-        ymin = np.min(yall[yall > 0]).astype(float)
+        ymin = 0.5 * np.min(yall[yall > 0]).astype(float)
         ymax = 2 * np.max(yall[yall > 0]).astype(float)
             
         for i, expr in enumerate(cls.data.exprs):
@@ -634,7 +634,7 @@ class Plot(object):
             fig.update_xaxes(title_text='', row=1, col=1, type='log')
             fig.update_xaxes(title_text='Energy (keV)', row=2, col=1, type='log')
             fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log')
-            # fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
+            fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
             fig.update_yaxes(title_text='Sigma', showgrid=False, range=[-3.5, 3.5], row=2, col=1)
             fig.update_layout(template='plotly_white', height=700, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
@@ -749,7 +749,7 @@ class Plot(object):
             raise ValueError(f'unsupported style argument: {style}')
         
         yall = np.array(list(chain.from_iterable(obs_y)))
-        ymin = np.min(yall[yall > 0]).astype(float)
+        ymin = 0.5 * np.min(yall[yall > 0]).astype(float)
         ymax = 2 * np.max(yall[yall > 0]).astype(float)
             
         for i, expr in enumerate(cls.data_exprs):
@@ -803,7 +803,7 @@ class Plot(object):
             fig.update_xaxes(title_text='', row=1, col=1, type='log')
             fig.update_xaxes(title_text='Energy (keV)', row=2, col=1, type='log')
             fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log')
-            # fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
+            fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
             fig.update_yaxes(title_text='Sigma', showgrid=False, range=[-3.5, 3.5], row=2, col=1)
             fig.update_layout(template='plotly_white', height=700, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
@@ -858,7 +858,8 @@ class Plot(object):
         weights = np.ones(cls.posterior_sample.shape[0]) / cls.posterior_sample.shape[0]
         
         title_fmt = '%s = $%.2f_{-%.2f}^{+%.2f}$'
-        plabel = [f'par#{key}' for key in cls.free_par.keys()]
+        pkeys = [f'par#{key}' for key in cls.free_par.keys()]
+        plabel = [label for label in cls.free_plabels]
         value = cls.par_best_ci
         error = cls.par_error(value)
         
@@ -907,7 +908,7 @@ class Plot(object):
             
             for i in range(cls.free_nparams):
                 ax = axes[i, i]
-                ax.set_title(title_fmt % (plabel[i], value[i], error[i][0], error[i][1]))
+                ax.set_title(title_fmt % (pkeys[i], value[i], error[i][0], error[i][1]))
                 ax.errorbar(value[i], 0.005, 
                             xerr=[[error[i][0]], [error[i][1]]], 
                             fmt='or', ms=2, ecolor='r', elinewidth=1)

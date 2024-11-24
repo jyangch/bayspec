@@ -88,7 +88,7 @@ def corner_plotly(
             go.Scatter(x=[values[i]], 
                         y=[0.01], 
                         mode='markers', 
-                        name=f'{labels[i]} value', 
+                        name=f'{labels[i]}', 
                         showlegend=False, 
                         error_x=dict(
                             type='data',
