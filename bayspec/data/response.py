@@ -128,14 +128,17 @@ class Response(object):
         return cls(chbin, phbin, drm)
 
 
-    def _update(self, qual, notc, grpg):
+    def _update(self, qual, notc, grpg, rebn):
+        
         self.qual = qual
         self.notc = notc
         self.grpg = grpg
+        self.rebn = rebn
         
         new_chidx = 0
         new_chbin = []
         new_drm = []
+        
         for i, (ql, nt, gr) in enumerate(zip(qual, notc, grpg)):
             if not (ql and nt):
                 continue
@@ -158,6 +161,32 @@ class Response(object):
         self.chbin = np.array(new_chbin)
         self.drm = np.column_stack(new_drm).astype(float)
         
+        re_chidx = 0
+        re_chbin = []
+        re_drm = []
+        
+        for i, (ql, nt, rb) in enumerate(zip(qual, notc, rebn)):
+            if not (ql and nt):
+                continue
+            else:
+                if rb == 0:
+                    continue
+                elif rb == 1:
+                    re_chidx += 1
+                    re_chbin.append(list(self._chbin[i]))
+                    re_drm.append(self._drm[:, i].copy())
+                elif rb == -1:
+                    if re_chidx == 0:
+                        re_chidx += 1
+                        re_chbin.append(list(self._chbin[i]))
+                        re_drm.append(self._drm[:, i].copy())
+                    else:
+                        re_chbin[-1][-1] = self._chbin[i][-1]
+                        re_drm[-1] += self._drm[:, i].copy()
+                    
+        self.re_chbin = np.array(re_chbin)
+        self.re_drm = np.column_stack(re_drm).astype(float)
+        
         
     @property
     def chbin_mean(self):
@@ -166,9 +195,21 @@ class Response(object):
     
     
     @property
+    def re_chbin_mean(self):
+        
+        return np.mean(self.re_chbin, axis=1)
+    
+    
+    @property
     def chbin_width(self):
         
         return np.diff(self.chbin, axis=1).reshape(1, -1)[0]
+    
+    
+    @property
+    def re_chbin_width(self):
+        
+        return np.diff(self.re_chbin, axis=1).reshape(1, -1)[0]
 
 
     @property
@@ -261,17 +302,23 @@ class Response(object):
 class DisableMethodsMeta(type):
     
     def __new__(cls, name, bases, dct):
+        
         cls_to_create = super().__new__(cls, name, bases, dct)
+        
         methods_to_disable = dct.get('methods_to_disable', [])
+        
         for method in methods_to_disable:
             if hasattr(cls_to_create, method):
                 setattr(cls_to_create, method, cls.disable_method(method))
+                
         return cls_to_create
 
     @staticmethod
     def disable_method(method_name):
+        
         def method(*args, **kwargs):
             raise AttributeError(f"'{args[0].__class__.__name__}' object has no attribute '{method_name}'")
+        
         return method
 
 

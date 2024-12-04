@@ -80,15 +80,17 @@ class Spectrum(object):
         self._errors = self.errors = np.zeros_like(self.errors).astype(float)
     
     
-    def _update(self, qual, notc, grpg):
+    def _update(self, qual, notc, grpg, rebn):
         
         self.qual = qual
         self.notc = notc
         self.grpg = grpg
+        self.rebn = rebn
         
         new_chidx = 0
         new_counts = []
         new_errors = []
+        
         for i, (ql, nt, gr) in enumerate(zip(qual, notc, grpg)):
             if not (ql and nt):
                 continue
@@ -110,6 +112,32 @@ class Spectrum(object):
                     
         self.counts = np.array(new_counts)
         self.errors = np.array(new_errors)
+        
+        re_chidx = 0
+        re_counts = []
+        re_errors = []
+        
+        for i, (ql, nt, rb) in enumerate(zip(qual, notc, rebn)):
+            if not (ql and nt):
+                continue
+            else:
+                if rb == 0:
+                    continue
+                elif rb == 1:
+                    re_chidx += 1
+                    re_counts.append(self._counts[i])
+                    re_errors.append(self._errors[i])
+                elif rb == -1:
+                    if re_chidx == 0:
+                        re_chidx += 1
+                        re_counts.append(self._counts[i])
+                        re_errors.append(self._errors[i])
+                    else:
+                        re_counts[-1] += self._counts[i]
+                        re_errors[-1] = np.sqrt(re_errors[-1] ** 2 + self._errors[i] ** 2)
+                    
+        self.re_counts = np.array(re_counts)
+        self.re_errors = np.array(re_errors)
 
 
     @property

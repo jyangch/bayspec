@@ -9,7 +9,7 @@
         ],
         "Statistic": "pgstat",
         "Grouping": {
-            "min_sigma": 3,
+            "min_sigma": 2,
             "max_bin": 10
         },
         "Time": "None"
@@ -24,7 +24,7 @@
         ],
         "Statistic": "pgstat",
         "Grouping": {
-            "min_sigma": 3,
+            "min_sigma": 2,
             "max_bin": 10
         },
         "Time": "None"

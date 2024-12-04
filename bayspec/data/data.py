@@ -106,6 +106,12 @@ class Data(object):
     def corr_rsp_drm(self):
         
         return [unit.corr_rsp_drm for unit in self.data.values()]
+    
+    
+    @property
+    def corr_rsp_re_drm(self):
+        
+        return [unit.corr_rsp_re_drm for unit in self.data.values()]
 
 
     @property
@@ -127,9 +133,21 @@ class Data(object):
     
     
     @property
+    def rsp_re_chbin_mean(self):
+        
+        return [unit.rsp_re_chbin_mean for unit in self.data.values()]
+    
+    
+    @property
     def rsp_chbin_width(self):
         
         return [unit.rsp_chbin_width for unit in self.data.values()]
+    
+    
+    @property
+    def rsp_re_chbin_width(self):
+        
+        return [unit.rsp_re_chbin_width for unit in self.data.values()]
     
     
     @property
@@ -139,9 +157,21 @@ class Data(object):
     
     
     @property
+    def rsp_re_chbin_tarr(self):
+        
+        return [unit.rsp_re_chbin_tarr for unit in self.data.values()]
+    
+    
+    @property
     def src_ctsrate(self):
         
         return [unit.src_ctsrate for unit in self.data.values()]
+    
+    
+    @property
+    def src_re_ctsrate(self):
+        
+        return [unit.src_re_ctsrate for unit in self.data.values()]
     
     
     @property
@@ -151,9 +181,21 @@ class Data(object):
     
     
     @property
+    def src_re_ctsrate_error(self):
+        
+        return [unit.src_re_ctsrate_error for unit in self.data.values()]
+    
+    
+    @property
     def src_ctsspec(self):
         
         return [unit.src_ctsspec for unit in self.data.values()]
+    
+    
+    @property
+    def src_re_ctsspec(self):
+        
+        return [unit.src_re_ctsspec for unit in self.data.values()]
     
     
     @property
@@ -163,9 +205,21 @@ class Data(object):
     
     
     @property
+    def src_re_ctsspec_error(self):
+        
+        return [unit.src_re_ctsspec_error for unit in self.data.values()]
+    
+    
+    @property
     def bkg_ctsrate(self):
         
         return [unit.bkg_ctsrate for unit in self.data.values()]
+    
+    
+    @property
+    def bkg_re_ctsrate(self):
+        
+        return [unit.bkg_re_ctsrate for unit in self.data.values()]
     
     
     @property
@@ -175,9 +229,21 @@ class Data(object):
     
     
     @property
+    def bkg_re_ctsrate_error(self):
+        
+        return [unit.bkg_re_ctsrate_error for unit in self.data.values()]
+    
+    
+    @property
     def bkg_ctsspec(self):
         
         return [unit.bkg_ctsspec for unit in self.data.values()]
+    
+    
+    @property
+    def bkg_re_ctsspec(self):
+        
+        return [unit.bkg_re_ctsspec for unit in self.data.values()]
     
     
     @property
@@ -187,9 +253,21 @@ class Data(object):
     
     
     @property
+    def bkg_re_ctsspec_error(self):
+        
+        return [unit.bkg_re_ctsspec_error for unit in self.data.values()]
+    
+    
+    @property
     def net_ctsrate(self):
         
         return [unit.net_ctsrate for unit in self.data.values()]
+    
+    
+    @property
+    def net_re_ctsrate(self):
+        
+        return [unit.net_re_ctsrate for unit in self.data.values()]
     
     
     @property
@@ -199,15 +277,33 @@ class Data(object):
     
     
     @property
+    def net_re_ctsrate_error(self):
+        
+        return [unit.net_re_ctsrate_error for unit in self.data.values()]
+    
+    
+    @property
     def net_ctsspec(self):
         
         return [unit.net_ctsspec for unit in self.data.values()]
     
     
     @property
+    def net_re_ctsspec(self):
+        
+        return [unit.net_re_ctsspec for unit in self.data.values()]
+    
+    
+    @property
     def net_ctsspec_error(self):
         
         return [unit.net_ctsspec_error for unit in self.data.values()]
+    
+    
+    @property
+    def net_re_ctsspec_error(self):
+        
+        return [unit.net_re_ctsspec_error for unit in self.data.values()]
     
     
     def net_counts_upperlimit(self, cl=0.9):
@@ -339,6 +435,7 @@ class DataUnit(object):
         stat='pgstat', 
         notc=None, 
         grpg=None, 
+        rebn=None, 
         time=None, 
         weight=1, 
         rsp_factor=None, 
@@ -354,6 +451,7 @@ class DataUnit(object):
         self._stat = stat
         self._notc = notc
         self._grpg = grpg
+        self._rebn = rebn
         self._time = time
         
         self._update()
@@ -665,15 +763,61 @@ class DataUnit(object):
                 
             else:
                 self.grouping = None
+                
+                
+    @property
+    def rebn(self):
+        
+        return self._rebn
+    
+    
+    @rebn.setter
+    def rebn(self, new_rebn):
+        
+        self._rebn = new_rebn
+        self._update()
+        
+        
+    def _update_rebn(self):
+        
+        if self._rebn is not None:
+            if not isinstance(self._rebn, dict):
+                raise ValueError('<rebn> parameter should be dict')
+            
+        if self._rebn is None:
+            self.rebining = self.grouping
+        else:
+            rb_params = {'min_evt': None, 'min_sigma': None, 'max_bin': None}
+            rb_params.update(self._rebn)
+            
+            if self.completeness:
+                ini_flag = (np.array(self.qualifying) & np.array(self.noticing)).astype(int).tolist()
+                
+                self.rebining =  self._rebin(
+                    self.src_ins._counts, 
+                    self.bkg_ins._counts, 
+                    self.bkg_ins._errors, 
+                    self.src_ins.exposure, 
+                    self.bkg_ins.exposure, 
+                    self.src_ins.backscale, 
+                    self.bkg_ins.backscale, 
+                    min_evt=rb_params['min_evt'], 
+                    min_sigma=rb_params['min_sigma'], 
+                    max_bin=rb_params['max_bin'], 
+                    stat=self.stat, 
+                    ini_flag=ini_flag)
+                
+            else:
+                self.rebining = None
 
 
     def _update_data(self):
         
         if self.completeness:
         
-            self.src_ins._update(self.qualifying, self.noticing, self.grouping)
-            self.bkg_ins._update(self.qualifying, self.noticing, self.grouping)
-            self.rsp_ins._update(self.qualifying, self.noticing, self.grouping)
+            self.src_ins._update(self.qualifying, self.noticing, self.grouping, self.rebining)
+            self.bkg_ins._update(self.qualifying, self.noticing, self.grouping, self.rebining)
+            self.rsp_ins._update(self.qualifying, self.noticing, self.grouping, self.rebining)
             
         self.npoint = self.src_ins.counts.shape[0]
         
@@ -718,6 +862,7 @@ class DataUnit(object):
         self._update_stat()
         self._update_notc()
         self._update_grpg()
+        self._update_rebn()
         self._update_data()
         self._update_time()
         
@@ -804,6 +949,12 @@ class DataUnit(object):
     def corr_rsp_drm(self):
         
         return self.rsp_ins.drm * self.rsp_factor
+    
+    
+    @property
+    def corr_rsp_re_drm(self):
+        
+        return self.rsp_ins.re_drm * self.rsp_factor
 
 
     @property
@@ -825,9 +976,21 @@ class DataUnit(object):
     
     
     @property
+    def rsp_re_chbin_mean(self):
+        
+        return np.mean(self.rsp_ins.re_chbin, axis=1)
+    
+    
+    @property
     def rsp_chbin_width(self):
         
         return np.diff(self.rsp_ins.chbin, axis=1).reshape(1, -1)[0]
+    
+    
+    @property
+    def rsp_re_chbin_width(self):
+        
+        return np.diff(self.rsp_ins.re_chbin, axis=1).reshape(1, -1)[0]
     
     
     @property
@@ -837,9 +1000,21 @@ class DataUnit(object):
     
     
     @property
+    def rsp_re_chbin_tarr(self):
+        
+        return np.repeat(self._time, self.rsp_re_chbin_mean.shape[0])
+    
+    
+    @property
     def src_ctsrate(self):
         
         return self.src_ins.counts / self.corr_src_efficiency
+    
+    
+    @property
+    def src_re_ctsrate(self):
+        
+        return self.src_ins.re_counts / self.corr_src_efficiency
     
     
     @property
@@ -849,9 +1024,21 @@ class DataUnit(object):
     
     
     @property
+    def src_re_ctsrate_error(self):
+        
+        return self.src_ins.re_errors  / self.corr_src_efficiency
+    
+    
+    @property
     def src_ctsspec(self):
         
         return self.src_ctsrate / self.rsp_chbin_width
+    
+    
+    @property
+    def src_re_ctsspec(self):
+        
+        return self.src_re_ctsrate / self.rsp_re_chbin_width
     
     
     @property
@@ -861,9 +1048,21 @@ class DataUnit(object):
     
     
     @property
+    def src_re_ctsspec_error(self):
+        
+        return self.src_re_ctsrate_error / self.rsp_re_chbin_width
+    
+    
+    @property
     def bkg_ctsrate(self):
         
         return self.bkg_ins.counts  / self.corr_bkg_efficiency
+    
+    
+    @property
+    def bkg_re_ctsrate(self):
+        
+        return self.bkg_ins.re_counts  / self.corr_bkg_efficiency
     
     
     @property
@@ -873,9 +1072,21 @@ class DataUnit(object):
     
     
     @property
+    def bkg_re_ctsrate_error(self):
+        
+        return self.bkg_ins.re_errors  / self.corr_bkg_efficiency
+    
+    
+    @property
     def bkg_ctsspec(self):
         
         return self.bkg_ctsrate / self.rsp_chbin_width
+    
+    
+    @property
+    def bkg_re_ctsspec(self):
+        
+        return self.bkg_re_ctsrate / self.rsp_re_chbin_width
     
     
     @property
@@ -885,9 +1096,21 @@ class DataUnit(object):
     
     
     @property
+    def bkg_re_ctsspec_error(self):
+        
+        return self.bkg_re_ctsrate_error / self.rsp_re_chbin_width
+    
+    
+    @property
     def net_ctsrate(self):
         
         return self.src_ctsrate - self.bkg_ctsrate
+    
+    
+    @property
+    def net_re_ctsrate(self):
+        
+        return self.src_re_ctsrate - self.bkg_re_ctsrate
     
     
     @property
@@ -897,15 +1120,33 @@ class DataUnit(object):
     
     
     @property
+    def net_re_ctsrate_error(self):
+        
+        return np.sqrt(self.src_re_ctsrate_error ** 2 + self.bkg_re_ctsrate_error ** 2)
+    
+    
+    @property
     def net_ctsspec(self):
         
         return self.src_ctsspec - self.bkg_ctsspec
     
     
     @property
+    def net_re_ctsspec(self):
+        
+        return self.src_re_ctsspec - self.bkg_re_ctsspec
+    
+    
+    @property
     def net_ctsspec_error(self):
         
         return np.sqrt(self.src_ctsspec_error ** 2 + self.bkg_ctsspec_error ** 2)
+    
+    
+    @property
+    def net_re_ctsspec_error(self):
+        
+        return np.sqrt(self.src_re_ctsspec_error ** 2 + self.bkg_re_ctsspec_error ** 2)
     
     
     def net_counts_upperlimit(self, cl=0.9):
@@ -1140,3 +1381,34 @@ class DataUnit(object):
                         flag[gs[-1]] = -1
 
         return np.array(flag)
+
+
+    @staticmethod
+    def _rebin(
+        s, 
+        b, 
+        berr, 
+        ts, 
+        tb, 
+        ss, 
+        sb, 
+        min_sigma=None, 
+        min_evt=None, 
+        max_bin=None, 
+        stat=None, 
+        ini_flag=None
+        ):
+        
+        return DataUnit._group(
+            s, 
+            b,
+            berr, 
+            ts, 
+            tb, 
+            ss, 
+            sb, 
+            min_sigma, 
+            min_evt, 
+            max_bin, 
+            stat, 
+            ini_flag)

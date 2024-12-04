@@ -12,7 +12,7 @@ nai = DataUnit(
     rsp='./ME/me.rsp', 
     notc=[8, 900], 
     stat='pgstat', 
-    grpg={'min_sigma': 3, 'max_bin': 10})
+    grpg={'min_sigma': 2, 'max_bin': 10})
 
 bgo = DataUnit(
     src='./HE/he.src', 
@@ -20,7 +20,7 @@ bgo = DataUnit(
     rsp='./HE/he.rsp', 
     notc=[300, 38000], 
     stat='pgstat', 
-    grpg={'min_sigma': 3, 'max_bin': 10})
+    grpg={'min_sigma': 2, 'max_bin': 10})
 
 data = Data([('nai', nai), ('bgo', bgo)])
 json_dump(data.info.data_list_dict, savepath + '/data.json')

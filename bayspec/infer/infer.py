@@ -298,9 +298,21 @@ class Infer(object):
     
     
     @property
+    def data_re_chbin_mean(self):
+        
+        return [value for data in self.Data for value in data.rsp_re_chbin_mean]
+    
+    
+    @property
     def data_chbin_width(self):
         
         return [value for data in self.Data for value in data.rsp_chbin_width]
+    
+    
+    @property
+    def data_re_chbin_width(self):
+        
+        return [value for data in self.Data for value in data.rsp_re_chbin_width]
     
     
     @property
@@ -310,9 +322,21 @@ class Infer(object):
     
     
     @property
+    def data_re_ctsrate(self):
+        
+        return [value for data in self.Data for value in data.net_re_ctsrate]
+    
+    
+    @property
     def data_ctsrate_error(self):
         
         return [value for data in self.Data for value in data.net_ctsrate_error]
+    
+    
+    @property
+    def data_re_ctsrate_error(self):
+        
+        return [value for data in self.Data for value in data.net_re_ctsrate_error]
     
     
     @property
@@ -322,9 +346,21 @@ class Infer(object):
     
     
     @property
+    def data_re_ctsspec(self):
+        
+        return [value for data in self.Data for value in data.net_re_ctsspec]
+    
+    
+    @property
     def data_ctsspec_error(self):
         
         return [value for data in self.Data for value in data.net_ctsspec_error]
+    
+    
+    @property
+    def data_re_ctsspec_error(self):
+        
+        return [value for data in self.Data for value in data.net_re_ctsspec_error]
     
     
     @property
@@ -334,9 +370,21 @@ class Infer(object):
     
     
     @property
+    def model_re_ctsrate(self):
+        
+        return [value for model in self.Model for value in model.conv_re_ctsrate]
+    
+    
+    @property
     def model_ctsspec(self):
         
         return [value for model in self.Model for value in model.conv_ctsspec]
+    
+    
+    @property
+    def model_re_ctsspec(self):
+        
+        return [value for model in self.Model for value in model.conv_re_ctsspec]
     
     
     @property

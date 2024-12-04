@@ -25,7 +25,7 @@ following three sections:
         rsp='./ME/me.rsp', 
         notc=[8, 900], 
         stat='pgstat', 
-        grpg={'min_sigma': 3, 'max_bin': 10})
+        grpg={'min_sigma': 2, 'max_bin': 10})
     
     bgo = DataUnit(
         src='./HE/he.src', 
@@ -33,7 +33,7 @@ following three sections:
         rsp='./HE/he.rsp', 
         notc=[300, 38000], 
         stat='pgstat', 
-        grpg={'min_sigma': 3, 'max_bin': 10})
+        grpg={'min_sigma': 2, 'max_bin': 10})
     
     data = Data([('nai', nai), 
                  ('bgo', bgo)])
@@ -111,31 +111,12 @@ following three sections:
 
 .. code:: ipython3
 
-    post = infer.multinest(nlive=300, resume=True, savepath='./multinest')
+    post = infer.emcee(nstep=1000, resume=True, savepath='./quickstart')
     print(post)
 
 
 .. parsed-literal::
 
-     *****************************************************
-     MultiNest v3.10
-     Copyright Farhan Feroz & Mike Hobson
-     Release Jul 2015
-    
-     no. of live points =  300
-     dimensionality =    3
-     resuming from previous job
-     *****************************************************
-     Starting MultiNest
-    Acceptance Rate:                        0.562397
-    Replacements:                               6165
-    Total Samples:                             10962
-    Nested Sampling ln(Z):               -229.153983
-    Importance Nested Sampling ln(Z):    -229.261712 +/-  0.022377
-      analysing data from ./multinest/1-.txt
-     ln(ev)=  -228.86015520780347      +/-  0.23816955101640733     
-     Total Likelihood Evaluations:        10962
-     Sampling finished. Exiting MultiNest
     ╒════════╤══════════════╤═════════════╤═════════════╤════════╤══════════╤════════╤══════════════════╕
     │  par#  │  Expression  │  Component  │  Parameter  │  Mean  │  Median  │  Best  │    1sigma CI     │
     ╞════════╪══════════════╪═════════════╪═════════════╪════════╪══════════╪════════╪══════════════════╡

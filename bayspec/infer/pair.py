@@ -73,18 +73,39 @@ class Pair(object):
         ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, self.data.corr_rsp_drm)]
         
         return ctsrate
+    
+    
+    def _re_convolve(self):
+        
+        flat_phtflux = self.model.integ(self.data.ebin, self.data.tarr)
+        phtflux = [flat_phtflux[i:j].copy() for (i, j) in zip(self.data.bin_start, self.data.bin_stop)]
+        re_ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, self.data.corr_rsp_re_drm)]
+        
+        return re_ctsrate
 
 
     @property
     def conv_ctsrate(self):
         
         return self._convolve()
+    
+    
+    @property
+    def conv_re_ctsrate(self):
+        
+        return self._re_convolve()
 
 
     @property
     def conv_ctsspec(self):
         
         return [cr / chw for (cr, chw) in zip(self.conv_ctsrate, self.data.rsp_chbin_width)]
+    
+    
+    @property
+    def conv_re_ctsspec(self):
+        
+        return [cr / chw for (cr, chw) in zip(self.conv_re_ctsrate, self.data.rsp_re_chbin_width)]
         
         
     @property
@@ -95,9 +116,22 @@ class Pair(object):
         
         
     @property
+    def re_phtspec_at_rsp(self):
+        
+        return [self.model.phtspec(E, T) for (E, T) in \
+            zip(self.data.rsp_re_chbin_mean, self.data.rsp_re_chbin_tarr)]
+        
+        
+    @property
     def cts_to_pht(self):
         
         return [cts / pht for (cts, pht) in zip(self.conv_ctsspec, self.phtspec_at_rsp)]
+    
+    
+    @property
+    def re_cts_to_pht(self):
+        
+        return [cts / pht for (cts, pht) in zip(self.conv_re_ctsspec, self.re_phtspec_at_rsp)]
     
     
     @property

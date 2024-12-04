@@ -846,6 +846,155 @@ class Plot(object):
             if show: plt.show()
             
         return fig
+    
+    
+    @staticmethod
+    def infer_re_ctsspec(cls, ploter='plotly', style='CE', show=True):
+        
+        if not isinstance(cls, (Infer, Posterior)):
+            raise TypeError('cls is not Infer or Posterior type, cannot call infer method')
+        
+        if isinstance(cls, Posterior):
+            cls.at_par(cls.par_best_ci)
+        
+        if ploter == 'plotly':
+            fig = make_subplots(
+                rows=2, cols=1,
+                row_heights=[0.75, 0.25], 
+                shared_xaxes=True,
+                horizontal_spacing=0,
+                vertical_spacing=0.02)
+            
+        elif ploter == 'matplotlib':
+            rcParams['font.family'] = 'sans-serif'
+            rcParams['font.size'] = 12
+            rcParams['pdf.fonttype'] = 42
+            fig = plt.figure(figsize=(6, 8))
+            gs = fig.add_gridspec(4, 1, wspace=0, hspace=0)
+            ax1 = fig.add_subplot(gs[0:3, 0])
+            ax2 = fig.add_subplot(gs[3, 0], sharex=ax1)
+            
+        obs_x = cls.data_re_chbin_mean
+        obs_x_le = [chw / 2 for chw in cls.data_re_chbin_width]
+        obs_x_he = [chw / 2 for chw in cls.data_re_chbin_width]
+        
+        if style == 'CC':
+            ylabel = 'Counts/s/channel'
+            
+            obs_y = cls.data_re_ctsrate
+            obs_y_err = cls.data_re_ctsrate_error
+            mo_y = cls.model_re_ctsrate
+            res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+            
+        elif style == 'CE':
+            ylabel = 'Counts/s/keV'
+            
+            obs_y = cls.data_re_ctsspec
+            obs_y_err = cls.data_re_ctsspec_error
+            mo_y = cls.model_re_ctsspec
+            res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+            
+        else:
+            raise ValueError(f'unsupported style argument: {style}')
+        
+        yall = np.array(list(chain.from_iterable(obs_y)))
+        ymin = 0.5 * np.min(yall[yall > 0]).astype(float)
+        ymax = 2 * np.max(yall[yall > 0]).astype(float)
+            
+        for i, expr in enumerate(cls.data_exprs):
+                
+            if ploter == 'plotly':
+                obs = go.Scatter(x=obs_x[i].astype(float), 
+                                 y=obs_y[i].astype(float), 
+                                 mode='markers', 
+                                 name=f'obs of {expr}', 
+                                 showlegend=False, 
+                                 error_x=dict(
+                                     type='data',
+                                     symmetric=False,
+                                     array=obs_x_he[i].astype(float),
+                                     arrayminus=obs_x_le[i].astype(float),
+                                     color=Plot.colors[i],
+                                     thickness=1.5,
+                                     width=0),
+                                 error_y=dict(
+                                     type='data',
+                                     array=obs_y_err[i].astype(float),
+                                     color=Plot.colors[i],
+                                     thickness=1.5,
+                                     width=0), 
+                                 marker=dict(symbol='cross-thin', size=0, color=Plot.colors[i]))
+                mo = go.Scatter(x=obs_x[i].astype(float), 
+                                y=mo_y[i].astype(float), 
+                                name=expr, 
+                                showlegend=True, 
+                                mode='lines', 
+                                line=dict(width=2, color=Plot.colors[i]))
+                res = go.Scatter(x=obs_x[i].astype(float), 
+                                 y=res_y[i].astype(float), 
+                                 name=f'res of {expr}', 
+                                 showlegend=False, 
+                                 mode='markers', 
+                                 marker=dict(symbol='cross-thin', size=10, color=Plot.colors[i], 
+                                             line=dict(width=1.5, color=Plot.colors[i])))
+                
+                fig.add_trace(obs, row=1, col=1)
+                fig.add_trace(mo, row=1, col=1)
+                fig.add_trace(res, row=2, col=1)
+                
+            elif ploter == 'matplotlib':
+                ax1.errorbar(obs_x[i], obs_y[i], xerr = [obs_x_le[i], obs_x_he[i]], yerr=obs_y_err[i], 
+                             fmt='none', ecolor=Plot.colors[i], elinewidth=0.8, capsize=0, capthick=0, label=expr)
+                ax1.plot(obs_x[i], mo_y[i], color=Plot.colors[i], lw=1.0)
+                ax2.scatter(obs_x[i], res_y[i], marker='+', color=Plot.colors[i], s=40, linewidths=0.8)
+                
+        if ploter == 'plotly':
+            fig.update_xaxes(title_text='', row=1, col=1, type='log')
+            fig.update_xaxes(title_text='Energy (keV)', row=2, col=1, type='log')
+            fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log')
+            fig.update_yaxes(title_text=ylabel, row=1, col=1, type='log', range=[np.log10(ymin), np.log10(ymax)])
+            fig.update_yaxes(title_text='Sigma', showgrid=False, range=[-3.5, 3.5], row=2, col=1)
+            fig.update_layout(template='plotly_white', height=700, width=600)
+            fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
+            
+            if show: fig.show()
+            
+        elif ploter == 'matplotlib':
+            ax1.set_xscale('log')
+            ax1.set_yscale('log')
+            ax1.set_ylabel(ylabel)
+            ax1.set_ylim([ymin, ymax])
+            ax1.minorticks_on()
+            ax1.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
+            ax1.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
+            ax1.tick_params(which='major', width=1.0, length=5)
+            ax1.tick_params(which='minor', width=1.0, length=3)
+            ax1.xaxis.set_ticks_position('both')
+            ax1.yaxis.set_ticks_position('both')
+            plt.setp(ax1.get_xticklabels(), visible=False)
+            ax1.spines['bottom'].set_linewidth(1.0)
+            ax1.spines['top'].set_linewidth(1.0)
+            ax1.spines['left'].set_linewidth(1.0)
+            ax1.spines['right'].set_linewidth(1.0)
+            ax1.legend(frameon=True)
+            ax2.axhline(0, c='grey', lw=1, ls='--')
+            ax2.set_xlabel('Energy (keV)')
+            ax2.set_ylabel('Sigma')
+            ax2.set_ylim([-3.5, 3.5])
+            ax2.minorticks_on()
+            ax2.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
+            ax2.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
+            ax2.tick_params(which='major', width=1.0, length=5)
+            ax2.tick_params(which='minor', width=1.0, length=3)
+            ax2.yaxis.set_ticks_position('both')
+            ax2.spines['bottom'].set_linewidth(1.0)
+            ax2.spines['top'].set_linewidth(1.0)
+            ax2.spines['left'].set_linewidth(1.0)
+            ax2.spines['right'].set_linewidth(1.0)
+            
+            if show: plt.show()
+            
+        return fig
             
         
     @staticmethod
