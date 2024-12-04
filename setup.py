@@ -34,10 +34,7 @@ setup(
         "corner>=2.2.2",
         "astropy>=5.3.2",
         "emcee>=3.1.6",
-        "pymultinest>=2.12",
-        "streamlit>=1.36.0",
-        "st-pages>=0.4.5",
-        "streamlit_code_editor>=0.1.20"
+        "pymultinest>=2.12"
     ],
     packages=find_packages(exclude=["examples*", "docs*"]),
     include_package_data=True,
