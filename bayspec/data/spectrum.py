@@ -1,5 +1,4 @@
 import inspect
-import warnings
 import numpy as np
 from io import BytesIO
 from copy import deepcopy

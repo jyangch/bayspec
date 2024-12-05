@@ -2,7 +2,6 @@ import json
 import numpy as np
 from io import BytesIO
 from .param import Par
-import streamlit as st
 from collections import OrderedDict
 
 
@@ -43,20 +42,3 @@ class SuperDict(OrderedDict):
             key = list(self.keys())[key - 1]
             
         return super().__getitem__(key)
-    
-    
-def init_session_state():
-    if 'data' not in st.session_state:
-        st.session_state.data = {}
-    if 'data_state' not in st.session_state:
-        st.session_state.data_state = {}
-    if 'model' not in st.session_state:
-        st.session_state.model = {}
-    if 'model_component' not in st.session_state:
-        st.session_state.model_component = {}
-    if 'model_state' not in st.session_state:
-        st.session_state.model_state = {}
-    if 'infer' not in st.session_state:
-        st.session_state.infer = None
-    if 'infer_state' not in st.session_state:
-        st.session_state.infer_state = {}
