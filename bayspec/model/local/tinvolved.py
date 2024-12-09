@@ -1,3 +1,4 @@
+import os
 import toml
 import numpy as np
 import subprocess as sp
@@ -220,6 +221,8 @@ class katu(Tinvolved):
         
         self.mo_prefix = docs_path + '/Katu'
 
+        os.chdir(self.mo_prefix)
+
         self.mo_dir = self.mo_prefix + '/GRB_MZ'
         self.mo_cfg_dir = self.mo_prefix + '/prompt.toml'
         
@@ -234,7 +237,6 @@ class katu(Tinvolved):
         self.params['log$\\Gamma$'] = Par(2, unif(1, 3))
         self.params['$p$'] = Par(3, unif(1.5, 3.5))
         self.params['$t_{inj}$'] = Par(10, unif(0, 20))
-        self.params['$p_{inj}$'] = Par(5, unif(0, 10))
         self.params['log$R_0$'] = Par(15, unif(12, 17))
         self.params['log$Q_0$'] = Par(40, unif(30, 50))
         
@@ -251,7 +253,6 @@ class katu(Tinvolved):
         logGamma = self.params['log$\\Gamma$'].value
         p = self.params['$p$'].value
         tinj = self.params['$t_{inj}$'].value
-        pinj = self.params['$p_{inj}$'].value
         logR0 = self.params['log$R_0$'].value
         logQ0 = self.params['log$Q_0$'].value
 
@@ -259,9 +260,8 @@ class katu(Tinvolved):
         self.set_cfg('Prompt.alpha', alphaB)
         self.set_cfg('Prompt.prompt_gmin', loggamma_min)
         self.set_cfg('Prompt.Gamma_init', logGamma)
-        self.set_cfg('Zone.p', p)
+        self.set_cfg('Prompt.prompt_p', p)
         self.set_cfg('Prompt.t_inj', tinj)
-        self.set_cfg('Prompt.prompt_p', pinj)
         self.set_cfg('Prompt.R_0', logR0)
         self.set_cfg('Prompt.Q_0', logQ0)
         
@@ -280,7 +280,7 @@ class katu(Tinvolved):
         E_str = ' '.join([str(Ei) for Ei in E])
         T_str = ' '.join([str(Ti) for Ti in T])
 
-        cmd = self.mo_dir + ' ' + self.mo_cfg_dir + ' --energy ' + E_str + ' --time ' + T_str
+        cmd = self.mo_dir + ' prompt.toml ' + '--energy ' + E_str + ' --time ' + T_str
 
         process = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
         (out, err) = process.communicate()
@@ -290,7 +290,7 @@ class katu(Tinvolved):
             print('err: ', err)
             print('cmd: ', cmd)
             print('+++++ +++++++++++++ +++++')
-        phtspec = out.split()
+        phtspec = np.array([float(ps) for ps in out.split()[3::4]])
         return phtspec
 
 
