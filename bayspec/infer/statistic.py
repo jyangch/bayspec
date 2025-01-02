@@ -253,7 +253,7 @@ class Statistic(object):
         ul_sigma = 3
         sigma = ppsig(mo_cts + bkg_cts * alpha, bkg_cts, alpha)
 
-        return (sigma - ul_sigma) ** 2
+        return (sigma - ul_sigma) ** 2 / 0.01
     
     
     @staticmethod
@@ -275,4 +275,4 @@ class Statistic(object):
         ul_sigma = 3
         sigma = pgsig(mo_cts + bkg_cts * alpha, bkg_cts * alpha, bkg_err * alpha)
 
-        return (sigma - ul_sigma) ** 2
+        return (sigma - ul_sigma) ** 2 / 0.01
