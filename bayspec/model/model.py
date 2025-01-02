@@ -546,7 +546,7 @@ class Model(object):
 
     def phtspec_sample(self, E, T=None):
         
-        sample = np.empty([self.posterior_nsample, len(E)])
+        sample = np.zeros([self.posterior_nsample, len(E)], dtype=float)
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
@@ -557,7 +557,7 @@ class Model(object):
     
     def nouspec_sample(self, E):
         
-        sample = np.empty([self.posterior_nsample, len(E)])
+        sample = np.zeros([self.posterior_nsample, len(E)], dtype=float)
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
@@ -568,7 +568,7 @@ class Model(object):
     
     def flxspec_sample(self, E, T=None):
         
-        sample = np.empty([self.posterior_nsample, len(E)])
+        sample = np.zeros([self.posterior_nsample, len(E)], dtype=float)
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
@@ -579,7 +579,7 @@ class Model(object):
     
     def ergspec_sample(self, E, T=None):
         
-        sample = np.empty([self.posterior_nsample, len(E)])
+        sample = np.zeros([self.posterior_nsample, len(E)], dtype=float)
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
@@ -590,7 +590,7 @@ class Model(object):
     
     def phtflux_sample(self, emin, emax, ngrid, epoch=None):
         
-        sample = np.empty(self.posterior_nsample)
+        sample = np.zeros(self.posterior_nsample, dtype=float)
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
@@ -601,7 +601,7 @@ class Model(object):
     
     def ergflux_sample(self, emin, emax, ngrid, epoch=None):
         
-        sample = np.empty(self.posterior_nsample)
+        sample = np.zeros(self.posterior_nsample, dtype=float)
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
