@@ -294,13 +294,13 @@ class Model(object):
     @property
     def cts_to_pht(self):
         
-        return [cts / pht for (cts, pht) in zip(self.conv_ctsspec, self.phtspec_at_rsp)]
+        return [pht / cts for (cts, pht) in zip(self.conv_ctsspec, self.phtspec_at_rsp)]
     
     
     @property
     def re_cts_to_pht(self):
         
-        return [cts / pht for (cts, pht) in zip(self.conv_re_ctsspec, self.re_phtspec_at_rsp)]
+        return [pht / cts for (cts, pht) in zip(self.conv_re_ctsspec, self.re_phtspec_at_rsp)]
     
     
     @property

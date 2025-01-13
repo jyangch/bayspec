@@ -100,6 +100,34 @@ class Data(object):
         self.nbin = [unit.nbin for unit in self.data.values()]
         self.bin_start = np.cumsum([0] + self.nbin)[:-1]
         self.bin_stop = np.cumsum([0] + self.nbin)[1:]
+        
+        
+    @property
+    def fit_with(self):
+        
+        try:
+            return self._fit_with
+        except AttributeError:
+            raise AttributeError('no model fit with')
+    
+    
+    @fit_with.setter
+    def fit_with(self, new_model):
+        
+        from ..model.model import Model
+        
+        self._fit_with = new_model
+        
+        if not isinstance(self._fit_with, Model): 
+            raise ValueError('fit_with argument should be Model type!')
+        
+        try:
+            self._fit_with.fit_to
+        except AttributeError:
+            self._fit_with.fit_to = self
+        else:
+            if self._fit_with.fit_to != self:
+                self._fit_with.fit_to = self
 
 
     @property
@@ -306,6 +334,31 @@ class Data(object):
         return [unit.net_re_ctsspec_error for unit in self.data.values()]
     
     
+    @property
+    def deconv_phtspec(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.fit_with.cts_to_pht, self.net_ctsspec)]
+    
+    
+    @property
+    def deconv_re_phtspec(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.fit_with.re_cts_to_pht, self.net_re_ctsspec)]
+    
+    
+    @property
+    def deconv_phtspec_error(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.fit_with.cts_to_pht, self.net_ctsspec_error)]
+    
+    
+    @property
+    def deconv_re_phtspec_error(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.fit_with.re_cts_to_pht, self.net_re_ctsspec_error)]
+    
+    
+    
     def net_counts_upperlimit(self, cl=0.9):
         
         return [unit.net_counts_upperlimit(cl) for unit in self.data.values()]
@@ -338,34 +391,6 @@ class Data(object):
                     info_dict[key][i] = 'None'
 
         return Info.from_dict(info_dict)
-
-
-    @property
-    def fit_with(self):
-        
-        try:
-            return self._fit_with
-        except AttributeError:
-            raise AttributeError('no model fit with')
-    
-    
-    @fit_with.setter
-    def fit_with(self, new_model):
-        
-        from ..model.model import Model
-        
-        self._fit_with = new_model
-        
-        if not isinstance(self._fit_with, Model): 
-            raise ValueError('fit_with argument should be Model type!')
-        
-        try:
-            self._fit_with.fit_to
-        except AttributeError:
-            self._fit_with.fit_to = self
-        else:
-            if self._fit_with.fit_to != self:
-                self._fit_with.fit_to = self
                 
                 
     @property

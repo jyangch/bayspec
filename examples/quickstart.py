@@ -46,12 +46,19 @@ json_dump(post.IC_info.data_list_dict, savepath + '/post_IC.json')
 print('<post information>')
 print(post)
 
-fig = Plot.infer_ctsspec(post, style='CE', ploter='plotly', show=False)
+fig = Plot.infer(post, style='CE', ploter='plotly', show=False)
 fig.write_html(savepath + '/ctsspec.html')
 json_dump(fig.to_dict(), savepath + '/ctsspec.json')
 
-fig = Plot.infer_ctsspec(post, style='CE', ploter='matplotlib', show=False)
+fig = Plot.infer(post, style='CE', ploter='matplotlib', show=False)
 fig.savefig(savepath + '/ctsspec.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
+
+fig = Plot.infer(post, style='NE', ploter='plotly', show=False)
+fig.write_html(savepath + '/phtspec.html')
+json_dump(fig.to_dict(), savepath + '/phtspec.json')
+
+fig = Plot.infer(post, style='NE', ploter='matplotlib', show=False)
+fig.savefig(savepath + '/phtspec.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
 
 fig = Plot.post_corner(post, ploter='plotly', show=False)
 fig.write_html(savepath + '/corner.html')

@@ -364,6 +364,30 @@ class Infer(object):
     
     
     @property
+    def data_phtspec(self):
+        
+        return [value for data in self.Data for value in data.deconv_phtspec]
+    
+    
+    @property
+    def data_re_phtspec(self):
+        
+        return [value for data in self.Data for value in data.deconv_re_phtspec]
+    
+    
+    @property
+    def data_phtspec_error(self):
+        
+        return [value for data in self.Data for value in data.deconv_phtspec_error]
+    
+    
+    @property
+    def data_re_phtspec_error(self):
+        
+        return [value for data in self.Data for value in data.deconv_re_phtspec_error]
+    
+    
+    @property
     def model_ctsrate(self):
         
         return [value for model in self.Model for value in model.conv_ctsrate]
@@ -394,9 +418,21 @@ class Infer(object):
     
     
     @property
+    def model_re_phtspec(self):
+        
+        return [value for model in self.Model for value in model.re_phtspec_at_rsp]
+    
+    
+    @property
     def model_cts_to_pht(self):
         
         return [value for model in self.Model for value in model.cts_to_pht]
+    
+    
+    @property
+    def model_re_cts_to_pht(self):
+        
+        return [value for model in self.Model for value in model.re_cts_to_pht]
 
 
     @property

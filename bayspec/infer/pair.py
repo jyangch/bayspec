@@ -125,13 +125,37 @@ class Pair(object):
     @property
     def cts_to_pht(self):
         
-        return [cts / pht for (cts, pht) in zip(self.conv_ctsspec, self.phtspec_at_rsp)]
+        return [pht / cts for (cts, pht) in zip(self.conv_ctsspec, self.phtspec_at_rsp)]
     
     
     @property
     def re_cts_to_pht(self):
         
-        return [cts / pht for (cts, pht) in zip(self.conv_re_ctsspec, self.re_phtspec_at_rsp)]
+        return [pht / cts for (cts, pht) in zip(self.conv_re_ctsspec, self.re_phtspec_at_rsp)]
+    
+    
+    @property
+    def deconv_phtspec(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.cts_to_pht, self.data.net_ctsspec)]
+    
+    
+    @property
+    def deconv_re_phtspec(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.re_cts_to_pht, self.data.net_re_ctsspec)]
+    
+    
+    @property
+    def deconv_phtspec_error(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.cts_to_pht, self.data.net_ctsspec_error)]
+    
+    
+    @property
+    def deconv_re_phtspec_error(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.re_cts_to_pht, self.data.net_re_ctsspec_error)]
     
     
     @property
