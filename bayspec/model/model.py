@@ -542,7 +542,18 @@ class Model(object):
         self.at_par(self.par_best_ci)
         
         return self.ergflux(emin, emax, ngrid, epoch)
+
+
+    def best_ergflux_ratio(self, erange1, erange2, ngrid, epoch=None):
         
+        self.at_par(self.par_best_ci)
+
+        emin1, emax1 = erange1
+
+        emin2, emax2 = erange2
+        
+        return self.ergflux(emin1, emax1, ngrid, epoch) / self.ergflux(emin2, emax2, ngrid, epoch)
+
 
     def phtspec_sample(self, E, T=None):
         
@@ -606,6 +617,21 @@ class Model(object):
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
             sample[i] = self.ergflux(emin, emax, ngrid, epoch)
+            
+        return self.sample_statistic(sample)
+
+
+    def ergflux_ratio_sample(self, erange1, erange2, ngrid, epoch=None):
+        
+        sample = np.zeros(self.posterior_nsample, dtype=float)
+
+        emin1, emax1 = erange1
+        
+        emin2, emax2 = erange2
+        
+        for i in range(self.posterior_nsample):
+            self.at_par(self.posterior_sample[i])
+            sample[i] = self.ergflux(emin1, emax1, ngrid, epoch) / self.ergflux(emin2, emax2, ngrid, epoch)
             
         return self.sample_statistic(sample)
         
