@@ -210,6 +210,112 @@ class zxhsync(Tinvolved):
         return Planck18.luminosity_distance(self.config['redshift'].value).to(u.cm).value
 
 
+    def elecspec(self, ielec_list=None):
+        '''
+        Generate the electron spectrum for each step
+        ielec_list: list of steps
+        return: list of electron spectra
+        '''
+        
+        logB0 = self.params['log$B_0$'].value
+        alphaB = self.params['$\\alpha_B$'].value
+        loggamma_min = self.params['log$\\gamma_{min}$'].value
+        loggamma_max = self.params['log$\\gamma_{max}$'].value
+        logGamma = self.params['log$\\Gamma$'].value
+        p = self.params['$p$'].value
+        tinj = self.params['$t_{inj}$'].value
+        q = self.params['$q$'].value
+        logR0 = self.params['log$R_0$'].value
+        logQ0 = self.params['log$Q_0$'].value   # in unit of s^-1
+
+        B0 = 10 ** logB0
+        gamma_min = 10 ** loggamma_min
+        gamma_max = 10 ** loggamma_max
+        Gamma = 10 ** logGamma
+        R0 = 10 ** logR0
+        Q0 = 10 ** logQ0
+
+        B0_str = str(B0)
+        alphaB_str = str(alphaB)
+        gamma_min_str = str(gamma_min)
+        gamma_max_str = str(gamma_max)
+        Gamma_str = str(Gamma)
+        p_str = str(p)
+        
+        zero_dt_str = '%.4f'%self.config['zero_offset'].value
+        tinj_str = str(tinj)
+        q_str = str(q)
+        max_time_str = '%.4f'%self.config['max_time'].value
+        R0_str = str(R0)
+        Q0_str = str(Q0)
+        z_str = '%.4f'%self.config['redshift'].value
+        dL_str = '%.4e'%self.luminosity_distance
+        spec_prec_str = '%.2f'%self.config['spec_prec'].value
+        temp_prec_str = '%.2f' % self.config['temp_prec'].value
+
+        t_obs_str = '1.0'
+        n_str = '0'
+        it_str = '0'
+        
+        if ielec_list is None:
+            ielec_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+        beta = np.sqrt(Gamma ** 2 - 1) / Gamma
+        tobspre = self.config['zero_offset'].value
+        tobs0 = R0 * (1 - beta) * (1 + 0.36) / beta / 3e10
+        tobsmax = self.config['max_time'].value
+        Rmax = 3e10 * beta * (tobsmax + tobs0 + tobspre) / (1 + 0.36) / (1 - beta)
+        
+        elec_spec = []
+
+        for ielec in ielec_list:
+            Rn = 10 ** (np.log10(R0) + (ielec - 1) * np.log10(Rmax / R0) / 399)
+            tn = (Rn - R0) / beta / 3e10
+            
+            ielec_str = str(ielec)
+            
+            cmd = self.mo_dir + ' ' + self.mo_prefix + ' ' + B0_str + ' ' + alphaB_str + ' ' + gamma_min_str \
+                + ' ' + gamma_max_str + ' ' + Gamma_str + ' ' + p_str + ' ' + t_obs_str + ' ' + zero_dt_str \
+                + ' ' + tinj_str + ' ' + q_str + ' ' + max_time_str + ' ' + R0_str + ' ' + Q0_str + ' ' + z_str \
+                + ' ' + dL_str + ' ' + n_str + ' ' + it_str + ' ' + ielec_str + ' ' + spec_prec_str \
+                + ' ' + temp_prec_str
+                
+            process = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+            (out, err) = process.communicate()
+            ge_str = out.split()[::2]
+            Ne_str = out.split()[1::2]
+            if err != '':
+                print('+++++ Error Message +++++')
+                print('out: ', out)
+                print('err: ', err)
+                print('cmd: ', cmd)
+                print('+++++ +++++++++++++ +++++')
+            ge = np.array([float(gei) for gei in ge_str])
+            Ne = np.array([float(Nei) for Nei in Ne_str])
+            
+            elec_spec.append({'nstep': ielec, 'Rn': Rn, 'tn': tn, 'ge': ge, 'Ne': Ne})
+            
+        return elec_spec
+    
+    
+    def lightcurve(self, response_list, time_list, tarr):
+        '''
+        Generate the model-predicted counts spectrum for each time
+        response_list: list of response files
+        time_list: list of times
+        tarr: time array of the light curve
+        return: list of model-predicted counts spectrum for each time
+        '''
+        
+        idx = np.argmin(np.abs(tarr[:, None] - time_list), axis=1)
+        
+        lc = []
+        for i, j in enumerate(idx):
+            ctsrate, _ = self.convolve_response(response_list[j], tarr[i])
+            lc.append(ctsrate)
+            
+        return lc
+
 
 class katu(Tinvolved):
 

@@ -122,8 +122,8 @@ class Par(object):
 
     def frozen_at(self, new_val):
         
-        self.frozen = True
         self.val = new_val
+        self.frozen = True
         
         
     @property

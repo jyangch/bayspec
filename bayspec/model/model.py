@@ -207,7 +207,10 @@ class Model(object):
                 self._fit_to.fit_with = self
 
 
-    def convolve_response(self, response, tarr=None):
+    def convolve_response(self, response, time=None):
+        
+        nbin = response.phbin.shape[0]
+        tarr = np.repeat(time, nbin)
         
         phtflux = self.integ(response.phbin, tarr)
         ctsrate = np.dot(phtflux, response.drm)

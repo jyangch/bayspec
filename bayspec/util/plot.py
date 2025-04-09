@@ -534,7 +534,7 @@ class Plot(object):
 
 
     @staticmethod
-    def pair(cls, ploter='plotly', style='CE', show=True):
+    def pair(cls, ploter='plotly', style='CE', show=True, add=None, mul=None):
         
         if not isinstance(cls, Pair):
             raise TypeError('cls is not Pair type, cannot call pair method')
@@ -578,6 +578,20 @@ class Plot(object):
             
         elif style == 'NE':
             ylabel = 'Photons/cm^2/s/keV'
+            
+            # if add is not None:
+            #     if not isinstance(add, Model) or add.type != 'add':
+            #         raise TypeError('add argument should be additive model')
+            #     add_mo_y = [add.phtspec(E) for E in obs_x]
+            # else:
+            #     add_mo_y = [np.zeros_like(E) for E in obs_x]
+                
+            # if mul is not None:
+            #     if not isinstance(mul, Model) or mul.type != 'mul':
+            #         raise TypeError('mul argument should be multiplicative model')
+            #     mul_mo_y = [mul.phtspec(E) for E in obs_x]
+            # else:
+            #     mul_mo_y = [np.ones_like(E) for E in obs_x]
             
             obs_y = cls.deconv_phtspec
             obs_y_err = cls.deconv_phtspec_error

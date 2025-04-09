@@ -750,6 +750,8 @@ class Infer(object):
         method: 'Nelder-Mead', 'TNC', 'SLSQP', 'Powell', 'trust-constr', 'L-BFGS-B'
         """
         
+        self._you_free()
+        
         np.random.seed(42)
         nll = lambda *args: -2 * self._loglike(*args)
         pos = self.free_pvalues + 1e-4 * np.random.randn(self.free_nparams)
