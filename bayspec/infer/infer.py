@@ -388,6 +388,54 @@ class Infer(object):
     
     
     @property
+    def data_flxspec(self):
+        
+        return [value for data in self.Data for value in data.deconv_flxspec]
+    
+    
+    @property
+    def data_re_flxspec(self):
+        
+        return [value for data in self.Data for value in data.deconv_re_flxspec]
+    
+    
+    @property
+    def data_flxspec_error(self):
+        
+        return [value for data in self.Data for value in data.deconv_flxspec_error]
+    
+    
+    @property
+    def data_re_flxspec_error(self):
+        
+        return [value for data in self.Data for value in data.deconv_re_flxspec_error]
+    
+    
+    @property
+    def data_ergspec(self):
+        
+        return [value for data in self.Data for value in data.deconv_ergspec]
+    
+    
+    @property
+    def data_re_ergspec(self):
+        
+        return [value for data in self.Data for value in data.deconv_re_ergspec]
+    
+    
+    @property
+    def data_ergspec_error(self):
+        
+        return [value for data in self.Data for value in data.deconv_ergspec_error]
+    
+    
+    @property
+    def data_re_ergspec_error(self):
+        
+        return [value for data in self.Data for value in data.deconv_re_ergspec_error]
+    
+    
+    @property
     def model_ctsrate(self):
         
         return [value for model in self.Model for value in model.conv_ctsrate]
@@ -421,6 +469,30 @@ class Infer(object):
     def model_re_phtspec(self):
         
         return [value for model in self.Model for value in model.re_phtspec_at_rsp]
+    
+    
+    @property
+    def model_flxspec(self):
+        
+        return [value for model in self.Model for value in model.flxspec_at_rsp]
+    
+    
+    @property
+    def model_re_flxspec(self):
+        
+        return [value for model in self.Model for value in model.re_flxspec_at_rsp]
+    
+    
+    @property
+    def model_ergspec(self):
+        
+        return [value for model in self.Model for value in model.ergspec_at_rsp]
+    
+    
+    @property
+    def model_re_ergspec(self):
+        
+        return [value for model in self.Model for value in model.re_ergspec_at_rsp]
     
     
     @property
@@ -670,7 +742,14 @@ class Infer(object):
         self.Analyzer = pymultinest.Analyzer(outputfiles_basename=self.prefix, n_params=self.free_nparams)
         
         self.posterior_stats = self.Analyzer.get_stats()
-        self.posterior_sample = self.Analyzer.get_equal_weighted_posterior()
+        
+        if (not self.resume) or (not os.path.exists(self.prefix + 'post_equal_weights.txt')):
+            self.posterior_sample = self.Analyzer.get_equal_weighted_posterior()
+            self.posterior_sample[:, -1] = self.posterior_sample[:, -1] + \
+                self._logprior_sample(self.posterior_sample[:, 0:-1])
+            np.savetxt(self.prefix + 'post_equal_weights.txt', self.posterior_sample)
+        else:
+            self.posterior_sample = np.loadtxt(self.prefix + 'post_equal_weights.txt')
 
         self.posterior_sample[:, -1] = self.posterior_sample[:, -1] + \
             self._logprior_sample(self.posterior_sample[:, 0:-1])

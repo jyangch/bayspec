@@ -2,8 +2,8 @@ import numpy as np
 import subprocess as sp
 import astropy.units as u
 from ..model import Additive
-from ...util.param import Par
 from ...util.prior import unif
+from ...util.param import Par, Cfg
 from collections import OrderedDict
 from os.path import dirname, abspath
 from astropy.cosmology import Planck18
@@ -286,6 +286,10 @@ class sbpl(Additive):
         self.params[r'$\beta$'] = Par(-2, unif(-5, 2))
         self.params[r'log$E_{b}$'] = Par(2, unif(0, 4))
         self.params[r'log$A$'] = Par(-1, unif(-6, 5))
+        
+        self.config = OrderedDict()
+        self.config['redshift'] = Cfg(0)
+        self.config['smoothness'] = Cfg(0.3)
 
 
     def func(self, E, T=None, O=None):
@@ -302,7 +306,7 @@ class sbpl(Additive):
         zi = 1 + redshift
         E = E * zi
 
-        Delta = 0.3
+        Delta = self.config['smoothness'].value
         m = (beta - alpha) / 2
         b = (alpha + beta) / 2
         q = np.log10(E / Eb) / Delta
@@ -328,6 +332,10 @@ class ssbpl(Additive):
         self.params[r'$\beta$'] = Par(-3, unif(-5, -2))
         self.params[r'log$E_{p}$'] = Par(2, unif(0, 4))
         self.params[r'log$A$'] = Par(0, unif(-6, 6))
+        
+        self.config = OrderedDict()
+        self.config['redshift'] = Cfg(0)
+        self.config['smoothness'] = Cfg(2)
 
 
     def func(self, E, T=None, O=None):
@@ -347,7 +355,7 @@ class ssbpl(Additive):
         zi = 1 + redshift
         E = E * zi
 
-        n = 2.69
+        n = self.config['smoothness'].value
         Ej = Ep * (-(alpha + 2) / (beta + 2)) ** (1 / ((beta - alpha) * n))
         phtspec = Amp * Ej ** alpha * ((E / Ej) ** (-alpha * n) + (E / Ej) ** (-beta * n)) ** (-1 / n)
         return phtspec
@@ -368,6 +376,10 @@ class csbpl(Additive):
         self.params[r'log$E_{b}$'] = Par(1, unif(-1, 2))
         self.params[r'log$E_{p}$'] = Par(3, unif(1, 4))
         self.params[r'log$A$'] = Par(0, unif(-6, 6))
+        
+        self.config = OrderedDict()
+        self.config['redshift'] = Cfg(0)
+        self.config['smoothness'] = Cfg(2)
 
 
     def func(self, E, T=None, O=None):
@@ -389,7 +401,7 @@ class csbpl(Additive):
         zi = 1 + redshift
         E = E * zi
 
-        n = 5.38
+        n = self.config['smoothness'].value
         Ec = Ep / (2 + alpha2)
         phtspec = Amp * Eb ** alpha1 * ((E / Eb) ** (-alpha1 * n) + (E / Eb) ** (-alpha2 * n)) ** (-1 / n) * np.exp(-E / Ec)
         return phtspec
@@ -412,6 +424,11 @@ class dsbpl(Additive):
         self.params[r'log$E_{b}$'] = Par(1, unif(0, 3))
         self.params[r'log$E_{p}$'] = Par(3, unif(1, 4))
         self.params[r'log$A$'] = Par(0, unif(-6, 6))
+        
+        self.config = OrderedDict()
+        self.config['redshift'] = Cfg(0)
+        self.config['smoothness1'] = Cfg(2)
+        self.config['smoothness2'] = Cfg(2)
 
 
     def func(self, E, T=None, O=None):
@@ -434,8 +451,8 @@ class dsbpl(Additive):
         zi = 1 + redshift
         E = E * zi
 
-        n1 = 5.38
-        n2 = 2.69
+        n1 = self.config['smoothness1'].value
+        n2 = self.config['smoothness2'].value
         Ej = Ep * (-(alpha2 + 2) / (beta + 2)) ** (1 / ((beta - alpha2) * n2))
         sbpl1 = ((E / Eb) ** (-alpha1 * n1) + (E / Eb) ** (-alpha2 * n1)) ** (n2 / n1)
         sbpl2 = ((Ej / Eb) ** (-alpha1 * n1) + (Ej / Eb) ** (-alpha2 * n1)) ** (n2 / n1)
@@ -462,6 +479,12 @@ class tsbpl(Additive):
         self.params[r'log$E_{p}$'] = Par(3, unif(1, 4))
         self.params[r'log$A$'] = Par(0, unif(-6, 6))
         
+        self.config = OrderedDict()
+        self.config['redshift'] = Cfg(0)
+        self.config['smoothness1'] = Cfg(2)
+        self.config['smoothness2'] = Cfg(2)
+        self.config['smoothness3'] = Cfg(2)
+        
         
     def func(self, E, T=None, O=None):
         alpha_a = self.params[r'$\alpha_{a}$'].value
@@ -486,9 +509,9 @@ class tsbpl(Additive):
         zi = 1 + redshift
         E = E * zi
 
-        n1 = 5.38
-        n2 = 5.38
-        n3 = 2.69
+        n1 = self.config['smoothness1'].value
+        n2 = self.config['smoothness2'].value
+        n3 = self.config['smoothness3'].value
 
         Ej = Ep * (-(alpha_p + 2) / (beta + 2)) ** (1 / ((beta - alpha_p) * n3))
         phtspec = Amp * Ea ** alpha_a * self._sb4pl(E, [alpha_a, alpha_m, alpha_p, beta, Ea, Em, Ej, n1, n2, n3])

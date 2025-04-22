@@ -121,7 +121,35 @@ class Pair(object):
         return [self.model.phtspec(E, T) for (E, T) in \
             zip(self.data.rsp_re_chbin_mean, self.data.rsp_re_chbin_tarr)]
         
+
+    @property
+    def flxspec_at_rsp(self):
         
+        return [self.model.flxspec(E, T) for (E, T) in \
+            zip(self.data.rsp_chbin_mean, self.data.rsp_chbin_tarr)]
+        
+        
+    @property
+    def re_flxspec_at_rsp(self):
+        
+        return [self.model.flxspec(E, T) for (E, T) in \
+            zip(self.data.rsp_re_chbin_mean, self.data.rsp_re_chbin_tarr)]
+        
+        
+    @property
+    def ergspec_at_rsp(self):
+        
+        return [self.model.ergspec(E, T) for (E, T) in \
+            zip(self.data.rsp_chbin_mean, self.data.rsp_chbin_tarr)]
+        
+        
+    @property
+    def re_ergspec_at_rsp(self):
+        
+        return [self.model.ergspec(E, T) for (E, T) in \
+            zip(self.data.rsp_re_chbin_mean, self.data.rsp_re_chbin_tarr)]
+
+
     @property
     def cts_to_pht(self):
         
@@ -132,6 +160,30 @@ class Pair(object):
     def re_cts_to_pht(self):
         
         return [pht / cts for (cts, pht) in zip(self.conv_re_ctsspec, self.re_phtspec_at_rsp)]
+    
+    
+    @property
+    def cts_to_flx(self):
+        
+        return [flx / cts for (cts, flx) in zip(self.conv_ctsspec, self.flxspec_at_rsp)]
+    
+    
+    @property
+    def re_cts_to_flx(self):
+        
+        return [flx / cts for (cts, flx) in zip(self.conv_re_ctsspec, self.re_flxspec_at_rsp)]
+    
+    
+    @property
+    def cts_to_erg(self):
+        
+        return [erg / cts for (cts, erg) in zip(self.conv_ctsspec, self.ergspec_at_rsp)]
+    
+    
+    @property
+    def re_cts_to_erg(self):
+        
+        return [erg / cts for (cts, erg) in zip(self.conv_re_ctsspec, self.re_ergspec_at_rsp)]
     
     
     @property
@@ -156,6 +208,54 @@ class Pair(object):
     def deconv_re_phtspec_error(self):
         
         return [factor * cts for (factor, cts) in zip(self.re_cts_to_pht, self.data.net_re_ctsspec_error)]
+    
+    
+    @property
+    def deconv_flxspec(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.cts_to_flx, self.data.net_ctsspec)]
+    
+    
+    @property
+    def deconv_re_flxspec(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.re_cts_to_flx, self.data.net_re_ctsspec)]
+    
+    
+    @property
+    def deconv_flxspec_error(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.cts_to_flx, self.data.net_ctsspec_error)]
+    
+    
+    @property
+    def deconv_re_flxspec_error(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.re_cts_to_flx, self.data.net_re_ctsspec_error)]
+    
+    
+    @property
+    def deconv_ergspec(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.cts_to_erg, self.data.net_ctsspec)]
+    
+    
+    @property
+    def deconv_re_ergspec(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.re_cts_to_erg, self.data.net_re_ctsspec)]
+    
+    
+    @property
+    def deconv_ergspec_error(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.cts_to_erg, self.data.net_ctsspec_error)]
+    
+    
+    @property
+    def deconv_re_ergspec_error(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.re_cts_to_erg, self.data.net_re_ctsspec_error)]
     
     
     @property

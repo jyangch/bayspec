@@ -295,6 +295,34 @@ class Model(object):
         
         
     @property
+    def flxspec_at_rsp(self):
+        
+        return [self.flxspec(E, T) for (E, T) in \
+            zip(self.fit_to.rsp_chbin_mean, self.fit_to.rsp_chbin_tarr)]
+        
+        
+    @property
+    def re_flxspec_at_rsp(self):
+        
+        return [self.flxspec(E, T) for (E, T) in \
+            zip(self.fit_to.rsp_re_chbin_mean, self.fit_to.rsp_re_chbin_tarr)]
+        
+        
+    @property
+    def ergspec_at_rsp(self):
+        
+        return [self.ergspec(E, T) for (E, T) in \
+            zip(self.fit_to.rsp_chbin_mean, self.fit_to.rsp_chbin_tarr)]
+        
+        
+    @property
+    def re_ergspec_at_rsp(self):
+        
+        return [self.ergspec(E, T) for (E, T) in \
+            zip(self.fit_to.rsp_re_chbin_mean, self.fit_to.rsp_re_chbin_tarr)]
+        
+        
+    @property
     def cts_to_pht(self):
         
         return [pht / cts for (cts, pht) in zip(self.conv_ctsspec, self.phtspec_at_rsp)]
@@ -304,6 +332,30 @@ class Model(object):
     def re_cts_to_pht(self):
         
         return [pht / cts for (cts, pht) in zip(self.conv_re_ctsspec, self.re_phtspec_at_rsp)]
+    
+    
+    @property
+    def cts_to_flx(self):
+        
+        return [flx / cts for (cts, flx) in zip(self.conv_ctsspec, self.flxspec_at_rsp)]
+    
+    
+    @property
+    def re_cts_to_flx(self):
+        
+        return [flx / cts for (cts, flx) in zip(self.conv_re_ctsspec, self.re_flxspec_at_rsp)]
+    
+    
+    @property
+    def cts_to_erg(self):
+        
+        return [erg / cts for (cts, erg) in zip(self.conv_ctsspec, self.ergspec_at_rsp)]
+    
+    
+    @property
+    def re_cts_to_erg(self):
+        
+        return [erg / cts for (cts, erg) in zip(self.conv_re_ctsspec, self.re_ergspec_at_rsp)]
     
     
     @property

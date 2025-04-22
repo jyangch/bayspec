@@ -534,7 +534,7 @@ class Plot(object):
 
 
     @staticmethod
-    def pair(cls, ploter='plotly', style='CE', show=True, add=None, mul=None):
+    def pair(cls, ploter='plotly', style='CE', show=True):
         
         if not isinstance(cls, Pair):
             raise TypeError('cls is not Pair type, cannot call pair method')
@@ -579,23 +579,25 @@ class Plot(object):
         elif style == 'NE':
             ylabel = 'Photons/cm^2/s/keV'
             
-            # if add is not None:
-            #     if not isinstance(add, Model) or add.type != 'add':
-            #         raise TypeError('add argument should be additive model')
-            #     add_mo_y = [add.phtspec(E) for E in obs_x]
-            # else:
-            #     add_mo_y = [np.zeros_like(E) for E in obs_x]
-                
-            # if mul is not None:
-            #     if not isinstance(mul, Model) or mul.type != 'mul':
-            #         raise TypeError('mul argument should be multiplicative model')
-            #     mul_mo_y = [mul.phtspec(E) for E in obs_x]
-            # else:
-            #     mul_mo_y = [np.ones_like(E) for E in obs_x]
-            
             obs_y = cls.deconv_phtspec
             obs_y_err = cls.deconv_phtspec_error
             mo_y = cls.phtspec_at_rsp
+            res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+            
+        elif style == 'Fv' or style == 'ENE':
+            ylabel = 'erg/cm^2/s/keV'
+            
+            obs_y = cls.deconv_flxspec
+            obs_y_err = cls.deconv_flxspec_error
+            mo_y = cls.flxspec_at_rsp
+            res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+            
+        elif style == 'vFv' or style == 'EENE':
+            ylabel = 'erg/cm^2/s'
+            
+            obs_y = cls.deconv_ergspec
+            obs_y_err = cls.deconv_ergspec_error
+            mo_y = cls.ergspec_at_rsp
             res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
             
         else:
@@ -797,6 +799,34 @@ class Plot(object):
                 obs_y_err = cls.data_re_phtspec_error
                 mo_y = cls.model_re_phtspec
                 res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+                
+        elif style == 'Fv' or style == 'ENE':
+            ylabel = 'erg/cm^2/s/keV'
+            
+            if not rebin:
+                obs_y = cls.data_flxspec
+                obs_y_err = cls.data_flxspec_error
+                mo_y = cls.model_flxspec
+                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+            else:
+                obs_y = cls.data_re_flxspec
+                obs_y_err = cls.data_re_flxspec_error
+                mo_y = cls.model_re_flxspec
+                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+                
+        elif style == 'vFv' or style == 'EENE':
+            ylabel = 'erg/cm^2/s'
+            
+            if not rebin:
+                obs_y = cls.data_ergspec
+                obs_y_err = cls.data_ergspec_error
+                mo_y = cls.model_ergspec
+                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+            else:
+                obs_y = cls.data_re_ergspec
+                obs_y_err = cls.data_re_ergspec_error
+                mo_y = cls.model_re_ergspec
+                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
             
         else:
             raise ValueError(f'unsupported style argument: {style}')
@@ -996,9 +1026,9 @@ class ModelPlot(object):
         
         if self.style == 'NE':
             ylabel = 'Photons/cm^2/s/keV'
-        elif self.style == 'Fv':
+        elif self.style == 'Fv' or self.style == 'ENE':
             ylabel = 'erg/cm^2/s/keV'
-        elif self.style == 'vFv':
+        elif self.style == 'vFv' or self.style == 'EENE':
             ylabel = 'erg/cm^2/s'
         elif self.style == 'NoU':
             ylabel = 'dimensionless'
@@ -1070,7 +1100,7 @@ class ModelPlot(object):
             else:
                 y = model.phtspec(E, T).astype(float)
                 
-        elif self.style == 'Fv':
+        elif self.style == 'Fv' or self.style == 'ENE':
             if model.type not in ['add', 'tinv']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
@@ -1081,7 +1111,7 @@ class ModelPlot(object):
             else:
                 y = model.flxspec(E, T).astype(float)
                 
-        elif self.style == 'vFv':
+        elif self.style == 'vFv' or self.style == 'EENE':
             if model.type not in ['add', 'tinv', 'math']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             

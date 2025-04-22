@@ -358,7 +358,54 @@ class Data(object):
         return [factor * cts for (factor, cts) in zip(self.fit_with.re_cts_to_pht, self.net_re_ctsspec_error)]
     
     
+    @property
+    def deconv_flxspec(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.fit_with.cts_to_flx, self.net_ctsspec)]
     
+    
+    @property
+    def deconv_re_flxspec(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.fit_with.re_cts_to_flx, self.net_re_ctsspec)]
+    
+    
+    @property
+    def deconv_flxspec_error(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.fit_with.cts_to_flx, self.net_ctsspec_error)]
+    
+    
+    @property
+    def deconv_re_flxspec_error(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.fit_with.re_cts_to_flx, self.net_re_ctsspec_error)]
+    
+    
+    @property
+    def deconv_ergspec(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.fit_with.cts_to_erg, self.net_ctsspec)]
+    
+    
+    @property
+    def deconv_re_ergspec(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.fit_with.re_cts_to_erg, self.net_re_ctsspec)]
+    
+    
+    @property
+    def deconv_ergspec_error(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.fit_with.cts_to_erg, self.net_ctsspec_error)]
+    
+    
+    @property
+    def deconv_re_ergspec_error(self):
+        
+        return [factor * cts for (factor, cts) in zip(self.fit_with.re_cts_to_erg, self.net_re_ctsspec_error)]
+
+
     def net_counts_upperlimit(self, cl=0.9):
         
         return [unit.net_counts_upperlimit(cl) for unit in self.data.values()]
@@ -1391,7 +1438,8 @@ class DataUnit(object):
                 else:
                     raise AttributeError(f'unsupported stat: {stat}')
                 
-                evt = cs - cb * alpha
+                evt = cs
+                # nevt = cs - cb * alpha
                 
                 if ((sigma >= min_sigma) and (evt >= min_evt)) or cp == max_bin:
                     nowbin = False
