@@ -386,7 +386,7 @@ class katu(Tinvolved):
         E_str = ' '.join([str(Ei) for Ei in E])
         T_str = ' '.join([str(Ti) for Ti in T])
 
-        cmd = self.mo_dir + ' prompt.toml ' + '--energy ' + E_str + ' --time ' + T_str
+        cmd = self.mo_dir + ' prompt.toml --energy ' + E_str + ' --time ' + T_str
 
         process = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
         (out, err) = process.communicate()
