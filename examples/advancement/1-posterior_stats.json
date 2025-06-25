@@ -37,7 +37,7 @@
         }
     ],
     "nested sampling global log-evidence": -227.20007855540442,
-    "nested sampling global log-evidence error": 0.28271601950486636,
+    "nested sampling global log-evidence error": 0.2827160195048662,
     "global evidence": -227.79291052152632,
     "global evidence error": 0.024813036746695584,
     "nested importance sampling global log-evidence": -227.79291052152632,

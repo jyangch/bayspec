@@ -1,3 +1,4 @@
+import copy
 import inspect
 import warnings
 import numpy as np
@@ -549,20 +550,25 @@ class DataUnit(object):
         
     def _update_src(self):
         
-        if isinstance(self._src, tuple):
-            self.src_file, self.src_ii = self._src
-        else:
-            self.src_file = self._src
-            self.src_ii = None
+        if isinstance(self._src, Source):
+            self.src_ins = self._src
+            self.src_name = self.src_ins.name
             
-        if isinstance(self.src_file, BytesIO):
-            self.src_name = self.src_file.name
-        elif isinstance(self.src_file, str):
-            self.src_name = self.src_file.split('/')[-1]
         else:
-            raise ValueError(f'unsupported src file type')
-        
-        self.src_ins = Source.from_plain(self.src_file, self.src_ii)
+            if isinstance(self._src, tuple):
+                self.src_file, self.src_ii = self._src
+            else:
+                self.src_file = self._src
+                self.src_ii = None
+                
+            if isinstance(self.src_file, BytesIO):
+                self.src_name = self.src_file.name
+            elif isinstance(self.src_file, str):
+                self.src_name = self.src_file.split('/')[-1]
+            else:
+                raise ValueError(f'unsupported src file type')
+            
+            self.src_ins = Source.from_plain(self.src_file, self.src_ii)
 
 
     @property
@@ -581,28 +587,36 @@ class DataUnit(object):
     def _update_bkg(self):
         
         if self._bkg is None:
-            self.bkg_file = None
-            self.bkg_ii = None
+            self.src_ins_copy = copy.deepcopy(self.src_ins)
+            self.bkg_ins = Background(self.src_ins_copy._counts, 
+                                      self.src_ins_copy._errors, 
+                                      self.src_ins_copy._exposure, 
+                                      self.src_ins_copy._quality, 
+                                      self.src_ins_copy._grouping, 
+                                      self.src_ins_copy._backscale)
+            self.bkg_ins.set_zero()
             self.bkg_name = None
             
-            self.bkg_ins = Background.from_plain(self.src_file, self.src_ii)
-            self.bkg_ins.set_zero()
-            
         else:
-            if isinstance(self._bkg, tuple):
-                self.bkg_file, self.bkg_ii = self._bkg
-            else:
-                self.bkg_file = self._bkg
-                self.bkg_ii = None
-        
-            if isinstance(self.bkg_file, BytesIO):
-                self.bkg_name = self.bkg_file.name
-            elif isinstance(self.bkg_file, str):
-                self.bkg_name = self.bkg_file.split('/')[-1]
-            else:
-                raise ValueError(f'unsupported bkg file type')
+            if isinstance(self._bkg, Background):
+                self.bkg_ins = self._bkg
+                self.bkg_name = self.bkg_ins.name
+                
+            else:  
+                if isinstance(self._bkg, tuple):
+                    self.bkg_file, self.bkg_ii = self._bkg
+                else:
+                    self.bkg_file = self._bkg
+                    self.bkg_ii = None
             
-            self.bkg_ins = Background.from_plain(self.bkg_file, self.bkg_ii)
+                if isinstance(self.bkg_file, BytesIO):
+                    self.bkg_name = self.bkg_file.name
+                elif isinstance(self.bkg_file, str):
+                    self.bkg_name = self.bkg_file.split('/')[-1]
+                else:
+                    raise ValueError(f'unsupported bkg file type')
+                
+                self.bkg_ins = Background.from_plain(self.bkg_file, self.bkg_ii)
             
             
     @property
@@ -621,26 +635,29 @@ class DataUnit(object):
     def _update_rmf(self):
         
         if self._rmf is None:
-            self.rmf_file = None
-            self.rmf_ii = None
             self.rmf_name = None
             self.rmf_ins = None
             
         else:
-            if isinstance(self._rmf, tuple):
-                self.rmf_file, self.rmf_ii = self._rmf
-            else:
-                self.rmf_file = self._rmf
-                self.rmf_ii = None
+            if isinstance(self._rmf, Redistribution):
+                self.rmf_ins = self._rmf
+                self.rmf_name = self.rmf_ins.name
                 
-            if isinstance(self.rmf_file, BytesIO):
-                self.rmf_name = self.rmf_file.name
-            elif isinstance(self.rmf_file, str):
-                self.rmf_name = self.rmf_file.split('/')[-1]
-            else:
-                raise ValueError(f'unsupported rmf file type')
-            
-            self.rmf_ins = Redistribution.from_plain(self.rmf_file, self.rmf_ii)
+            else:   
+                if isinstance(self._rmf, tuple):
+                    self.rmf_file, self.rmf_ii = self._rmf
+                else:
+                    self.rmf_file = self._rmf
+                    self.rmf_ii = None
+                    
+                if isinstance(self.rmf_file, BytesIO):
+                    self.rmf_name = self.rmf_file.name
+                elif isinstance(self.rmf_file, str):
+                    self.rmf_name = self.rmf_file.split('/')[-1]
+                else:
+                    raise ValueError(f'unsupported rmf file type')
+                
+                self.rmf_ins = Redistribution.from_plain(self.rmf_file, self.rmf_ii)
             
             
     @property
@@ -659,26 +676,29 @@ class DataUnit(object):
     def _update_arf(self):
         
         if self._arf is None:
-            self.arf_file = None
-            self.arf_ii = None
             self.arf_name = None
             self.arf_ins = None
             
         else:
-            if isinstance(self._arf, tuple):
-                self.arf_file, self.arf_ii = self._arf
-            else:
-                self.arf_file = self._arf
-                self.arf_ii = None
+            if isinstance(self._arf, Auxiliary):
+                self.arf_ins = self._arf
+                self.arf_name = self.arf_ins.name
                 
-            if isinstance(self.arf_file, BytesIO):
-                self.arf_name = self.arf_file.name
-            elif isinstance(self.arf_file, str):
-                self.arf_name = self.arf_file.split('/')[-1]
-            else:
-                raise ValueError(f'unsupported arf file type')
-            
-            self.arf_ins = Auxiliary.from_plain(self.arf_file, self.arf_ii)
+            else:   
+                if isinstance(self._arf, tuple):
+                    self.arf_file, self.arf_ii = self._arf
+                else:
+                    self.arf_file = self._arf
+                    self.arf_ii = None
+                    
+                if isinstance(self.arf_file, BytesIO):
+                    self.arf_name = self.arf_file.name
+                elif isinstance(self.arf_file, str):
+                    self.arf_name = self.arf_file.split('/')[-1]
+                else:
+                    raise ValueError(f'unsupported arf file type')
+                
+                self.arf_ins = Auxiliary.from_plain(self.arf_file, self.arf_ii)
 
 
     @property
@@ -697,8 +717,6 @@ class DataUnit(object):
     def _update_rsp(self):
         
         if self._rsp is None:
-            self.rsp_file = None
-            self.rsp_ii = None
             self.rsp_name = None
             
             if self.rmf is not None and self.arf is not None:
@@ -708,20 +726,25 @@ class DataUnit(object):
                 warnings.warn(f'response is missing for spectrum {self.src_name}')
 
         else:
-            if isinstance(self._rsp, tuple):
-                self.rsp_file, self.rsp_ii = self._rsp
-            else:
-                self.rsp_file = self._rsp
-                self.rsp_ii = None
+            if isinstance(self._rsp, Response):
+                self.rsp_ins = self._rsp
+                self.rsp_name = self.rsp_ins.name
                 
-            if isinstance(self.rsp_file, BytesIO):
-                self.rsp_name = self.rsp_file.name
-            elif isinstance(self.rsp_file, str):
-                self.rsp_name = self.rsp_file.split('/')[-1]
             else:
-                raise ValueError(f'unsupported rsp file type')
-            
-            self.rsp_ins = Response.from_plain(self.rsp_file, self.rsp_ii)
+                if isinstance(self._rsp, tuple):
+                    self.rsp_file, self.rsp_ii = self._rsp
+                else:
+                    self.rsp_file = self._rsp
+                    self.rsp_ii = None
+                    
+                if isinstance(self.rsp_file, BytesIO):
+                    self.rsp_name = self.rsp_file.name
+                elif isinstance(self.rsp_file, str):
+                    self.rsp_name = self.rsp_file.split('/')[-1]
+                else:
+                    raise ValueError(f'unsupported rsp file type')
+                
+                self.rsp_ins = Response.from_plain(self.rsp_file, self.rsp_ii)
             
         if self.completeness:
             self.ebin = np.array(self.rsp_ins.phbin, dtype=float)

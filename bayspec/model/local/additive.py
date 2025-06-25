@@ -6,6 +6,7 @@ from ...util.prior import unif
 from ...util.param import Par, Cfg
 from collections import OrderedDict
 from os.path import dirname, abspath
+from scipy.special import gamma, zeta
 from astropy.cosmology import Planck18
 docs_path = dirname(dirname(dirname(abspath(__file__)))) + '/docs'
 
@@ -564,3 +565,45 @@ class tsbpl(Additive):
         F4 = self._pl(E, [alpha4, Eb3]) * self._sb3pl(Eb3, [alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2])
         F1234 = (F123 ** (- omega3) + F4 ** (- omega3)) ** (- 1 / omega3)
         return F1234
+
+
+
+class mbb(Additive):
+
+    def __init__(self):
+        super().__init__()
+        
+        self.expr = 'mbb'
+        self.comment = 'multi-color black-body model'
+
+        self.params = OrderedDict()
+        self.params[r'log$kT_{min}$'] = Par(1, unif(0, 2))
+        self.params[r'log$kT_{max}$'] = Par(2, unif(1, 4))
+        self.params[r'$m$'] = Par(0, unif(-5, 5))
+        self.params[r'log$A$'] = Par(0, unif(-10, 10))
+
+
+    def func(self, E, T=None, O=None):
+        logkTmin = self.params[r'log$kT_{min}$'].value
+        logkTmax = self.params[r'log$kT_{max}$'].value
+        m = self.params[r'$m$'].value
+        logA = self.params[r'log$A$'].value
+        
+        kTmin = 10 ** logkTmin
+        kTmax = 10 ** logkTmax
+        Amp = 10 ** logA
+        
+        redshift = self.config['redshift'].value
+
+        zi = 1 + redshift
+        E = E * zi
+
+        Emin = E / kTmin
+        Emax = E / kTmax
+        s1 = -2.015 - 1.665 * m - 0.125 * (m ** 2.0)
+        s2 = 3.0025 + 0.9275 * m + 0.0875 * (m ** 2.0)
+
+        phtspec = Amp * E ** (-2) * (1 + np.abs(m) * Emax ** (-1 - m) / (gamma(1 - m) * zeta(-1 * m, 1))) * \
+            kTmin ** (-4) / ((np.exp(Emax / s1) - 1) ** s1 + 1) / (((m + 1) / m * Emin ** (-3)) ** s2 + \
+                (Emin ** (-4 - m) / (gamma(1 - m) * zeta(-1 * m, 1))) ** s2) ** (1 / s2)
+        return phtspec

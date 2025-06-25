@@ -174,7 +174,7 @@ class zxhsync(Tinvolved):
         spec_prec_str = '%.2f'%self.config['spec_prec'].value
         temp_prec_str = '%.2f' % self.config['temp_prec'].value
 
-        phtspec = np.zeros_like(E)
+        phtspec = np.zeros_like(E, dtype=float)
         
         for Ti in set(T):
             idx = np.where(T == Ti)[0]
@@ -325,15 +325,13 @@ class katu(Tinvolved):
         self.expr = 'katu'
         self.comment = 'katu model'
         
+        self.pwd = os.getcwd()
         self.mo_prefix = docs_path + '/Katu'
 
-        os.chdir(self.mo_prefix)
-
         self.mo_dir = self.mo_prefix + '/GRB_MZ'
-        self.mo_cfg_dir = self.mo_prefix + '/prompt.toml'
+        self.cfg_dir = self.mo_prefix + '/prompt.toml'
         
-        # load the default configuration file
-        with open(self.mo_cfg_dir, 'r') as f_obj:
+        with open(self.cfg_dir, 'r') as f_obj:
             self.mo_cfg = toml.load(f_obj)
             
         self.params = OrderedDict()
@@ -379,24 +377,35 @@ class katu(Tinvolved):
         self.set_cfg('General.t_obs_start', t_obs_start)
         self.set_cfg('General.t_obs_end', t_obs_end)
 
-        # save the updated configuration file
-        with open(self.mo_cfg_dir, 'w') as f_obj:
+        with open(self.cfg_dir, 'w') as f_obj:
             toml.dump(self.mo_cfg, f_obj)
 
-        E_str = ' '.join([str(Ei) for Ei in E])
-        T_str = ' '.join([str(Ti) for Ti in T])
+        E_list = [str(Ei) for Ei in E]
+        T_list = [str(Ti) for Ti in T]
+        
+        E_split_list = [E_list[i:i + 10000] for i in range(0, len(E_list), 10000)]
+        T_split_list = [T_list[i:i + 10000] for i in range(0, len(T_list), 10000)]
+        
+        os.chdir(self.mo_prefix)
+        
+        sed_split_list = []
+        for E_split, T_split in zip(E_split_list, T_split_list):
+            cmd = [self.mo_dir, 'prompt.toml', '--energy'] + E_split + ['--time'] + T_split
+            process = sp.Popen(cmd, shell=False, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
+            (out, err) = process.communicate()
+            if out == '':
+                print('+++++ Error Message +++++')
+                print('out: ', out)
+                print('err: ', err)
+                print('cmd: ', cmd)
+                print('+++++ +++++++++++++ +++++')
+            sed_split = np.array([float(val) for val in out.split()[3::4]])
+            sed_split_list.append(sed_split)
 
-        cmd = self.mo_dir + ' prompt.toml --energy ' + E_str + ' --time ' + T_str
-
-        process = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
-        (out, err) = process.communicate()
-        if out == '':
-            print('+++++ Error Message +++++')
-            print('out: ', out)
-            print('err: ', err)
-            print('cmd: ', cmd)
-            print('+++++ +++++++++++++ +++++')
-        phtspec = np.array([float(ps) for ps in out.split()[3::4]])
+        os.chdir(self.pwd)
+        
+        sed = np.concatenate(sed_split_list)    # in unit of erg/cm^2/s
+        phtspec = sed / (E * E * 1.60218e-9)    # in unit of photons/s/cm^2/keV
         return phtspec
 
 

@@ -23,7 +23,8 @@ class Plot(object):
     colors = px.colors.qualitative.Plotly \
         + px.colors.qualitative.D3 \
             + px.colors.qualitative.G10 \
-                + px.colors.qualitative.T10
+                + px.colors.qualitative.T10 \
+                    + px.colors.qualitative.Alphabet
 
     @staticmethod
     def get_rgb(color, opacity=1.0):
