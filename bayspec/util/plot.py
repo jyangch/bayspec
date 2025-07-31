@@ -725,7 +725,7 @@ class Plot(object):
             
     
     @staticmethod
-    def infer(cls, ploter='plotly', style='CE', rebin=False, show=True):
+    def infer(cls, ploter='plotly', style='CE', rebin=True, show=True):
         
         if not isinstance(cls, (Infer, Posterior)):
             raise TypeError('cls is not Infer or Posterior type, cannot call infer method')
