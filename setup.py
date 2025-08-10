@@ -1,16 +1,22 @@
+from pathlib import Path
 from setuptools import setup, find_packages
 
 
 _info_ = {}
-with open("bayspec/__info__.py", "r") as f:
+with open("heapy/__info__.py", "r") as f:
     exec(f.read(), _info_)
+    
+    
+readme_path = Path(__file__).parent / "README.md"
+long_description = readme_path.read_text(encoding="utf-8")
 
 
 setup(
     name="bayspec",
     version=_info_['__version__'],
     description="Astronomical spectrum fitting tool",
-    long_description="A Bayesian inference-based spectral fitting tool for multi-dimensional and multi-wavelength astrophysical data",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author="Jun Yang",
     author_email="jyang@smail.nju.edu.cn",
     url="https://github.com/jyangch/bayspec",
