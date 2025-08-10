@@ -3,7 +3,7 @@
 ### A Bayesian Inference-based Spectral Fitting Tool for High-energy Astrophysical Data.
 
 [![PyPI - Version](https://img.shields.io/pypi/v/bayspec?color=blue&logo=PyPI&logoColor=white&style=for-the-badge)](https://pypi.org/project/bayspec/)
-[![License: GPL v3](https://img.shields.io/github/license/wcxve/elisa?color=blue&logo=open-source-initiative&logoColor=white&style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: GPL v3](https://img.shields.io/github/license/jyangch/bayspec?color=blue&logo=open-source-initiative&logoColor=white&style=for-the-badge)](https://www.gnu.org/licenses/gpl-3.0)
 
 
 ## Features
