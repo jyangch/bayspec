@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 
 _info_ = {}
-with open("heapy/__info__.py", "r") as f:
+with open("bayspec/__info__.py", "r") as f:
     exec(f.read(), _info_)
     
     
