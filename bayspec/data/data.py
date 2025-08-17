@@ -1448,6 +1448,7 @@ class DataUnit(object):
                 cberr = np.sqrt(cberr ** 2 + bierr ** 2)
                 
                 if stat is None: stat = 'pgstat'
+                
                 if stat in ['pstat', 'cstat', 'ppstat', 'Xppstat', 'Xcstat', 'ULppstat']:
                     if (cb < 0 or cs < 0) and (cb != cs):
                         sigma = 0
@@ -1460,9 +1461,8 @@ class DataUnit(object):
                         sigma = pgsig(cs, cb * alpha, cberr * alpha)
                 else:
                     raise AttributeError(f'unsupported stat: {stat}')
-                
-                evt = cs
-                # nevt = cs - cb * alpha
+
+                evt = cs - cb * alpha
                 
                 if ((sigma >= min_sigma) and (evt >= min_evt)) or cp == max_bin:
                     nowbin = False

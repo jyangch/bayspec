@@ -5,7 +5,7 @@ from bayspec.util.tools import json_dump
 from bayspec import DataUnit, Data, Infer, Plot
 
 
-savepath = './quickstart_'
+savepath = './quickstart'
 
 if not os.path.exists(savepath):
     os.makedirs(savepath)

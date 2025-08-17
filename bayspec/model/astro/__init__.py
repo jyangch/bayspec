@@ -107,7 +107,10 @@ for name, cls in model_classes.items():
                     else:
                         if min_value is None: min_value = value / 10
                         if max_value is None: max_value = value * 10
-                        self.params[pl] = Par(value, unif(min_value, max_value))
+                        if pl == 'NH':
+                            self.params[pl] = Par(value, unif(min_value, 20))
+                        else:
+                            self.params[pl] = Par(value, unif(min_value, max_value))
                 else:
                     value = pr.value
                     self.config[pl] = Cfg(value)
