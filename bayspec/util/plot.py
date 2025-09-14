@@ -1094,45 +1094,41 @@ class ModelPlot(object):
             if model.type not in ['add', 'tinv']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
                 
+            y = model.phtspec(E, T).astype(float)
             if self.CI:
                 y_sample = model.phtspec_sample(E, T)
-                y = y_sample['median'].astype(float)
+                # y = y_sample['median'].astype(float)
                 y_ci = y_sample['Isigma'].astype(float)
-            else:
-                y = model.phtspec(E, T).astype(float)
                 
         elif self.style == 'Fv' or self.style == 'ENE':
             if model.type not in ['add', 'tinv']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
+            y = model.flxspec(E, T).astype(float)
             if self.CI:
                 y_sample = model.flxspec_sample(E, T)
-                y = y_sample['median'].astype(float)
+                # y = y_sample['median'].astype(float)
                 y_ci = y_sample['Isigma'].astype(float)
-            else:
-                y = model.flxspec(E, T).astype(float)
                 
         elif self.style == 'vFv' or self.style == 'EENE':
             if model.type not in ['add', 'tinv', 'math']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
+            y = model.ergspec(E, T).astype(float)
             if self.CI:
                 y_sample = model.ergspec_sample(E, T)
-                y = y_sample['median'].astype(float)
+                # y = y_sample['median'].astype(float)
                 y_ci = y_sample['Isigma'].astype(float)
-            else:
-                y = model.ergspec(E, T).astype(float)
-                
+
         elif self.style == 'NoU':
             if model.type not in ['mul', 'math']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
+            y = model.nouspec(E).astype(float)
             if self.CI:
                 y_sample = model.nouspec_sample(E)
-                y = y_sample['median'].astype(float)
+                # y = y_sample['median'].astype(float)
                 y_ci = y_sample['Isigma'].astype(float)
-            else:
-                y = model.nouspec(E).astype(float)
                 
         else:
             raise ValueError(f'unsupported style argument: {self.style}')
