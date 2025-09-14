@@ -83,7 +83,7 @@ class Infer(object):
         self.Model = [pair[1] for pair in self.pairs]
         self.Pair = [Pair(*pair) for pair in self.pairs]
         
-        self.data_exprs = [key for data in self.Data for key in data.exprs]
+        self.data_names = [key for data in self.Data for key in data.names]
         self.model_exprs = [model.expr for model in self.Model]
         
         
@@ -578,7 +578,7 @@ class Infer(object):
 
         for dt, mo in zip(self.Data, self.Model):
             mex = mo.expr
-            for sex, stat in zip(dt.exprs, dt.stats):
+            for sex, stat in zip(dt.names, dt.stats):
                 all_stat['Data'].insert(-1, sex)
                 all_stat['Model'].insert(-1, mex)
                 all_stat['Statistic'].insert(-1, stat)
@@ -750,9 +750,6 @@ class Infer(object):
             np.savetxt(self.prefix + 'post_equal_weights.txt', self.posterior_sample)
         else:
             self.posterior_sample = np.loadtxt(self.prefix + 'post_equal_weights.txt')
-
-        self.posterior_sample[:, -1] = self.posterior_sample[:, -1] + \
-            self._logprior_sample(self.posterior_sample[:, 0:-1])
 
         self.logevidence = self.posterior_stats['nested importance sampling global log-evidence']
         

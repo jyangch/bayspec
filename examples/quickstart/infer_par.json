@@ -1,0 +1,74 @@
+[
+    {
+        "par#": "1*",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "$\\alpha$",
+        "Value": -1.0,
+        "Prior": "unif(-8, 4)"
+    },
+    {
+        "par#": "2*",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "log$E_{c}$",
+        "Value": 2.0,
+        "Prior": "unif(0, 4)"
+    },
+    {
+        "par#": "3*",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "log$A$",
+        "Value": -1.0,
+        "Prior": "unif(-6, 5)"
+    },
+    {
+        "par#": "4",
+        "Expression": "data",
+        "Component": "nai",
+        "Parameter": "rf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "5",
+        "Expression": "data",
+        "Component": "nai",
+        "Parameter": "sf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "6",
+        "Expression": "data",
+        "Component": "nai",
+        "Parameter": "bf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "7",
+        "Expression": "data",
+        "Component": "bgo",
+        "Parameter": "rf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "8",
+        "Expression": "data",
+        "Component": "bgo",
+        "Parameter": "sf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "9",
+        "Expression": "data",
+        "Component": "bgo",
+        "Parameter": "bf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    }
+]

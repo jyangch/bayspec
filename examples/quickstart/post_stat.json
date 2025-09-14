@@ -1,0 +1,23 @@
+[
+    {
+        "Data": "nai",
+        "Model": "cpl",
+        "Statistic": "pgstat",
+        "Value": "388.50",
+        "Bins": "109"
+    },
+    {
+        "Data": "bgo",
+        "Model": "cpl",
+        "Statistic": "pgstat",
+        "Value": "31.07",
+        "Bins": "28"
+    },
+    {
+        "Data": "Total",
+        "Model": "Total",
+        "Statistic": "stat/dof",
+        "Value": "419.58/134",
+        "Bins": "137"
+    }
+]

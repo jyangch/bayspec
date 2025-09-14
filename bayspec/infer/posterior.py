@@ -40,6 +40,7 @@ class Posterior(Infer):
             self.free_par[i+1].post = Post(sample, logprob)
             
         self._par_best_ci(q=0.6827)
+        self.at_par(self.par_best_ci)
 
 
     def _par_best_ci(self, q=0.6827):
@@ -199,7 +200,7 @@ class Posterior(Infer):
     @property
     def stat_info(self):
         
-        self.at_par(self.par_best_ci)
+        self.at_par(self.par_best)
         
         return Info.from_dict(self.all_stat)
 

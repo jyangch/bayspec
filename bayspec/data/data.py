@@ -5,7 +5,7 @@ import numpy as np
 from io import BytesIO
 from scipy import special
 from ..util.info import Info
-from ..util.param import Par
+from ..util.tools import SuperDict
 from collections import OrderedDict
 from .spectrum import Source, Background
 from ..util.significance import pgsig, ppsig
@@ -68,41 +68,18 @@ class Data(object):
         if self.data is None:
             raise ValueError('data is None')
         
-        self.exprs = [key for key in self.data.keys()]
+        self.names = [key for key in self.data.keys()]
         self.srcs = [unit.src_ins for unit in self.data.values()]
         self.bkgs = [unit.bkg_ins for unit in self.data.values()]
         self.rsps = [unit.rsp_ins for unit in self.data.values()]
         self.stats = [unit.stat for unit in self.data.values()]
-        
-        self.weights = np.array([unit.weight for unit in self.data.values()])
-        self.npoints = np.array([unit.npoint for unit in self.data.values()])
-        
         self.notcs = [unit.notc for unit in self.data.values()]
-        
-        self.rsp_factor = [unit.rsp_factor for unit in self.data.values()]
-        self.src_factor = [unit.src_factor for unit in self.data.values()]
-        self.bkg_factor = [unit.bkg_factor for unit in self.data.values()]
-        
-        self.src_efficiency = [unit.src_efficiency for unit in self.data.values()]
-        self.bkg_efficiency = [unit.bkg_efficiency for unit in self.data.values()]
+        self.grpgs = [unit.grpg for unit in self.data.values()]
+        self.rebns = [unit.rebn for unit in self.data.values()]
+        self.times = [unit.time for unit in self.data.values()]
+        self.weights = np.array([unit.weight for unit in self.data.values()])
 
-        self.src_counts = [src.counts for src in self.srcs]
-        self.src_errors = [src.errors for src in self.srcs]
-        
-        self.bkg_counts = [bkg.counts for bkg in self.bkgs]
-        self.bkg_errors = [bkg.errors for bkg in self.bkgs]
-        
-        self.rsp_chbin = [rsp.chbin for rsp in self.rsps]
-        self.rsp_phbin = [rsp.phbin for rsp in self.rsps]
-        self.rsp_drm = [rsp.drm for rsp in self.rsps]
-        
-        self.ebin = np.vstack([unit.ebin for unit in self.data.values()])
-        self.tarr = np.hstack([unit.tarr for unit in self.data.values()])
-        self.nbin = [unit.nbin for unit in self.data.values()]
-        self.bin_start = np.cumsum([0] + self.nbin)[:-1]
-        self.bin_stop = np.cumsum([0] + self.nbin)[1:]
-        
-        
+
     @property
     def fit_with(self):
         
@@ -132,6 +109,206 @@ class Data(object):
 
 
     @property
+    def pdicts(self):
+        
+        return OrderedDict([(key, unit.pdicts) for key, unit in self.data.items()])
+
+
+    @property
+    def par(self):
+        
+        pid = 0
+        par = SuperDict()
+        
+        for params in self.pdicts.values():
+            for pr in params.values():
+                pid += 1
+                par[str(pid)] = pr
+                
+        return par
+    
+    
+    @property
+    def ebin(self):
+        
+        return np.vstack([unit.ebin for unit in self.data.values()])
+    
+    
+    @property
+    def nbin(self):
+
+        return [unit.nbin for unit in self.data.values()]
+    
+    
+    @property
+    def tarr(self):
+        
+        return np.hstack([unit.tarr for unit in self.data.values()])
+    
+    
+    @property
+    def bin_start(self):
+        
+        return np.cumsum([0] + self.nbin)[:-1]
+    
+    
+    @property
+    def bin_stop(self):
+        
+        return np.cumsum([0] + self.nbin)[1:]
+    
+    
+    @property
+    def src_efficiency(self):
+
+        return [unit.src_efficiency for unit in self.data.values()]
+
+
+    @property
+    def bkg_efficiency(self):
+
+        return [unit.bkg_efficiency for unit in self.data.values()]
+
+
+    @property
+    def alpha(self):
+        
+        return [unit.alpha for unit in self.data.values()]
+
+
+    @property
+    def src_counts(self):
+        
+        return [unit.src_counts for unit in self.data.values()]
+    
+    
+    @property
+    def src_re_counts(self):
+        
+        return [unit.src_re_counts for unit in self.data.values()]
+    
+    
+    @property
+    def src_errors(self):
+        
+        return [unit.src_errors for unit in self.data.values()]
+
+
+    @property
+    def src_re_errors(self):
+
+        return [unit.src_re_errors for unit in self.data.values()]
+    
+    
+    @property
+    def bkg_counts(self):
+        
+        return [unit.bkg_counts for unit in self.data.values()]
+
+
+    @property
+    def bkg_re_counts(self):
+
+        return [unit.bkg_re_counts for unit in self.data.values()]
+
+
+    @property
+    def bkg_errors(self):
+
+        return [unit.bkg_errors for unit in self.data.values()]
+
+
+    @property
+    def bkg_re_errors(self):
+
+        return [unit.bkg_re_errors for unit in self.data.values()]
+    
+    
+    @property
+    def rsp_chbin(self):
+        
+        return [unit.rsp_chbin for unit in self.data.values()]
+
+
+    @property
+    def rsp_re_chbin(self):
+
+        return [unit.rsp_re_chbin for unit in self.data.values()]
+    
+    
+    @property
+    def rsp_chbin_mean(self):
+        
+        return [unit.rsp_chbin_mean for unit in self.data.values()]
+
+
+    @property
+    def rsp_re_chbin_mean(self):
+
+        return [unit.rsp_re_chbin_mean for unit in self.data.values()]
+
+
+    @property
+    def rsp_chbin_width(self):
+        
+        return [unit.rsp_chbin_width for unit in self.data.values()]
+
+
+    @property
+    def rsp_re_chbin_width(self):
+
+        return [unit.rsp_re_chbin_width for unit in self.data.values()]
+    
+    
+    @property
+    def rsp_chbin_tarr(self):
+        
+        return [unit.rsp_chbin_tarr for unit in self.data.values()]
+    
+    
+    @property
+    def rsp_re_chbin_tarr(self):
+        
+        return [unit.rsp_re_chbin_tarr for unit in self.data.values()]
+
+
+    @property
+    def rsp_drm(self):
+
+        return [unit.rsp_drm for unit in self.data.values()]
+
+
+    @property
+    def rsp_re_drm(self):
+
+        return [unit.rsp_re_drm for unit in self.data.values()]
+    
+    
+    @property
+    def npoints(self):
+        
+        return np.array([unit.npoint for unit in self.data.values()])
+    
+    
+    @property
+    def rsp_factor(self):
+        
+        return [unit.rsp_factor for unit in self.data.values()]
+    
+    
+    @property
+    def src_factor(self):
+
+        return [unit.src_factor for unit in self.data.values()]
+
+
+    @property
+    def bkg_factor(self):
+
+        return [unit.bkg_factor for unit in self.data.values()]
+
+
+    @property
     def corr_rsp_drm(self):
         
         return [unit.corr_rsp_drm for unit in self.data.values()]
@@ -153,43 +330,7 @@ class Data(object):
     def corr_bkg_efficiency(self):
         
         return [unit.corr_bkg_efficiency for unit in self.data.values()]
-    
-    
-    @property
-    def rsp_chbin_mean(self):
-        
-        return [unit.rsp_chbin_mean for unit in self.data.values()]
-    
-    
-    @property
-    def rsp_re_chbin_mean(self):
-        
-        return [unit.rsp_re_chbin_mean for unit in self.data.values()]
-    
-    
-    @property
-    def rsp_chbin_width(self):
-        
-        return [unit.rsp_chbin_width for unit in self.data.values()]
-    
-    
-    @property
-    def rsp_re_chbin_width(self):
-        
-        return [unit.rsp_re_chbin_width for unit in self.data.values()]
-    
-    
-    @property
-    def rsp_chbin_tarr(self):
-        
-        return [unit.rsp_chbin_tarr for unit in self.data.values()]
-    
-    
-    @property
-    def rsp_re_chbin_tarr(self):
-        
-        return [unit.rsp_re_chbin_tarr for unit in self.data.values()]
-    
+
     
     @property
     def src_ctsrate(self):
@@ -335,6 +476,16 @@ class Data(object):
         return [unit.net_re_ctsspec_error for unit in self.data.values()]
     
     
+    def net_counts_upperlimit(self, cl=0.9):
+        
+        return [unit.net_counts_upperlimit(cl) for unit in self.data.values()]
+        
+        
+    def net_ctsrate_upperlimit(self, cl=0.9):
+        
+        return [unit.net_ctsrate_upperlimit(cl) for unit in self.data.values()]
+    
+    
     @property
     def deconv_phtspec(self):
         
@@ -407,22 +558,6 @@ class Data(object):
         return [factor * cts for (factor, cts) in zip(self.fit_with.re_cts_to_erg, self.net_re_ctsspec_error)]
 
 
-    def net_counts_upperlimit(self, cl=0.9):
-        
-        return [unit.net_counts_upperlimit(cl) for unit in self.data.values()]
-        
-        
-    def net_ctsrate_upperlimit(self, cl=0.9):
-        
-        return [unit.net_ctsrate_upperlimit(cl) for unit in self.data.values()]
-    
-    
-    @property
-    def pdicts(self):
-        
-        return OrderedDict([(key, unit.pdicts) for key, unit in self.data.items()])
-
-
     @property
     def info(self):
         
@@ -439,6 +574,38 @@ class Data(object):
                     info_dict[key][i] = 'None'
 
         return Info.from_dict(info_dict)
+    
+    
+    @property
+    def all_params(self):
+        
+        pid = 0
+        all_params = list()
+        
+        for expr, params in self.pdicts.items():
+            for pl, pr in params.items():
+                pid += 1
+                
+                all_params.append(\
+                    {'par#': str(pid), 
+                     'Component': expr, 
+                     'Parameter': pl, 
+                     'Value': pr.val, 
+                     'Prior': f'{pr.prior_info}', 
+                     'Frozen': pr.frozen, 
+                     'Posterior': f'{pr.post_info}'})
+
+        return all_params
+    
+    
+    @property
+    def par_info(self):
+        
+        par_info = Info.list_dict_to_dict(self.all_params)
+        
+        del par_info['Posterior']
+        
+        return Info.from_dict(par_info)
                 
                 
     @property
@@ -491,6 +658,7 @@ class Data(object):
     def __str__(self):
         
         print(self.info.table)
+        print(self.par_info.table)
         
         return ''
 
@@ -510,10 +678,7 @@ class DataUnit(object):
         grpg=None, 
         rebn=None, 
         time=None, 
-        weight=1, 
-        rsp_factor=None, 
-        src_factor=None, 
-        bkg_factor=None
+        weight=1
         ):
         
         self._src = src
@@ -526,13 +691,9 @@ class DataUnit(object):
         self._grpg = grpg
         self._rebn = rebn
         self._time = time
-        
+        self._weight = weight
+
         self._update()
-        
-        self.weight = weight
-        self.rsp_factor = rsp_factor
-        self.src_factor = src_factor
-        self.bkg_factor = bkg_factor
 
 
     @property
@@ -588,12 +749,12 @@ class DataUnit(object):
         
         if self._bkg is None:
             self.src_ins_copy = copy.deepcopy(self.src_ins)
-            self.bkg_ins = Background(self.src_ins_copy._counts, 
-                                      self.src_ins_copy._errors, 
-                                      self.src_ins_copy._exposure, 
-                                      self.src_ins_copy._quality, 
-                                      self.src_ins_copy._grouping, 
-                                      self.src_ins_copy._backscale)
+            self.bkg_ins = Background(self.src_ins_copy.counts, 
+                                      self.src_ins_copy.errors, 
+                                      self.src_ins_copy.exposure, 
+                                      self.src_ins_copy.quality, 
+                                      self.src_ins_copy.grouping, 
+                                      self.src_ins_copy.backscale)
             self.bkg_ins.set_zero()
             self.bkg_name = None
             
@@ -745,12 +906,15 @@ class DataUnit(object):
                     raise ValueError(f'unsupported rsp file type')
                 
                 self.rsp_ins = Response.from_plain(self.rsp_file, self.rsp_ii)
-            
-        if self.completeness:
-            self.ebin = np.array(self.rsp_ins.phbin, dtype=float)
-            self.nbin = self.rsp_ins.phbin.shape[0]
+
+
+    @property
+    def completeness(self):
+        
+        if self.src_ins is None or self.rsp_ins is None:
+            return False
         else:
-            self.ebin = self.nbin = None
+            return True
 
 
     @property
@@ -770,15 +934,14 @@ class DataUnit(object):
         
         if not isinstance(self._stat, str):
             raise ValueError('<stat> parameter should be str')
-
-
-    @property
-    def qualifying(self):
+        
+        
+    def _update_qual(self):
         # quality flag:
         # qual == 0 if the data quality is good -> True
         # qual != 0 if the data quality is bad -> False
-        
-        return list(np.array(self.src_ins.quality) == 0)
+
+        self.qualifying = list(np.array(self.src_ins.quality) == 0)
 
 
     @property
@@ -805,13 +968,8 @@ class DataUnit(object):
                     self._notc = [self._notc]
                 else:
                     self._notc = self._union(self._notc)
-        else:
-            self._notc = [[np.min(self.rsp_ins._chbin), np.max(self.rsp_ins._chbin)]]
         
-        if self.completeness:
-            self.noticing = self._notice(self.rsp_ins._chbin, self._notc)
-        else:
-            self.noticing = None
+        self.noticing = self._notice(self.rsp_ins.chbin, self._notc)
 
 
     @property
@@ -836,30 +994,44 @@ class DataUnit(object):
         if self._grpg is None:
             self.grouping = self.src_ins.grouping
         else:
-            gr_params = {'min_evt': None, 'min_sigma': None, 'max_bin': None}
+            gr_params = {'min_evt': None, 'min_nevt': None, 'min_sigma': None, 'max_bin': None}
             gr_params.update(self._grpg)
             
-            if self.completeness:
-                ini_flag = (np.array(self.qualifying) & np.array(self.noticing)).astype(int).tolist()
-                
-                self.grouping =  self._group(
-                    self.src_ins._counts, 
-                    self.bkg_ins._counts, 
-                    self.bkg_ins._errors, 
-                    self.src_ins.exposure, 
-                    self.bkg_ins.exposure, 
-                    self.src_ins.backscale, 
-                    self.bkg_ins.backscale, 
-                    min_evt=gr_params['min_evt'], 
-                    min_sigma=gr_params['min_sigma'], 
-                    max_bin=gr_params['max_bin'], 
-                    stat=self.stat, 
-                    ini_flag=ini_flag)
-                
+            ini_flag = (np.array(self.qualifying) & np.array(self.noticing)).astype(int).tolist()
+            
+            self.grouping =  self._group(
+                self.src_ins.counts, 
+                self.bkg_ins.counts, 
+                self.bkg_ins.errors, 
+                self.src_ins.exposure, 
+                self.bkg_ins.exposure, 
+                self.src_ins.backscale, 
+                self.bkg_ins.backscale, 
+                min_evt=gr_params['min_evt'], 
+                min_nevt=gr_params['min_nevt'], 
+                min_sigma=gr_params['min_sigma'], 
+                max_bin=gr_params['max_bin'], 
+                stat=self.stat, 
+                ini_flag=ini_flag)
+
+        self.grouping_slice = []
+        for i, (ql, nt, gr) in enumerate(zip(self.qualifying, self.noticing, self.grouping)):
+            if not (ql and nt):
+                continue
             else:
-                self.grouping = None
-                
-                
+                if gr == 0:
+                    continue
+                elif gr == 1:
+                    self.grouping_slice.append([i, i+1])
+                elif gr == -1:
+                    if len(self.grouping_slice) == 0:
+                        self.grouping_slice.append([i, i+1])
+                    else:
+                        self.grouping_slice[-1][1] = i + 1
+
+        self.grouping_slice = np.array(self.grouping_slice, dtype=int)
+
+
     @property
     def rebn(self):
         
@@ -882,44 +1054,42 @@ class DataUnit(object):
         if self._rebn is None:
             self.rebining = self.grouping
         else:
-            rb_params = {'min_evt': None, 'min_sigma': None, 'max_bin': None}
+            rb_params = {'min_evt': None, 'min_nevt': None, 'min_sigma': None, 'max_bin': None}
             rb_params.update(self._rebn)
             
-            if self.completeness:
-                ini_flag = (np.array(self.qualifying) & np.array(self.noticing)).astype(int).tolist()
-                
-                self.rebining =  self._rebin(
-                    self.src_ins._counts, 
-                    self.bkg_ins._counts, 
-                    self.bkg_ins._errors, 
-                    self.src_ins.exposure, 
-                    self.bkg_ins.exposure, 
-                    self.src_ins.backscale, 
-                    self.bkg_ins.backscale, 
-                    min_evt=rb_params['min_evt'], 
-                    min_sigma=rb_params['min_sigma'], 
-                    max_bin=rb_params['max_bin'], 
-                    stat=self.stat, 
-                    ini_flag=ini_flag)
-                
-            else:
-                self.rebining = None
-
-
-    def _update_data(self):
-        
-        if self.completeness:
-        
-            self.src_ins._update(self.qualifying, self.noticing, self.grouping, self.rebining)
-            self.bkg_ins._update(self.qualifying, self.noticing, self.grouping, self.rebining)
-            self.rsp_ins._update(self.qualifying, self.noticing, self.grouping, self.rebining)
+            ini_flag = (np.array(self.qualifying) & np.array(self.noticing)).astype(int).tolist()
             
-        self.npoint = self.src_ins.counts.shape[0]
-        
-        self.src_efficiency = self.src_ins.exposure
-        self.bkg_efficiency = self.bkg_ins.exposure * self.bkg_ins.backscale / self.src_ins.backscale
-        
-        self.alpha = self.src_efficiency / self.bkg_efficiency
+            self.rebining =  self._rebin(
+                self.src_ins.counts, 
+                self.bkg_ins.counts, 
+                self.bkg_ins.errors, 
+                self.src_ins.exposure, 
+                self.bkg_ins.exposure, 
+                self.src_ins.backscale, 
+                self.bkg_ins.backscale, 
+                min_evt=rb_params['min_evt'], 
+                min_nevt=rb_params['min_nevt'], 
+                min_sigma=rb_params['min_sigma'], 
+                max_bin=rb_params['max_bin'], 
+                stat=self.stat, 
+                ini_flag=ini_flag)
+
+        self.rebining_slice = []
+        for i, (ql, nt, rb) in enumerate(zip(self.qualifying, self.noticing, self.rebining)):
+            if not (ql and nt):
+                continue
+            else:
+                if rb == 0:
+                    continue
+                elif rb == 1:
+                    self.rebining_slice.append([i, i+1])
+                elif rb == -1:
+                    if len(self.rebining_slice) == 0:
+                        self.rebining_slice.append([i, i+1])
+                    else:
+                        self.rebining_slice[-1][1] = i + 1
+
+        self.rebining_slice = np.array(self.rebining_slice, dtype=int)
 
 
     @property
@@ -940,35 +1110,6 @@ class DataUnit(object):
         if self._time is not None:
             if not isinstance(self._time, (int, float)):
                 raise ValueError('<time> parameter should be int or float')
-        
-        if self.completeness:
-            self.tarr = np.repeat(self._time, self.nbin)
-        else:
-            self.tarr = None
-
-
-    def _update(self):
-        
-        self._update_src()
-        self._update_bkg()
-        self._update_rmf()
-        self._update_arf()
-        self._update_rsp()
-        self._update_stat()
-        self._update_notc()
-        self._update_grpg()
-        self._update_rebn()
-        self._update_data()
-        self._update_time()
-        
-        
-    @property
-    def completeness(self):
-        
-        if self.src_ins is None or self.rsp_ins is None:
-            return False
-        else:
-            return True
 
 
     @property
@@ -981,111 +1122,206 @@ class DataUnit(object):
     def weight(self, new_weight):
         
         self._weight = new_weight
-        
+        self._update()
+
+
+    def _update_weight(self):
+
         if not isinstance(self._weight, (int, float)):
             raise ValueError('<weight> parameter should be int or float')
 
 
-    @property
-    def rsp_factor(self):
+    def _update(self):
         
-        return self._rsp_factor.value
-    
-    
-    @rsp_factor.setter
-    def rsp_factor(self, new_rsp_factor):
-        
-        if new_rsp_factor is None:
-            self._rsp_factor = Par(1, frozen=True)
+        self._update_src()
+        self._update_bkg()
+        self._update_rmf()
+        self._update_arf()
+        self._update_rsp()
+        self._update_stat()
+        self._update_time()
+        self._update_weight()
+
+        if self.completeness:
+            self._update_qual()
+            self._update_notc()
+            self._update_grpg()
+            self._update_rebn()
         else:
-            self._rsp_factor = new_rsp_factor
-        
-        if not isinstance(self._rsp_factor, Par):
-            raise ValueError('<rsp_factor> parameter should be Param type')
-        
-        
-    @property
-    def src_factor(self):
-        
-        return self._src_factor.value
-    
-    
-    @src_factor.setter
-    def src_factor(self, new_src_factor):
-        
-        if new_src_factor is None:
-            self._src_factor = Par(1, frozen=True)
-        else:
-            self._src_factor = new_src_factor
-        
-        if not isinstance(self._src_factor, Par):
-            raise ValueError('<src_factor> parameter should be Param type')
-        
-        
-    @property
-    def bkg_factor(self):
-        
-        return self._bkg_factor.value
-    
-    
-    @bkg_factor.setter
-    def bkg_factor(self, new_bkg_factor):
-        
-        if new_bkg_factor is None:
-            self._bkg_factor = Par(1, frozen=True)
-        else:
-            self._bkg_factor = new_bkg_factor
-        
-        if not isinstance(self._bkg_factor, Par):
-            raise ValueError('<bkg_factor> parameter should be Param type')
+            self.qualifying = None
+            self.noticing = None
+            self.grouping = None
+            self.rebining = None
+            self.grouping_slice = None
+            self.rebining_slice = None
+            
+            warnings.warn('data unit is uncomplete with missing src or rsp!')
 
 
     @property
-    def corr_rsp_drm(self):
+    def pdicts(self):
         
-        return self.rsp_ins.drm * self.rsp_factor
+        pdicts = OrderedDict()
+        pdicts['rf'] = self.rsp_ins.factor
+        pdicts['sf'] = self.src_ins.factor
+        pdicts['bf'] = self.bkg_ins.factor
+        
+        if hasattr(self.rsp_ins, 'ra'):
+            pdicts['ra'] = self.rsp_ins.ra
+        if hasattr(self.rsp_ins, 'dec'):
+            pdicts['dec'] = self.rsp_ins.dec
+
+        return pdicts
+
+
+    @property
+    def ebin(self):
+        
+        return np.array(self.rsp_ins.phbin, dtype=float)
+        
+        
+    @property
+    def nbin(self):
+        
+        return self.rsp_ins.phbin.shape[0]
+
+
+    @property
+    def tarr(self):
+
+        return np.repeat(self.time, self.nbin)
     
     
     @property
-    def corr_rsp_re_drm(self):
+    def src_efficiency(self):
         
-        return self.rsp_ins.re_drm * self.rsp_factor
+        return self.src_ins.exposure
+    
+    
+    @property
+    def bkg_efficiency(self):
+        
+        return self.bkg_ins.exposure * self.bkg_ins.backscale / self.src_ins.backscale
+    
+    
+    @property
+    def alpha(self):
+        
+        return self.src_efficiency / self.bkg_efficiency
+    
+    
+    @property
+    def src_counts(self):
+        
+        src_cts_cumsum = np.r_[0, np.cumsum(self.src_ins.counts)]
+        gr_starts, gr_stops = self.grouping_slice.T
+        
+        return src_cts_cumsum[gr_stops] - src_cts_cumsum[gr_starts]
+    
+    
+    @property
+    def src_re_counts(self):
+        
+        src_cts_cumsum = np.r_[0, np.cumsum(self.src_ins.counts)]
+        rb_starts, rb_stops = self.rebining_slice.T
+        
+        return src_cts_cumsum[rb_stops] - src_cts_cumsum[rb_starts]
 
 
     @property
-    def corr_src_efficiency(self):
+    def src_errors(self):
         
-        return self.src_efficiency * self.src_factor
+        src_err_cumsum = np.r_[0, np.cumsum(self.src_ins.errors**2)]
+        gr_starts, gr_stops = self.grouping_slice.T
+        
+        return np.sqrt(src_err_cumsum[gr_stops] - src_err_cumsum[gr_starts])
+    
+    
+    @property
+    def src_re_errors(self):
+        
+        src_err_cumsum = np.r_[0, np.cumsum(self.src_ins.errors**2)]
+        rb_starts, rb_stops = self.rebining_slice.T
+        
+        return np.sqrt(src_err_cumsum[rb_stops] - src_err_cumsum[rb_starts])
+    
+    
+    @property
+    def bkg_counts(self):
+        
+        bkg_cts_cumsum = np.r_[0, np.cumsum(self.bkg_ins.counts)]
+        gr_starts, gr_stops = self.grouping_slice.T
+        
+        return bkg_cts_cumsum[gr_stops] - bkg_cts_cumsum[gr_starts]
+    
+    
+    @property
+    def bkg_re_counts(self):
+        
+        bkg_cts_cumsum = np.r_[0, np.cumsum(self.bkg_ins.counts)]
+        rb_starts, rb_stops = self.rebining_slice.T
+        
+        return bkg_cts_cumsum[rb_stops] - bkg_cts_cumsum[rb_starts]
 
 
     @property
-    def corr_bkg_efficiency(self):
+    def bkg_errors(self):
         
-        return self.bkg_efficiency * self.bkg_factor
+        bkg_err_cumsum = np.r_[0, np.cumsum(self.bkg_ins.errors**2)]
+        gr_starts, gr_stops = self.grouping_slice.T
+        
+        return np.sqrt(bkg_err_cumsum[gr_stops] - bkg_err_cumsum[gr_starts])
+    
+    
+    @property
+    def bkg_re_errors(self):
+        
+        bkg_err_cumsum = np.r_[0, np.cumsum(self.bkg_ins.errors**2)]
+        rb_starts, rb_stops = self.rebining_slice.T
+        
+        return np.sqrt(bkg_err_cumsum[rb_stops] - bkg_err_cumsum[rb_starts])
+
+
+    @property
+    def rsp_chbin(self):
+        
+        ch_left = self.rsp_ins.chbin[self.grouping_slice[:,0], 0]
+        ch_right = self.rsp_ins.chbin[self.grouping_slice[:,1] - 1, 1]
+
+        return np.column_stack([ch_left, ch_right])
+    
+    
+    @property
+    def rsp_re_chbin(self):
+        
+        ch_left = self.rsp_ins.chbin[self.rebining_slice[:,0], 0]
+        ch_right = self.rsp_ins.chbin[self.rebining_slice[:,1] - 1, 1]
+
+        return np.column_stack([ch_left, ch_right])
     
     
     @property
     def rsp_chbin_mean(self):
-        
-        return np.mean(self.rsp_ins.chbin, axis=1)
+
+        return np.mean(self.rsp_chbin, axis=1)
     
     
     @property
     def rsp_re_chbin_mean(self):
-        
-        return np.mean(self.rsp_ins.re_chbin, axis=1)
-    
-    
+
+        return np.mean(self.rsp_re_chbin, axis=1)
+
+
     @property
     def rsp_chbin_width(self):
-        
-        return np.diff(self.rsp_ins.chbin, axis=1).reshape(1, -1)[0]
+
+        return np.diff(self.rsp_chbin, axis=1).reshape(1, -1)[0]
     
     
     @property
     def rsp_re_chbin_width(self):
-        
-        return np.diff(self.rsp_ins.re_chbin, axis=1).reshape(1, -1)[0]
+
+        return np.diff(self.rsp_re_chbin, axis=1).reshape(1, -1)[0]
     
     
     @property
@@ -1098,30 +1334,98 @@ class DataUnit(object):
     def rsp_re_chbin_tarr(self):
         
         return np.repeat(self._time, self.rsp_re_chbin_mean.shape[0])
+
+
+    @property
+    def rsp_drm(self):
+
+        rsp_drm_cumsum = np.hstack([np.zeros((self.rsp_ins.drm.shape[0], 1), dtype=float), 
+                                    np.cumsum(self.rsp_ins.drm, axis=1, dtype=float)])
+        gr_starts, gr_stops = self.grouping_slice.T
+
+        return rsp_drm_cumsum[:, gr_stops] - rsp_drm_cumsum[:, gr_starts]
+
+
+    @property
+    def rsp_re_drm(self):
+
+        rsp_drm_cumsum = np.hstack([np.zeros((self.rsp_ins.drm.shape[0], 1), dtype=float), 
+                                    np.cumsum(self.rsp_ins.drm, axis=1, dtype=float)])
+        rb_starts, rb_stops = self.rebining_slice.T
+
+        return rsp_drm_cumsum[:, rb_stops] - rsp_drm_cumsum[:, rb_starts]
+
+
+    @property
+    def npoint(self):
+        
+        return self.src_counts.shape[0]
+
+
+    @property
+    def rsp_factor(self):
+        
+        return self.rsp_ins.factor.value
+
+
+    @property
+    def src_factor(self):
+        
+        return self.src_ins.factor.value
+
+
+    @property
+    def bkg_factor(self):
+        
+        return self.bkg_ins.factor.value
+
+
+    @property
+    def corr_rsp_drm(self):
+        
+        return self.rsp_drm * self.rsp_factor
     
     
     @property
+    def corr_rsp_re_drm(self):
+        
+        return self.rsp_re_drm * self.rsp_factor
+
+
+    @property
+    def corr_src_efficiency(self):
+        
+        return self.src_efficiency * self.src_factor
+
+
+    @property
+    def corr_bkg_efficiency(self):
+        
+        return self.bkg_efficiency * self.bkg_factor
+
+
+    @property
     def src_ctsrate(self):
         
-        return self.src_ins.counts / self.corr_src_efficiency
+        return self.src_counts / self.corr_src_efficiency
     
     
     @property
     def src_re_ctsrate(self):
         
-        return self.src_ins.re_counts / self.corr_src_efficiency
+        return self.src_re_counts / self.corr_src_efficiency
     
     
     @property
     def src_ctsrate_error(self):
         
-        return self.src_ins.errors  / self.corr_src_efficiency
+        return self.src_errors  / self.corr_src_efficiency
     
     
     @property
     def src_re_ctsrate_error(self):
         
-        return self.src_ins.re_errors  / self.corr_src_efficiency
+        return self.src_re_errors  / self.corr_src_efficiency
     
     
     @property
@@ -1151,25 +1455,25 @@ class DataUnit(object):
     @property
     def bkg_ctsrate(self):
         
-        return self.bkg_ins.counts  / self.corr_bkg_efficiency
+        return self.bkg_counts  / self.corr_bkg_efficiency
     
     
     @property
     def bkg_re_ctsrate(self):
         
-        return self.bkg_ins.re_counts  / self.corr_bkg_efficiency
+        return self.bkg_re_counts  / self.corr_bkg_efficiency
     
     
     @property
     def bkg_ctsrate_error(self):
         
-        return self.bkg_ins.errors  / self.corr_bkg_efficiency
+        return self.bkg_errors  / self.corr_bkg_efficiency
     
     
     @property
     def bkg_re_ctsrate_error(self):
         
-        return self.bkg_ins.re_errors  / self.corr_bkg_efficiency
+        return self.bkg_re_errors  / self.corr_bkg_efficiency
     
     
     @property
@@ -1246,8 +1550,8 @@ class DataUnit(object):
     
     def net_counts_upperlimit(self, cl=0.9):
         
-        N = np.sum(self.src_ins.counts)
-        B = np.sum(self.bkg_ins.counts) * self.alpha
+        N = np.sum(self.src_counts)
+        B = np.sum(self.bkg_counts) * self.alpha
         
         return special.gammaincinv(N + 1, cl * special.gammaincc(N + 1, B) 
                                    + special.gammainc(N + 1, B)) - B
@@ -1256,38 +1560,6 @@ class DataUnit(object):
     def net_ctsrate_upperlimit(self, cl=0.9):
         
         return self.net_counts_upperlimit(cl) / self.corr_src_efficiency
-
-
-    @property
-    def name(self):
-        
-        try:
-            return self._name
-        except AttributeError:
-            return self.get_obj_name()
-    
-    
-    @name.setter
-    def name(self, new_name):
-        
-        self._name = new_name
-        
-        
-    @property
-    def pdicts(self):
-        
-        pdicts = OrderedDict()
-        
-        if self._rsp_factor == Par(1, frozen=True):
-            pdicts[f'rf@{self.name}'] = self._rsp_factor
-            
-        if self._src_factor == Par(1, frozen=True):
-            pdicts[f'sf@{self.name}'] = self._src_factor
-            
-        if self._bkg_factor == Par(1, frozen=True):
-            pdicts[f'bf@{self.name}'] = self._bkg_factor
-        
-        return pdicts
 
 
     @property
@@ -1304,9 +1576,6 @@ class DataUnit(object):
         info_dict['grpg'] = self.grpg
         info_dict['time'] = self.time
         info_dict['weight'] = self.weight
-        info_dict['rsp_factor'] = self.rsp_factor
-        info_dict['src_factor'] = self.src_factor
-        info_dict['bkg_factor'] = self.bkg_factor
         
         for key, value in info_dict.items():
             if value is None:
@@ -1316,15 +1585,23 @@ class DataUnit(object):
                                  (self.name, info_dict.values())])
         
         return Info.from_dict(info_dict)
-
+    
+    
+    @property
+    def name(self):
         
-    def __str__(self):
+        try:
+            return self._name
+        except AttributeError:
+            return self.get_obj_name()
+    
+    
+    @name.setter
+    def name(self, new_name):
         
-        print(self.info.table)
-        
-        return ''
-
-
+        self._name = new_name
+    
+    
     def get_obj_name(self):
         
         frame = inspect.currentframe()
@@ -1342,6 +1619,13 @@ class DataUnit(object):
             return possible_var_names[-1]
         
         return None
+
+
+    def __str__(self):
+        
+        print(self.info.table)
+        
+        return ''
     
     
     @staticmethod
@@ -1394,6 +1678,7 @@ class DataUnit(object):
         sb, 
         min_sigma=None, 
         min_evt=None, 
+        min_nevt=None, 
         max_bin=None, 
         stat=None, 
         ini_flag=None
@@ -1412,6 +1697,9 @@ class DataUnit(object):
         
         if min_evt is None:
             min_evt = 0
+            
+        if min_nevt is None:
+            min_nevt = 0
             
         if max_bin is None:
             max_bin = np.inf
@@ -1462,9 +1750,10 @@ class DataUnit(object):
                 else:
                     raise AttributeError(f'unsupported stat: {stat}')
 
-                evt = cs - cb * alpha
+                evt = cs
+                nevt = cs - cb * alpha
                 
-                if ((sigma >= min_sigma) and (evt >= min_evt)) or cp == max_bin:
+                if ((sigma >= min_sigma) and (evt >= min_evt) and (nevt >= min_nevt)) or cp == max_bin:
                     nowbin = False
                     cs, cb, cberr, cp = 0, 0, 0, 0
                 else:
@@ -1490,6 +1779,7 @@ class DataUnit(object):
         sb, 
         min_sigma=None, 
         min_evt=None, 
+        min_nevt=None, 
         max_bin=None, 
         stat=None, 
         ini_flag=None
@@ -1505,6 +1795,7 @@ class DataUnit(object):
             sb, 
             min_sigma, 
             min_evt, 
+            min_nevt, 
             max_bin, 
             stat, 
             ini_flag)

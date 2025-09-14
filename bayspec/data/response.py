@@ -3,6 +3,8 @@ import numpy as np
 from io import BytesIO
 from copy import deepcopy
 from ..util.info import Info
+from ..util.param import Par
+from ..util.prior import unif
 import astropy.io.fits as fits
 from collections import OrderedDict
 
@@ -10,7 +12,13 @@ from collections import OrderedDict
 
 class Response(object):
     
-    def __init__(self, chbin, phbin, drm):
+    def __init__(
+        self, 
+        chbin, 
+        phbin, 
+        drm, 
+        factor=Par(1, frozen=True)
+        ):
         
         if not (np.ndim(chbin) == np.ndim(phbin) == np.ndim(drm) == 2):
             raise ValueError('chbin, phbin and drm must be 2D arrays')
@@ -21,9 +29,10 @@ class Response(object):
         if not (phbin.shape[0] == drm.shape[0] and phbin.shape[1] == 2):
             raise ValueError('phbin is 2-col array with rows same with rows of drm')
         
-        self._chbin = self.chbin = chbin
-        self._phbin = self.phbin = phbin
-        self._drm = self.drm = drm
+        self._chbin = chbin
+        self._phbin = phbin
+        self._drm = drm
+        self._factor = factor
         
         
     @classmethod
@@ -126,68 +135,44 @@ class Response(object):
         drm = drm * srp
         
         return cls(chbin, phbin, drm)
+    
+    
+    @property
+    def chbin(self):
+        
+        return self._chbin
+    
+    
+    @property
+    def phbin(self):
+        
+        return self._phbin
+    
+    
+    @property
+    def drm(self):
+
+        return self._drm
 
 
-    def _update(self, qual, notc, grpg, rebn):
+    @property
+    def factor(self):
         
-        self.qual = qual
-        self.notc = notc
-        self.grpg = grpg
-        self.rebn = rebn
+        return self._factor
+    
+    
+    @factor.setter
+    def factor(self, new_factor):
         
-        new_chidx = 0
-        new_chbin = []
-        new_drm = []
-        
-        for i, (ql, nt, gr) in enumerate(zip(qual, notc, grpg)):
-            if not (ql and nt):
-                continue
-            else:
-                if gr == 0:
-                    continue
-                elif gr == 1:
-                    new_chidx += 1
-                    new_chbin.append(list(self._chbin[i]))
-                    new_drm.append(self._drm[:, i].copy())
-                elif gr == -1:
-                    if new_chidx == 0:
-                        new_chidx += 1
-                        new_chbin.append(list(self._chbin[i]))
-                        new_drm.append(self._drm[:, i].copy())
-                    else:
-                        new_chbin[-1][-1] = self._chbin[i][-1]
-                        new_drm[-1] += self._drm[:, i].copy()
-                    
-        self.chbin = np.array(new_chbin)
-        self.drm = np.column_stack(new_drm).astype(float)
-        
-        re_chidx = 0
-        re_chbin = []
-        re_drm = []
-        
-        for i, (ql, nt, rb) in enumerate(zip(qual, notc, rebn)):
-            if not (ql and nt):
-                continue
-            else:
-                if rb == 0:
-                    continue
-                elif rb == 1:
-                    re_chidx += 1
-                    re_chbin.append(list(self._chbin[i]))
-                    re_drm.append(self._drm[:, i].copy())
-                elif rb == -1:
-                    if re_chidx == 0:
-                        re_chidx += 1
-                        re_chbin.append(list(self._chbin[i]))
-                        re_drm.append(self._drm[:, i].copy())
-                    else:
-                        re_chbin[-1][-1] = self._chbin[i][-1]
-                        re_drm[-1] += self._drm[:, i].copy()
-                    
-        self.re_chbin = np.array(re_chbin)
-        self.re_drm = np.column_stack(re_drm).astype(float)
-        
-        
+        if new_factor is None:
+            self._factor = Par(1, frozen=True)
+        else:
+            self._factor = new_factor
+
+        if not isinstance(self._factor, Par):
+            raise ValueError('<factor> parameter should be Param type')
+
+
     @property
     def chbin_mean(self):
         
@@ -195,28 +180,16 @@ class Response(object):
     
     
     @property
-    def re_chbin_mean(self):
-        
-        return np.mean(self.re_chbin, axis=1)
-    
-    
-    @property
     def chbin_width(self):
         
         return np.diff(self.chbin, axis=1).reshape(1, -1)[0]
-    
-    
-    @property
-    def re_chbin_width(self):
-        
-        return np.diff(self.re_chbin, axis=1).reshape(1, -1)[0]
 
 
     @property
     def info(self):
         
-        num_chbin = len(self._chbin)
-        num_phbin = len(self._phbin)
+        num_chbin = len(self.chbin)
+        num_phbin = len(self.phbin)
         info_dict = OrderedDict([('Name', [self.name]), 
                                  ('Channel bins', [num_chbin]), 
                                  ('Photon bins', [num_phbin])])
@@ -323,15 +296,109 @@ class DisableMethodsMeta(type):
 
 
 
+class BalrogResponse(Response, metaclass=DisableMethodsMeta):
+
+    methods_to_disable = ['from_rsp', 
+                          'from_rsp2',
+                          'from_plain',
+                          'from_rmf_arf']
+
+    def __init__(
+        self, 
+        balrog_drm, 
+        ra=Par(0, unif(0, 360)), 
+        dec=Par(0, unif(-90, 90)), 
+        factor=Par(1, frozen=True)
+        ):
+
+        self._balrog_drm = balrog_drm
+        self._ra = ra
+        self._dec = dec
+        self._factor = factor
+
+
+    @property
+    def balrog_drm(self):
+
+        return self._balrog_drm
+    
+    
+    @property
+    def ra(self):
+        
+        return self._ra
+    
+    
+    @ra.setter
+    def ra(self, new_ra):
+        
+        if new_ra is None:
+            self._ra = Par(0, unif(0, 360))
+        else:
+            self._ra = new_ra
+
+        if not isinstance(self._ra, Par):
+            raise ValueError('<ra> parameter should be Param type')
+
+
+    @property
+    def dec(self):
+
+        return self._dec
+
+
+    @dec.setter
+    def dec(self, new_dec):
+
+        if new_dec is None:
+            self._dec = Par(0, unif(-90, 90))
+        else:
+            self._dec = new_dec
+
+        if not isinstance(self._dec, Par):
+            raise ValueError('<dec> parameter should be Param type')
+    
+    
+    @property
+    def chbin(self):
+
+        return np.vstack([self.balrog_drm.ebounds[:-1], 
+                          self.balrog_drm.ebounds[1:]]).T
+    
+    
+    @property
+    def phbin(self):
+
+        return np.vstack([self.balrog_drm.monte_carlo_energies[:-1], 
+                          self.balrog_drm.monte_carlo_energies[1:]]).T
+
+
+    @property
+    def drm(self):
+        
+        self.balrog_drm.set_location(self.ra.value, self.dec.value)
+        
+        drm = self.balrog_drm.matrix
+
+        if not np.all(np.isfinite(drm)):
+
+            for i, j in zip(np.where(np.isnan(drm))[0], np.where(np.isnan(drm))[1]):
+
+                drm[i, j] = 0.
+
+        return drm.T
+
+
+
 class Redistribution(Response, metaclass=DisableMethodsMeta):
     
-    methods_to_disable = ['from_rmf_arf', '_update']
-    
+    methods_to_disable = ['from_rmf_arf']
+
     def __init__(self, chbin, phbin, drm):
         
         super().__init__(chbin, phbin, drm)
-        
-        
+
+
     @classmethod
     def from_rmf(cls, rmf_file):
         
@@ -385,8 +452,7 @@ class Auxiliary(Response, metaclass=DisableMethodsMeta):
     
     methods_to_disable = ['from_rsp', 
                           'from_rsp2', 
-                          'from_rmf_arf', 
-                          '_update'
+                          'from_rmf_arf'
                           ]
     
     def __init__(self, phbin, srp):
@@ -400,10 +466,16 @@ class Auxiliary(Response, metaclass=DisableMethodsMeta):
         if not (phbin.shape[0] == srp.shape[0]):
             raise ValueError('phbin and srp should have same rows')
         
-        self._phbin = self.phbin = phbin
-        self._srp = self.srp = srp
+        self._phbin = phbin
+        self._srp = srp
+
+
+    @property
+    def srp(self):
         
-        
+        return self._srp
+
+
     @classmethod
     def from_arf(cls, arf_file):
         
@@ -453,7 +525,7 @@ class Auxiliary(Response, metaclass=DisableMethodsMeta):
     @property
     def info(self):
         
-        num_phbin = len(self._phbin)
+        num_phbin = len(self.phbin)
         info_dict = OrderedDict([('auxiliary', [self.name]), 
                                  ('photon bins', [num_phbin])])
         

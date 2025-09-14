@@ -409,6 +409,52 @@ class csbpl(Additive):
     
     
     
+class sbplcut(Additive):
+
+    def __init__(self):
+        super().__init__()
+
+        self.expr = 'sbplcut'
+        self.comment = 'smoothly broken power law with cutoff'
+
+        self.params = OrderedDict()
+        self.params[r'$\alpha$'] = Par(-1, unif(-4, 3))
+        self.params[r'$\beta$'] = Par(-3, unif(-5, -2))
+        self.params[r'log$E_{p}$'] = Par(2, unif(0, 4))
+        self.params[r'log$E_{c}$'] = Par(3, unif(3, 5))
+        self.params[r'log$A$'] = Par(0, unif(-6, 6))
+        
+        self.config = OrderedDict()
+        self.config['redshift'] = Cfg(0)
+        self.config['smoothness'] = Cfg(2)
+
+
+    def func(self, E, T=None, O=None):
+        alpha = self.params[r'$\alpha$'].value
+        beta = self.params[r'$\beta$'].value
+        logEp = self.params[r'log$E_{p}$'].value
+        logEc = self.params[r'log$E_{c}$'].value
+        logA = self.params[r'log$A$'].value
+
+        Ep = 10 ** logEp
+        Ec = 10 ** logEc
+        Amp = 10 ** logA
+
+        if alpha <= beta:
+            return np.ones_like(E) * np.nan
+
+        redshift = self.config['redshift'].value
+
+        zi = 1 + redshift
+        E = E * zi
+        
+        n = self.config['smoothness'].value
+        Ej = Ep * (-(alpha + 2) / (beta + 2)) ** (1 / ((beta - alpha) * n))
+        phtspec = Amp * Ej ** alpha * ((E / Ej) ** (-alpha * n) + (E / Ej) ** (-beta * n)) ** (-1 / n) * np.exp(-E / Ec)
+        return phtspec
+    
+    
+    
 class dsbpl(Additive):
     # Ravasio_A&A_2018#
     

@@ -43,13 +43,13 @@ class Plot(object):
         
         if ploter == 'plotly':
             fig = go.Figure()
-            obs = go.Scatter(x=np.arange(len(cls._counts)), 
-                             y=cls._counts.astype(float), 
+            obs = go.Scatter(x=np.arange(len(cls.counts)), 
+                             y=cls.counts.astype(float), 
                              mode='lines', 
                              showlegend=False, 
                              error_y=dict(
                                  type='data',
-                                 array=cls._errors.astype(float),
+                                 array=cls.errors.astype(float),
                                  thickness=1.5,
                                  width=0)
                              )
@@ -71,8 +71,8 @@ class Plot(object):
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
 
-            ax.errorbar(np.arange(len(cls._counts)), cls._counts, 
-                        yerr=cls._errors, fmt='-', lw=1.0, elinewidth=1.0, capsize=0)
+            ax.errorbar(np.arange(len(cls.counts)), cls.counts, 
+                        yerr=cls.errors, fmt='-', lw=1.0, elinewidth=1.0, capsize=0)
             ax.set_yscale('log')
             ax.set_xlabel('Channel')
             ax.set_ylabel('Counts')
@@ -102,8 +102,8 @@ class Plot(object):
         if isinstance(cls, Auxiliary):
             raise TypeError('cls is Auxiliary type, cannot call response method')
         
-        ch_mean = np.mean(cls._chbin, axis=1)
-        ph_mean = np.mean(cls._phbin, axis=1)
+        ch_mean = np.mean(cls.chbin, axis=1)
+        ph_mean = np.mean(cls.phbin, axis=1)
         
         if ch_range is None:
             ch_idx = np.arange(len(ch_mean))
@@ -117,7 +117,7 @@ class Plot(object):
         
         if ploter == 'plotly':
             fig = go.Figure()
-            rsp = go.Contour(z=cls._drm[ph_idx, :][:, ch_idx].astype(float), 
+            rsp = go.Contour(z=cls.drm[ph_idx, :][:, ch_idx].astype(float), 
                              x=ch_mean[ch_idx].astype(float), 
                              y=ph_mean[ph_idx].astype(float), 
                              colorscale='Jet'
@@ -142,7 +142,7 @@ class Plot(object):
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
 
-            c = ax.contourf(X, Y, cls._drm[ph_idx, :][:, ch_idx], cmap='jet')
+            c = ax.contourf(X, Y, cls.drm[ph_idx, :][:, ch_idx], cmap='jet')
             ax.set_xscale('log')
             ax.set_yscale('log')
             ax.set_xlabel('Channel energy (keV)')
@@ -160,7 +160,7 @@ class Plot(object):
         if not isinstance(cls, Response):
             raise TypeError('cls is not Response type, cannot call response_photon method')
         
-        ph_mean = np.mean(cls._phbin, axis=1)
+        ph_mean = np.mean(cls.phbin, axis=1)
         
         if ph_range is None:
             ph_idx = np.arange(len(ph_mean))
@@ -170,9 +170,9 @@ class Plot(object):
         x = ph_mean[ph_idx].astype(float)
         
         if isinstance(cls, Auxiliary):
-            y = cls._srp[ph_idx].astype(float)
+            y = cls.srp[ph_idx].astype(float)
         else:
-            y = np.sum(cls._drm[ph_idx, :], axis=1).astype(float)
+            y = np.sum(cls.drm[ph_idx, :], axis=1).astype(float)
             
         
         if ploter == 'plotly':
@@ -230,7 +230,7 @@ class Plot(object):
         if isinstance(cls, Auxiliary):
             raise TypeError('cls is Auxiliary type, cannot call response_channel method')
         
-        ch_mean = np.mean(cls._chbin, axis=1)
+        ch_mean = np.mean(cls.chbin, axis=1)
         
         if ch_range is None:
             ch_idx = np.arange(len(ch_mean))
@@ -240,7 +240,7 @@ class Plot(object):
         if ploter == 'plotly':
             fig = go.Figure()
             obs = go.Scatter(x=ch_mean[ch_idx].astype(float), 
-                             y=np.sum(cls._drm[:, ch_idx], axis=0).astype(float), 
+                             y=np.sum(cls.drm[:, ch_idx], axis=0).astype(float), 
                              mode='lines', 
                              showlegend=False
                              )
@@ -262,7 +262,7 @@ class Plot(object):
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
 
-            ax.plot(ch_mean[ch_idx], np.sum(cls._drm[:, ch_idx], axis=0), lw=1.0)
+            ax.plot(ch_mean[ch_idx], np.sum(cls.drm[:, ch_idx], axis=0), lw=1.0)
             ax.set_xscale('log')
             ax.set_yscale('log')
             ax.set_xlabel('Channel energy (keV)')
@@ -466,13 +466,13 @@ class Plot(object):
         else:
             raise ValueError(f'unsupported style argument: {style}')
             
-        for i, expr in enumerate(cls.exprs):
+        for i, name in enumerate(cls.names):
                 
             if ploter == 'plotly':
                 obs = go.Scatter(x=x[i].astype(float), 
                                  y=y[i].astype(float), 
                                  mode='markers', 
-                                 name=expr, 
+                                 name=name, 
                                  showlegend=True, 
                                  error_x=dict(
                                      type='data',
@@ -493,7 +493,7 @@ class Plot(object):
                 
             elif ploter == 'matplotlib':
                 ax.errorbar(x[i], y[i], xerr=[x_le[i], x_he[i]], yerr=y_err[i], fmt='none', 
-                            ecolor=Plot.colors[i], elinewidth=0.8, capsize=0, capthick=0, label=expr)
+                            ecolor=Plot.colors[i], elinewidth=0.8, capsize=0, capthick=0, label=name)
                 
         if ploter == 'plotly':
             fig.update_xaxes(title_text='Energy (keV)', type='log')
@@ -608,13 +608,13 @@ class Plot(object):
         ymin = 0.5 * np.min(yall[yall > 0]).astype(float)
         ymax = 2 * np.max(yall[yall > 0]).astype(float)
             
-        for i, expr in enumerate(cls.data.exprs):
+        for i, name in enumerate(cls.data.names):
                 
             if ploter == 'plotly':
                 obs = go.Scatter(x=obs_x[i].astype(float), 
                                  y=obs_y[i].astype(float), 
                                  mode='markers', 
-                                 name=f'obs of {expr}', 
+                                 name=f'obs of {name}', 
                                  showlegend=False, 
                                  error_x=dict(
                                      type='data',
@@ -633,13 +633,13 @@ class Plot(object):
                                  marker=dict(symbol='cross-thin', size=0, color=Plot.colors[i]))
                 mo = go.Scatter(x=obs_x[i].astype(float), 
                                 y=mo_y[i].astype(float), 
-                                name=expr, 
+                                name=name, 
                                 showlegend=True, 
                                 mode='lines', 
                                 line=dict(width=2, color=Plot.colors[i]))
                 res = go.Scatter(x=obs_x[i].astype(float), 
                                  y=res_y[i].astype(float), 
-                                 name=f'res of {expr}', 
+                                 name=f'res of {name}', 
                                  showlegend=False, 
                                  mode='markers', 
                                  marker=dict(symbol='cross-thin', size=10, color=Plot.colors[i], 
@@ -651,7 +651,7 @@ class Plot(object):
                 
             elif ploter == 'matplotlib':
                 ax1.errorbar(obs_x[i], obs_y[i], xerr = [obs_x_le[i], obs_x_he[i]], yerr=obs_y_err[i], 
-                             fmt='none', ecolor=Plot.colors[i], elinewidth=0.8, capsize=0, capthick=0, label=expr)
+                             fmt='none', ecolor=Plot.colors[i], elinewidth=0.8, capsize=0, capthick=0, label=name)
                 ax1.plot(obs_x[i], mo_y[i], color=Plot.colors[i], lw=1.0)
                 ax2.scatter(obs_x[i], res_y[i], marker='+', color=Plot.colors[i], s=40, linewidths=0.8)
                 
@@ -836,13 +836,13 @@ class Plot(object):
         ymin = 0.5 * np.min(yall[yall > 0]).astype(float)
         ymax = 2 * np.max(yall[yall > 0]).astype(float)
             
-        for i, expr in enumerate(cls.data_exprs):
+        for i, name in enumerate(cls.data_names):
                 
             if ploter == 'plotly':
                 obs = go.Scatter(x=obs_x[i].astype(float), 
                                  y=obs_y[i].astype(float), 
                                  mode='markers', 
-                                 name=f'obs of {expr}', 
+                                 name=f'obs of {name}', 
                                  showlegend=False, 
                                  error_x=dict(
                                      type='data',
@@ -861,13 +861,13 @@ class Plot(object):
                                  marker=dict(symbol='cross-thin', size=0, color=Plot.colors[i]))
                 mo = go.Scatter(x=obs_x[i].astype(float), 
                                 y=mo_y[i].astype(float), 
-                                name=expr, 
+                                name=name, 
                                 showlegend=True, 
                                 mode='lines', 
                                 line=dict(width=2, color=Plot.colors[i]))
                 res = go.Scatter(x=obs_x[i].astype(float), 
                                  y=res_y[i].astype(float), 
-                                 name=f'res of {expr}', 
+                                 name=f'res of {name}', 
                                  showlegend=False, 
                                  mode='markers', 
                                  marker=dict(symbol='cross-thin', size=10, color=Plot.colors[i], 
@@ -879,7 +879,7 @@ class Plot(object):
                 
             elif ploter == 'matplotlib':
                 ax1.errorbar(obs_x[i], obs_y[i], xerr = [obs_x_le[i], obs_x_he[i]], yerr=obs_y_err[i], 
-                             fmt='none', ecolor=Plot.colors[i], elinewidth=0.8, capsize=0, capthick=0, label=expr)
+                             fmt='none', ecolor=Plot.colors[i], elinewidth=0.8, capsize=0, capthick=0, label=name)
                 ax1.plot(obs_x[i], mo_y[i], color=Plot.colors[i], lw=1.0)
                 ax2.scatter(obs_x[i], res_y[i], marker='+', color=Plot.colors[i], s=40, linewidths=0.8)
                 

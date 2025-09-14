@@ -3,6 +3,7 @@ import numpy as np
 from io import BytesIO
 from copy import deepcopy
 from ..util.info import Info
+from ..util.param import Par
 import astropy.io.fits as fits
 from collections import OrderedDict
 
@@ -17,7 +18,8 @@ class Spectrum(object):
         exposure, 
         quality=None, 
         grouping=None,
-        backscale=1.0
+        backscale=1.0,
+        factor=Par(1, frozen=True)
         ):
         
         if not (np.ndim(counts) == np.ndim(errors) == 1):
@@ -41,14 +43,27 @@ class Spectrum(object):
             if not (np.shape(grouping) == np.shape(counts)):
                 raise ValueError('grouping must have the same shape with counts')
         
-        self._counts = self.counts = counts
-        self._errors = self.errors = errors
+        self._counts = counts
+        self._errors = errors
         self._exposure = exposure
         self._quality = quality
         self._grouping = grouping
         self._backscale = backscale
+        self._factor = factor
+
+
+    @property
+    def counts(self):
         
+        return self._counts
+    
+    
+    @property
+    def errors(self):
         
+        return self._errors
+
+
     @property
     def exposure(self):
         
@@ -73,82 +88,40 @@ class Spectrum(object):
         return self._backscale
     
     
+    @property
+    def factor(self):
+        
+        return self._factor
+    
+    
+    @factor.setter
+    def factor(self, new_factor):
+        
+        if new_factor is None:
+            self._factor = Par(1, frozen=True)
+        else:
+            self._factor = new_factor
+
+        if not isinstance(self._factor, Par):
+            raise ValueError('<factor> parameter should be Param type')
+    
+    
     def set_zero(self):
         
-        self._counts = self.counts = np.zeros_like(self.counts).astype(float)
-        self._errors = self.errors = np.zeros_like(self.errors).astype(float)
-    
-    
-    def _update(self, qual, notc, grpg, rebn):
-        
-        self.qual = qual
-        self.notc = notc
-        self.grpg = grpg
-        self.rebn = rebn
-        
-        new_chidx = 0
-        new_counts = []
-        new_errors = []
-        
-        for i, (ql, nt, gr) in enumerate(zip(qual, notc, grpg)):
-            if not (ql and nt):
-                continue
-            else:
-                if gr == 0:
-                    continue
-                elif gr == 1:
-                    new_chidx += 1
-                    new_counts.append(self._counts[i])
-                    new_errors.append(self._errors[i])
-                elif gr == -1:
-                    if new_chidx == 0:
-                        new_chidx += 1
-                        new_counts.append(self._counts[i])
-                        new_errors.append(self._errors[i])
-                    else:
-                        new_counts[-1] += self._counts[i]
-                        new_errors[-1] = np.sqrt(new_errors[-1] ** 2 + self._errors[i] ** 2)
-                    
-        self.counts = np.array(new_counts)
-        self.errors = np.array(new_errors)
-        
-        re_chidx = 0
-        re_counts = []
-        re_errors = []
-        
-        for i, (ql, nt, rb) in enumerate(zip(qual, notc, rebn)):
-            if not (ql and nt):
-                continue
-            else:
-                if rb == 0:
-                    continue
-                elif rb == 1:
-                    re_chidx += 1
-                    re_counts.append(self._counts[i])
-                    re_errors.append(self._errors[i])
-                elif rb == -1:
-                    if re_chidx == 0:
-                        re_chidx += 1
-                        re_counts.append(self._counts[i])
-                        re_errors.append(self._errors[i])
-                    else:
-                        re_counts[-1] += self._counts[i]
-                        re_errors[-1] = np.sqrt(re_errors[-1] ** 2 + self._errors[i] ** 2)
-                    
-        self.re_counts = np.array(re_counts)
-        self.re_errors = np.array(re_errors)
+        self._counts = np.zeros_like(self._counts).astype(float)
+        self._errors = np.zeros_like(self._errors).astype(float)
 
 
     @property
     def info(self):
         
-        num_channel = len(self._counts)
-        num_counts = sum(self._counts)
+        num_channel = len(self.counts)
+        num_counts = sum(self.counts)
         info_dict = OrderedDict([('Name', [self.name]), 
                                  ('Channels', [num_channel]), 
                                  ('Counts', [num_counts]), 
-                                 ('Exposure', [self._exposure]), 
-                                 ('Backscale', [self._backscale])])
+                                 ('Exposure', [self.exposure]), 
+                                 ('Backscale', [self.backscale])])
 
         return Info.from_dict(info_dict)
     
