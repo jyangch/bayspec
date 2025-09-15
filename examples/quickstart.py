@@ -1,6 +1,3 @@
-import time
-start = time.perf_counter()
-
 import os
 import numpy as np
 from bayspec.model.local import *
@@ -98,6 +95,3 @@ earr = np.logspace(1, 4, 100)
 modelplot = Plot.model(ploter='matplotlib', style='vFv', CI=True)
 fig = modelplot.add_model(model, E=earr, show=False)
 fig.savefig(savepath + '/model.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
-
-end = time.perf_counter()
-print("耗时:", end - start, "秒")
