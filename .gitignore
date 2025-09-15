@@ -50,6 +50,9 @@ Icon?
 build/
 dist/
 
+# beta version
+bayspec_beta/
+
 # private models
 bayspec/docs/Katu/
 bayspec/docs/ZXHSYNC/
