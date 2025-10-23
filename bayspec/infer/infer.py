@@ -2,13 +2,15 @@ import os
 import json
 import ctypes
 import numpy as np
+from scipy.optimize import minimize
+from collections import OrderedDict
+
 from .pair import Pair
 from ..util.info import Info
 from ..data.data import Data
 from ..model.model import Model
-from scipy.optimize import minimize
-from collections import OrderedDict
 from ..util.tools import SuperDict, JsonEncoder
+from ..util.tools import cached_property, clear_cached_property, json_dump
 
 
 
@@ -79,6 +81,12 @@ class Infer(object):
         if self.pairs is None:
             raise ValueError('pairs is None')
         
+        self._EXTRACT = object()
+        
+        clear_cached_property(self)
+        
+        self.nparis = len(self.pairs)
+        
         self.Data = [pair[0] for pair in self.pairs]
         self.Model = [pair[1] for pair in self.pairs]
         self.Pair = [Pair(*pair) for pair in self.pairs]
@@ -86,23 +94,22 @@ class Infer(object):
         self.data_names = [key for data in self.Data for key in data.names]
         self.model_exprs = [model.expr for model in self.Model]
         
-        
         self._you_free()
 
 
-    @property
+    @cached_property()
     def pdicts(self):
         
         return OrderedDict([(md.expr, md.pdicts) for md in (self.Model + self.Data)])
 
 
-    @property
+    @cached_property()
     def cdicts(self):
         
         return OrderedDict([(mo.expr, mo.pdicts) for mo in self.Model])
 
 
-    @property
+    @cached_property()
     def cfg(self):
 
         cid = 0
@@ -117,7 +124,7 @@ class Infer(object):
         return cfg
 
 
-    @property
+    @cached_property()
     def par(self):
         
         pid = 0
@@ -130,6 +137,12 @@ class Infer(object):
                     par[str(pid)] = pr
                 
         return par
+    
+    
+    @property
+    def pvalues(self):
+
+        return tuple([pr.value for pr in self.par.values()])
 
     
     @staticmethod
@@ -138,7 +151,7 @@ class Infer(object):
         return ctypes.cast(id, ctypes.py_object).value
 
 
-    @property
+    @cached_property()
     def idpid(self):
         
         pid = 0
@@ -162,14 +175,19 @@ class Infer(object):
         cid = 0
         all_config = list()
         
-        for mo in self.Model:
-            for expr, config in mo.cdicts.items():
+        for i, md in enumerate(self.Model + self.Data):
+            
+            if i < self.nparis: cls = 'model'
+            else: cls = 'data'
+            
+            for expr, config in md.cdicts.items():
                 for cl, cg in config.items():
                     cid += 1
                     
-                    all_config.append(\
+                    all_config.append(
                         {'cfg#': str(cid), 
-                         'Expression': mo.expr, 
+                         'Class': cls, 
+                         'Expression': md.expr, 
                          'Component': expr, 
                          'Parameter': cl, 
                          'Value': cg.val})
@@ -183,7 +201,11 @@ class Infer(object):
         pid = 0
         all_params = list()
         
-        for md in (self.Model + self.Data):
+        for i, md in enumerate(self.Model + self.Data):
+            
+            if i < self.nparis: cls = 'model'
+            else: cls = 'data'
+            
             for expr, params in md.pdicts.items():
                 for pl, pr in params.items():
                     pid += 1
@@ -193,8 +215,9 @@ class Infer(object):
                     mates = self_id.union(*mate_id)
                     mates.remove(str(pid))
                     
-                    all_params.append(\
+                    all_params.append(
                         {'par#': str(pid), 
+                         'Class': cls, 
                          'Expression': md.expr, 
                          'Component': expr, 
                          'Parameter': pl, 
@@ -592,7 +615,9 @@ class Infer(object):
     @property
     def cfg_info(self):
         
-        return Info.from_list_dict(self.all_config)
+        cfg_info = Info.list_dict_to_dict(self.all_config)
+
+        return Info.from_dict(cfg_info)
 
 
     @property
@@ -612,6 +637,35 @@ class Infer(object):
                     par['Prior'] = '=par#{%s}'%(','.join(par['Mates']))
         
         par_info = Info.list_dict_to_dict(all_params)
+        
+        del par_info['Posterior']
+        del par_info['Mates']
+        del par_info['Frozen']
+        
+        return Info.from_dict(par_info)
+
+
+    @property
+    def notable_par_info(self):
+        
+        self._you_free()
+        
+        all_params = self.all_params.copy()
+        notable_params = list()
+        
+        for par in all_params:
+            if par['par#'] in self.free_par:
+                par['par#'] = par['par#'] + '*'
+            else: 
+                if par['Frozen']:
+                    par['Prior'] = 'frozen'
+                    if par['Class'] == 'data': 
+                        continue
+                else:
+                    par['Prior'] = '=par#{%s}'%(','.join(par['Mates']))
+            notable_params.append(par)
+        
+        par_info = Info.list_dict_to_dict(notable_params)
         
         del par_info['Posterior']
         del par_info['Mates']
@@ -638,6 +692,15 @@ class Infer(object):
     def stat_info(self):
         
         return Info.from_dict(self.all_stat)
+    
+    
+    def save(self, savepath):
+        
+        if not os.path.exists(savepath):
+            os.makedirs(savepath)
+        
+        json_dump(self.cfg_info.data_list_dict, savepath + '/infer_cfg.json')
+        json_dump(self.par_info.data_list_dict, savepath + '/infer_par.json')
 
 
     def at_par(self, theta):
@@ -700,17 +763,15 @@ class Infer(object):
     def __str__(self):
         
         print(self.cfg_info.table)
-        print(self.par_info.table)
+        print(self.notable_par_info.table)
         
         return ''
 
         
     def multinest_loglike(self, cube, ndim, nparams):
         
-        theta = np.array([cube[i] for i in range(ndim)], dtype=float)
-        
-        for i, thi in enumerate(theta): 
-            self.free_par[i+1].val = thi
+        for i in range(ndim):
+            self.free_par[i+1].val = cube[i]
         
         return np.sum([[pair.loglike for pair in self.Pair]])
 
@@ -721,22 +782,24 @@ class Infer(object):
             cube[i] = self.free_par[i+1].prior.ppf(cube[i])
         
     
-    def multinest(self, nlive=500, resume=True, savepath='./'):
+    def multinest(self, nlive=500, resume=True, verbose=False, savepath='./'):
         
         import pymultinest
         from .posterior import Posterior
         
         self._you_free()
         
+        self.sampler = 'nested'
         self.nlive = nlive
         self.resume = resume
+        self.verbose = verbose
         self.prefix = savepath + '/1-'
         
         if not os.path.exists(savepath):
             os.makedirs(savepath)
 
-        pymultinest.run(self.multinest_loglike, self.multinest_prior_transform, self.free_nparams, resume=resume, 
-                        verbose=True, n_live_points=nlive, outputfiles_basename=self.prefix, 
+        pymultinest.run(self.multinest_loglike, self.multinest_prior_transform, self.free_nparams, 
+                        resume=resume, verbose=verbose, n_live_points=nlive, outputfiles_basename=self.prefix, 
                         sampling_efficiency=0.8, importance_nested_sampling=True, multimodal=True)
 
         self.Analyzer = pymultinest.Analyzer(outputfiles_basename=self.prefix, n_params=self.free_nparams)
@@ -776,6 +839,7 @@ class Infer(object):
         
         self._you_free()
         
+        self.sampler = 'mcmc'
         self.nstep = nstep
         self.discard = discard
         self.resume = resume

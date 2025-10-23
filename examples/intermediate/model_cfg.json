@@ -1,0 +1,14 @@
+[
+    {
+        "cfg#": "1",
+        "Component": "AS_TbAbs",
+        "Parameter": "redshift",
+        "Value": 0.0
+    },
+    {
+        "cfg#": "2",
+        "Component": "cpl",
+        "Parameter": "redshift",
+        "Value": 0.0
+    }
+]

@@ -1,19 +1,23 @@
+import sys
 import corner
 import numpy as np
 import matplotlib as mpl
 from itertools import chain
 import plotly.express as px
-from ..infer.pair import Pair
 import plotly.graph_objs as go
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
+from getdist import plots, MCSamples
+from plotly.subplots import make_subplots
+
+from .tools import json_dump
+from ..infer.pair import Pair
 from ..model.model import Model
 from ..infer.infer import Infer
 from .corner import corner_plotly
 from ..data.spectrum import Spectrum
 from ..data.data import Data, DataUnit
 from ..infer.posterior import Posterior
-from plotly.subplots import make_subplots
 from ..data.response import Response, Auxiliary
 
 
@@ -36,31 +40,33 @@ class Plot(object):
     
     
     @staticmethod
-    def spectrum(cls, ploter='plotly', show=True):
+    def spectrum(cls, ploter='plotly'):
         
         if not isinstance(cls, Spectrum):
             raise TypeError('cls is not Spectrum type, cannot call spectrum method')
         
+        x = np.arange(len(cls.counts))
+        y = cls.counts.astype(float)
+        y_e = cls.errors.astype(float)
+        
         if ploter == 'plotly':
             fig = go.Figure()
-            obs = go.Scatter(x=np.arange(len(cls.counts)), 
-                             y=cls.counts.astype(float), 
-                             mode='lines', 
-                             showlegend=False, 
-                             error_y=dict(
-                                 type='data',
-                                 array=cls.errors.astype(float),
-                                 thickness=1.5,
-                                 width=0)
-                             )
-            fig.add_trace(obs)
+            spec = go.Scatter(
+                x=x, 
+                y=y, 
+                mode='lines', 
+                showlegend=False, 
+                error_y=dict(
+                    type='data',
+                    array=y_e,
+                    thickness=1.5,
+                    width=0))
+            fig.add_trace(spec)
             
             fig.update_xaxes(title_text='Channel')
             fig.update_yaxes(title_text='Counts', type='log')
             fig.update_layout(template='plotly_white', height=600, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
-            
-            if show: fig.show()
             
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
@@ -71,8 +77,7 @@ class Plot(object):
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
 
-            ax.errorbar(np.arange(len(cls.counts)), cls.counts, 
-                        yerr=cls.errors, fmt='-', lw=1.0, elinewidth=1.0, capsize=0)
+            ax.errorbar(x, y, yerr=y_e, fmt='-', lw=1.0, elinewidth=1.0, capsize=0)
             ax.set_yscale('log')
             ax.set_xlabel('Channel')
             ax.set_ylabel('Counts')
@@ -88,13 +93,13 @@ class Plot(object):
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             
-            if show: plt.show()
+        fig_data = {'spec': {'x': x, 'y': y, 'y_e': y_e}}
             
-        return fig
-            
-    
+        return Figure(fig, fig_data, ploter)
+
+
     @staticmethod
-    def response(cls, ploter='plotly', ch_range=None, ph_range=None, show=True):
+    def response(cls, ploter='plotly', ch_range=None, ph_range=None):
         
         if not isinstance(cls, Response):
             raise TypeError('cls is not Response type, cannot call response method')
@@ -114,48 +119,50 @@ class Plot(object):
             ph_idx = np.arange(len(ph_mean))
         else:
             ph_idx = np.where((ph_mean >= ph_range[0]) & (ph_mean <= ph_range[1]))[0]
+            
+        x = ch_mean[ch_idx].astype(float)
+        y = ph_mean[ph_idx].astype(float)
+        z = cls.drm[ph_idx, :][:, ch_idx].astype(float)
         
         if ploter == 'plotly':
             fig = go.Figure()
-            rsp = go.Contour(z=cls.drm[ph_idx, :][:, ch_idx].astype(float), 
-                             x=ch_mean[ch_idx].astype(float), 
-                             y=ph_mean[ph_idx].astype(float), 
-                             colorscale='Jet'
-                             )
-            fig.add_trace(rsp)
+            resp = go.Contour(
+                z=z, 
+                x=x, 
+                y=y, 
+                colorscale='Jet')
+            fig.add_trace(resp)
             
             fig.update_xaxes(title_text='Channel energy (keV)', type='log')
             fig.update_yaxes(title_text='Photon energy (keV)', type='log')
             fig.update_layout(template='plotly_white', height=600, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            if show: fig.show()
-            
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
 
-            X, Y = np.meshgrid(ch_mean[ch_idx], ph_mean[ph_idx])
+            X, Y = np.meshgrid(x, y)
             
             fig = plt.figure(figsize=(8, 6))
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
 
-            c = ax.contourf(X, Y, cls.drm[ph_idx, :][:, ch_idx], cmap='jet')
+            c = ax.contourf(X, Y, z, cmap='jet')
             ax.set_xscale('log')
             ax.set_yscale('log')
             ax.set_xlabel('Channel energy (keV)')
             ax.set_ylabel('Photon energy (keV)')
             fig.colorbar(c, orientation='vertical')
+            
+        fig_data = {'resp': {'x': x, 'y': y, 'z': z}}
+            
+        return Figure(fig, fig_data, ploter)
 
-            if show: plt.show()
-            
-        return fig
-            
-    
+
     @staticmethod
-    def response_photon(cls, ploter='plotly', ph_range=None, show=True):
+    def response_photon(cls, ploter='plotly', ph_range=None):
         
         if not isinstance(cls, Response):
             raise TypeError('cls is not Response type, cannot call response_photon method')
@@ -173,23 +180,20 @@ class Plot(object):
             y = cls.srp[ph_idx].astype(float)
         else:
             y = np.sum(cls.drm[ph_idx, :], axis=1).astype(float)
-            
-        
+
         if ploter == 'plotly':
             fig = go.Figure()
-            obs = go.Scatter(x=x, 
-                             y=y, 
-                             mode='lines', 
-                             showlegend=False
-                             )
-            fig.add_trace(obs)
+            resp = go.Scatter(
+                x=x, 
+                y=y, 
+                mode='lines', 
+                showlegend=False)
+            fig.add_trace(resp)
             
             fig.update_xaxes(title_text='Photon energy (keV)', type='log')
             fig.update_yaxes(type='log')
             fig.update_layout(template='plotly_white', height=600, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
-            
-            if show: fig.show()
             
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
@@ -215,14 +219,14 @@ class Plot(object):
             ax.spines['left'].set_linewidth(0.5)
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
+
+        fig_data = {'resp': {'x': x, 'y': y}}
             
-            if show: plt.show()
-            
-        return fig
+        return Figure(fig, fig_data, ploter)
 
 
     @staticmethod
-    def response_channel(cls, ploter='plotly', ch_range=None, show=True):
+    def response_channel(cls, ploter='plotly', ch_range=None):
         
         if not isinstance(cls, Response):
             raise TypeError('cls is not Response type, cannot call response_channel method')
@@ -236,22 +240,23 @@ class Plot(object):
             ch_idx = np.arange(len(ch_mean))
         else:
             ch_idx = np.where((ch_mean >= ch_range[0]) & (ch_mean <= ch_range[1]))[0]
+            
+        x = ch_mean[ch_idx].astype(float)
+        y = np.sum(cls.drm[:, ch_idx], axis=0).astype(float)
         
         if ploter == 'plotly':
             fig = go.Figure()
-            obs = go.Scatter(x=ch_mean[ch_idx].astype(float), 
-                             y=np.sum(cls.drm[:, ch_idx], axis=0).astype(float), 
-                             mode='lines', 
-                             showlegend=False
-                             )
+            obs = go.Scatter(
+                x=x, 
+                y=y, 
+                mode='lines', 
+                showlegend=False)
             fig.add_trace(obs)
             
             fig.update_xaxes(title_text='Channel energy (keV)', type='log')
             fig.update_yaxes(type='log')
             fig.update_layout(template='plotly_white', height=600, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
-            
-            if show: fig.show()
             
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
@@ -262,7 +267,7 @@ class Plot(object):
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
 
-            ax.plot(ch_mean[ch_idx], np.sum(cls.drm[:, ch_idx], axis=0), lw=1.0)
+            ax.plot(x, y, lw=1.0)
             ax.set_xscale('log')
             ax.set_yscale('log')
             ax.set_xlabel('Channel energy (keV)')
@@ -278,13 +283,13 @@ class Plot(object):
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             
-            if show: plt.show()
+        fig_data = {'resp': {'x': x, 'y': y}}
             
-        return fig
+        return Figure(fig, fig_data, ploter)
 
 
     @staticmethod
-    def dataunit(cls, ploter='plotly', style='CE', show=True):
+    def dataunit(cls, ploter='plotly', style='CE'):
         
         if not isinstance(cls, DataUnit):
             raise TypeError('cls is not DataUnit type, cannot call dataunit method')
@@ -298,25 +303,25 @@ class Plot(object):
         
         if style == 'CC':
             src_y = cls.src_ctsrate.astype(float)
-            src_y_err = cls.src_ctsrate_error.astype(float)
+            src_y_e = cls.src_ctsrate_error.astype(float)
             
             bkg_y = cls.bkg_ctsrate.astype(float)
-            bkg_y_err = cls.bkg_ctsrate_error.astype(float)
+            bkg_y_e = cls.bkg_ctsrate_error.astype(float)
             
             net_y = cls.net_ctsrate.astype(float)
-            net_y_err = cls.net_ctsrate_error.astype(float)
+            net_y_e = cls.net_ctsrate_error.astype(float)
             
             ylabel = 'Counts/s/channel'
         
         elif style == 'CE':
             src_y = cls.src_ctsspec.astype(float)
-            src_y_err = cls.src_ctsspec_error.astype(float)
+            src_y_e = cls.src_ctsspec_error.astype(float)
             
             bkg_y = cls.bkg_ctsspec.astype(float)
-            bkg_y_err = cls.bkg_ctsspec_error.astype(float)
+            bkg_y_e = cls.bkg_ctsspec_error.astype(float)
             
             net_y = cls.net_ctsspec.astype(float)
-            net_y_err = cls.net_ctsspec_error.astype(float)
+            net_y_e = cls.net_ctsspec_error.astype(float)
             
             ylabel = 'Counts/s/keV'
             
@@ -325,62 +330,65 @@ class Plot(object):
             
         if ploter == 'plotly':
             fig = go.Figure()
-            src = go.Scatter(x=x, 
-                             y=src_y, 
-                             mode='markers', 
-                             name='src', 
-                             showlegend=True, 
-                             error_x=dict(
-                                 type='data',
-                                 symmetric=False,
-                                 array=x_he,
-                                 arrayminus=x_le,
-                                 thickness=1.5,
-                                 width=0),
-                             error_y=dict(
-                                 type='data',
-                                 array=src_y_err,
-                                 thickness=1.5,
-                                 width=0), 
-                             marker=dict(symbol='circle', size=3))
+            src = go.Scatter(
+                x=x, 
+                y=src_y, 
+                mode='markers', 
+                name='src', 
+                showlegend=True, 
+                error_x=dict(
+                    type='data',
+                    symmetric=False,
+                    array=x_he,
+                    arrayminus=x_le,
+                    thickness=1.5,
+                    width=0),
+                error_y=dict(
+                    type='data',
+                    array=src_y_e,
+                    thickness=1.5,
+                    width=0), 
+                marker=dict(symbol='circle', size=3))
             
-            bkg = go.Scatter(x=x, 
-                             y=bkg_y, 
-                             mode='markers', 
-                             name='bkg', 
-                             showlegend=True, 
-                             error_x=dict(
-                                 type='data',
-                                 symmetric=False,
-                                 array=x_he,
-                                 arrayminus=x_le,
-                                 thickness=1.5,
-                                 width=0),
-                             error_y=dict(
-                                 type='data',
-                                 array=bkg_y_err,
-                                 thickness=1.5,
-                                 width=0), 
-                             marker=dict(symbol='circle', size=3))
+            bkg = go.Scatter(
+                x=x, 
+                y=bkg_y, 
+                mode='markers', 
+                name='bkg', 
+                showlegend=True, 
+                error_x=dict(
+                    type='data',
+                    symmetric=False,
+                    array=x_he,
+                    arrayminus=x_le,
+                    thickness=1.5,
+                    width=0),
+                error_y=dict(
+                    type='data',
+                    array=bkg_y_e,
+                    thickness=1.5,
+                    width=0), 
+                marker=dict(symbol='circle', size=3))
             
-            net = go.Scatter(x=x, 
-                             y=net_y, 
-                             mode='markers', 
-                             name='net', 
-                             showlegend=True, 
-                             error_x=dict(
-                                 type='data',
-                                 symmetric=False,
-                                 array=x_he,
-                                 arrayminus=x_le,
-                                 thickness=1.5,
-                                 width=0),
-                             error_y=dict(
-                                 type='data',
-                                 array=net_y_err,
-                                 thickness=1.5,
-                                 width=0), 
-                             marker=dict(symbol='circle', size=3))
+            net = go.Scatter(
+                x=x, 
+                y=net_y, 
+                mode='markers', 
+                name='net', 
+                showlegend=True, 
+                error_x=dict(
+                    type='data',
+                    symmetric=False,
+                    array=x_he,
+                    arrayminus=x_le,
+                    thickness=1.5,
+                    width=0),
+                error_y=dict(
+                    type='data',
+                    array=net_y_e,
+                    thickness=1.5,
+                    width=0), 
+                marker=dict(symbol='circle', size=3))
             
             fig.add_trace(src)
             fig.add_trace(bkg)
@@ -391,8 +399,6 @@ class Plot(object):
             fig.update_layout(template='plotly_white', height=600, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            if show: fig.show()
-            
         elif ploter == 'matplotlib':
             rcParams['font.family'] = 'sans-serif'
             rcParams['font.size'] = 12
@@ -402,11 +408,11 @@ class Plot(object):
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
             
-            ax.errorbar(x, src_y, xerr = [x_le, x_he], yerr=src_y_err, fmt='none', 
+            ax.errorbar(x, src_y, xerr = [x_le, x_he], yerr=src_y_e, fmt='none', 
                         ecolor='m', elinewidth=1.0, capsize=0, label='src')
-            ax.errorbar(x, bkg_y, xerr = [x_le, x_he], yerr=bkg_y_err, fmt='none', 
+            ax.errorbar(x, bkg_y, xerr = [x_le, x_he], yerr=bkg_y_e, fmt='none', 
                         ecolor='b', elinewidth=1.0, capsize=0, label='bkg')
-            ax.errorbar(x, net_y, xerr = [x_le, x_he], yerr=net_y_err, fmt='none', 
+            ax.errorbar(x, net_y, xerr = [x_le, x_he], yerr=net_y_e, fmt='none', 
                         ecolor='c', elinewidth=1.0, capsize=0, label='net')
             ax.set_xscale('log')
             ax.set_yscale('log')
@@ -425,13 +431,16 @@ class Plot(object):
             ax.spines['top'].set_visible(False)
             ax.legend()
             
-            if show: plt.show()
+        fig_data = {
+            'src': {'x': x, 'y': src_y, 'x_le': x_le, 'x_he': x_he, 'y_e': src_y_e}, 
+            'bkg': {'x': x, 'y': bkg_y, 'x_le': x_le, 'x_he': x_he, 'y_e': bkg_y_e}, 
+            'net': {'x': x, 'y': net_y, 'x_le': x_le, 'x_he': x_he, 'y_e': net_y_e}}
             
-        return fig
+        return Figure(fig, fig_data, ploter)
 
 
     @staticmethod
-    def data(cls, ploter='plotly', style='CE', show=True):
+    def data(cls, ploter='plotly', style='CE'):
         
         if not isinstance(cls, Data):
             raise TypeError('cls is not Data type, cannot call data method')
@@ -453,55 +462,59 @@ class Plot(object):
         
         if style == 'CC':
             y = cls.net_ctsrate
-            y_err = cls.net_ctsrate_error
+            y_e = cls.net_ctsrate_error
             
             ylabel = 'Counts/s/channel'
             
         elif style == 'CE':
             y = cls.net_ctsspec
-            y_err = cls.net_ctsspec_error
+            y_e = cls.net_ctsspec_error
             
             ylabel = 'Counts/s/keV'
             
         else:
             raise ValueError(f'unsupported style argument: {style}')
             
+        fig_data = {}
+            
         for i, name in enumerate(cls.names):
                 
             if ploter == 'plotly':
-                obs = go.Scatter(x=x[i].astype(float), 
-                                 y=y[i].astype(float), 
-                                 mode='markers', 
-                                 name=name, 
-                                 showlegend=True, 
-                                 error_x=dict(
-                                     type='data',
-                                     symmetric=False,
-                                     array=x_he[i].astype(float),
-                                     arrayminus=x_le[i].astype(float),
-                                     color=Plot.colors[i],
-                                     thickness=1.5,
-                                     width=0),
-                                 error_y=dict(
-                                     type='data',
-                                     array=y_err[i].astype(float),
-                                     color=Plot.colors[i],
-                                     thickness=1.5,
-                                     width=0), 
-                                 marker=dict(symbol='circle', size=3, color=Plot.colors[i]))
+                obs = go.Scatter(
+                    x=x[i].astype(float), 
+                    y=y[i].astype(float), 
+                    mode='markers', 
+                    name=f'obs of {name}', 
+                    showlegend=True, 
+                    error_x=dict(
+                        type='data',
+                        symmetric=False,
+                        array=x_he[i].astype(float),
+                        arrayminus=x_le[i].astype(float),
+                        color=Plot.colors[i],
+                        thickness=1.5,
+                        width=0),
+                    error_y=dict(
+                        type='data',
+                        array=y_e[i].astype(float),
+                        color=Plot.colors[i],
+                        thickness=1.5,
+                        width=0), 
+                    marker=dict(symbol='circle', size=3, color=Plot.colors[i]))
                 fig.add_trace(obs)
                 
             elif ploter == 'matplotlib':
-                ax.errorbar(x[i], y[i], xerr=[x_le[i], x_he[i]], yerr=y_err[i], fmt='none', 
+                ax.errorbar(x[i], y[i], xerr=[x_le[i], x_he[i]], yerr=y_e[i], fmt='none', 
                             ecolor=Plot.colors[i], elinewidth=0.8, capsize=0, capthick=0, label=name)
+                
+            fig_data[name] = {
+                'obs': {'x': x[i], 'y': y[i], 'x_le': x_le[i], 'x_he': x_he[i], 'y_e': y_e[i]}}
                 
         if ploter == 'plotly':
             fig.update_xaxes(title_text='Energy (keV)', type='log')
             fig.update_yaxes(title_text=ylabel, type='log')
             fig.update_layout(template='plotly_white', height=600, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
-            
-            if show: fig.show()
             
         elif ploter == 'matplotlib':
             ax.set_xscale('log')
@@ -520,10 +533,8 @@ class Plot(object):
             ax.spines['right'].set_visible(False)
             ax.spines['top'].set_visible(False)
             ax.legend()
-
-            if show: plt.show()
- 
-        return fig
+            
+        return Figure(fig, fig_data, ploter)
 
 
     @staticmethod
@@ -535,7 +546,7 @@ class Plot(object):
 
 
     @staticmethod
-    def pair(cls, ploter='plotly', style='CE', show=True):
+    def pair(cls, ploter='plotly', style='CE'):
         
         if not isinstance(cls, Pair):
             raise TypeError('cls is not Pair type, cannot call pair method')
@@ -565,41 +576,41 @@ class Plot(object):
             ylabel = 'Counts/s/channel'
             
             obs_y = cls.data.net_ctsrate
-            obs_y_err = cls.data.net_ctsrate_error
+            obs_y_e = cls.data.net_ctsrate_error
             mo_y = cls.model.conv_ctsrate
-            res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+            res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             
         elif style == 'CE':
             ylabel = 'Counts/s/keV'
             
             obs_y = cls.data.net_ctsspec
-            obs_y_err = cls.data.net_ctsspec_error
+            obs_y_e = cls.data.net_ctsspec_error
             mo_y = cls.model.conv_ctsspec
-            res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+            res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             
         elif style == 'NE':
             ylabel = 'Photons/cm^2/s/keV'
             
             obs_y = cls.deconv_phtspec
-            obs_y_err = cls.deconv_phtspec_error
+            obs_y_e = cls.deconv_phtspec_error
             mo_y = cls.phtspec_at_rsp
-            res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+            res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             
         elif style == 'Fv' or style == 'ENE':
             ylabel = 'erg/cm^2/s/keV'
             
             obs_y = cls.deconv_flxspec
-            obs_y_err = cls.deconv_flxspec_error
+            obs_y_e = cls.deconv_flxspec_error
             mo_y = cls.flxspec_at_rsp
-            res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+            res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             
         elif style == 'vFv' or style == 'EENE':
             ylabel = 'erg/cm^2/s'
             
             obs_y = cls.deconv_ergspec
-            obs_y_err = cls.deconv_ergspec_error
+            obs_y_e = cls.deconv_ergspec_error
             mo_y = cls.ergspec_at_rsp
-            res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+            res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             
         else:
             raise ValueError(f'unsupported style argument: {style}')
@@ -608,52 +619,62 @@ class Plot(object):
         ymin = 0.5 * np.min(yall[yall > 0]).astype(float)
         ymax = 2 * np.max(yall[yall > 0]).astype(float)
             
+        fig_data = {}    
+        
         for i, name in enumerate(cls.data.names):
                 
             if ploter == 'plotly':
-                obs = go.Scatter(x=obs_x[i].astype(float), 
-                                 y=obs_y[i].astype(float), 
-                                 mode='markers', 
-                                 name=f'obs of {name}', 
-                                 showlegend=False, 
-                                 error_x=dict(
-                                     type='data',
-                                     symmetric=False,
-                                     array=obs_x_he[i].astype(float),
-                                     arrayminus=obs_x_le[i].astype(float),
-                                     color=Plot.colors[i],
-                                     thickness=1.5,
-                                     width=0),
-                                 error_y=dict(
-                                     type='data',
-                                     array=obs_y_err[i].astype(float),
-                                     color=Plot.colors[i],
-                                     thickness=1.5,
-                                     width=0), 
-                                 marker=dict(symbol='cross-thin', size=0, color=Plot.colors[i]))
-                mo = go.Scatter(x=obs_x[i].astype(float), 
-                                y=mo_y[i].astype(float), 
-                                name=name, 
-                                showlegend=True, 
-                                mode='lines', 
-                                line=dict(width=2, color=Plot.colors[i]))
-                res = go.Scatter(x=obs_x[i].astype(float), 
-                                 y=res_y[i].astype(float), 
-                                 name=f'res of {name}', 
-                                 showlegend=False, 
-                                 mode='markers', 
-                                 marker=dict(symbol='cross-thin', size=10, color=Plot.colors[i], 
-                                             line=dict(width=1.5, color=Plot.colors[i])))
+                obs = go.Scatter(
+                    x=obs_x[i].astype(float), 
+                    y=obs_y[i].astype(float), 
+                    mode='markers', 
+                    name=f'obs of {name}', 
+                    showlegend=False, 
+                    error_x=dict(
+                        type='data',
+                        symmetric=False,
+                        array=obs_x_he[i].astype(float),
+                        arrayminus=obs_x_le[i].astype(float),
+                        color=Plot.colors[i],
+                        thickness=1.5,
+                        width=0),
+                    error_y=dict(
+                        type='data',
+                        array=obs_y_e[i].astype(float),
+                        color=Plot.colors[i],
+                        thickness=1.5,
+                        width=0), 
+                    marker=dict(symbol='cross-thin', size=0, color=Plot.colors[i]))
+                mo = go.Scatter(
+                    x=obs_x[i].astype(float), 
+                    y=mo_y[i].astype(float), 
+                    name=name, 
+                    showlegend=True, 
+                    mode='lines', 
+                    line=dict(width=2, color=Plot.colors[i]))
+                res = go.Scatter(
+                    x=obs_x[i].astype(float), 
+                    y=res_y[i].astype(float), 
+                    name=f'res of {name}', 
+                    showlegend=False, 
+                    mode='markers', 
+                    marker=dict(symbol='cross-thin', size=10, color=Plot.colors[i], 
+                                line=dict(width=1.5, color=Plot.colors[i])))
                 
                 fig.add_trace(obs, row=1, col=1)
                 fig.add_trace(mo, row=1, col=1)
                 fig.add_trace(res, row=2, col=1)
                 
             elif ploter == 'matplotlib':
-                ax1.errorbar(obs_x[i], obs_y[i], xerr = [obs_x_le[i], obs_x_he[i]], yerr=obs_y_err[i], 
+                ax1.errorbar(obs_x[i], obs_y[i], xerr = [obs_x_le[i], obs_x_he[i]], yerr=obs_y_e[i], 
                              fmt='none', ecolor=Plot.colors[i], elinewidth=0.8, capsize=0, capthick=0, label=name)
                 ax1.plot(obs_x[i], mo_y[i], color=Plot.colors[i], lw=1.0)
                 ax2.scatter(obs_x[i], res_y[i], marker='+', color=Plot.colors[i], s=40, linewidths=0.8)
+                
+            fig_data[name] = {
+                'obs': {'x': obs_x[i], 'y': obs_y[i], 'x_le': obs_x_le[i], 'x_he': obs_x_he[i], 'y_e': obs_y_e[i]}, 
+                'mo': {'x': obs_x[i], 'y': mo_y[i]}, 
+                'res': {'x': obs_x[i], 'y': res_y[i]}}
                 
         if ploter == 'plotly':
             fig.update_xaxes(title_text='', row=1, col=1, type='log')
@@ -663,8 +684,6 @@ class Plot(object):
             fig.update_yaxes(title_text='Sigma', showgrid=False, range=[-3.5, 3.5], row=2, col=1)
             fig.update_layout(template='plotly_white', height=700, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
-            
-            if show: fig.show()
             
         elif ploter == 'matplotlib':
             ax1.set_xscale('log')
@@ -699,13 +718,11 @@ class Plot(object):
             ax2.spines['left'].set_linewidth(1.0)
             ax2.spines['right'].set_linewidth(1.0)
             
-            if show: plt.show()
-            
-        return fig
+        return Figure(fig, fig_data, ploter)
             
     
     @staticmethod
-    def emcee_walker(cls, show=True):
+    def emcee_walker(cls):
         
         if not isinstance(cls, (Infer, Posterior)):
             raise TypeError('cls is not Infer or Posterior type, cannot call walker method')
@@ -719,13 +736,13 @@ class Plot(object):
             ax.yaxis.set_label_coords(-0.1, 0.5)
         axes[-1].set_xlabel("step number")
         
-        if show: plt.show()
+        fig_data = None
         
-        return fig
+        return Figure(fig, fig_data, 'matplotlib')
             
     
     @staticmethod
-    def infer(cls, ploter='plotly', style='CE', rebin=True, show=True):
+    def infer(cls, ploter='plotly', style='CE', rebin=True):
         
         if not isinstance(cls, (Infer, Posterior)):
             raise TypeError('cls is not Infer or Posterior type, cannot call infer method')
@@ -764,70 +781,70 @@ class Plot(object):
             
             if not rebin:
                 obs_y = cls.data_ctsrate
-                obs_y_err = cls.data_ctsrate_error
+                obs_y_e = cls.data_ctsrate_error
                 mo_y = cls.model_ctsrate
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             else:
                 obs_y = cls.data_re_ctsrate
-                obs_y_err = cls.data_re_ctsrate_error
+                obs_y_e = cls.data_re_ctsrate_error
                 mo_y = cls.model_re_ctsrate
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             
         elif style == 'CE':
             ylabel = 'Counts/s/keV'
             
             if not rebin:
                 obs_y = cls.data_ctsspec
-                obs_y_err = cls.data_ctsspec_error
+                obs_y_e = cls.data_ctsspec_error
                 mo_y = cls.model_ctsspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             else:
                 obs_y = cls.data_re_ctsspec
-                obs_y_err = cls.data_re_ctsspec_error
+                obs_y_e = cls.data_re_ctsspec_error
                 mo_y = cls.model_re_ctsspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
                 
         elif style == 'NE':
             ylabel = 'Photons/cm^2/s/keV'
             
             if not rebin:
                 obs_y = cls.data_phtspec
-                obs_y_err = cls.data_phtspec_error
+                obs_y_e = cls.data_phtspec_error
                 mo_y = cls.model_phtspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             else:
                 obs_y = cls.data_re_phtspec
-                obs_y_err = cls.data_re_phtspec_error
+                obs_y_e = cls.data_re_phtspec_error
                 mo_y = cls.model_re_phtspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
                 
         elif style == 'Fv' or style == 'ENE':
             ylabel = 'erg/cm^2/s/keV'
             
             if not rebin:
                 obs_y = cls.data_flxspec
-                obs_y_err = cls.data_flxspec_error
+                obs_y_e = cls.data_flxspec_error
                 mo_y = cls.model_flxspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             else:
                 obs_y = cls.data_re_flxspec
-                obs_y_err = cls.data_re_flxspec_error
+                obs_y_e = cls.data_re_flxspec_error
                 mo_y = cls.model_re_flxspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
                 
         elif style == 'vFv' or style == 'EENE':
             ylabel = 'erg/cm^2/s'
             
             if not rebin:
                 obs_y = cls.data_ergspec
-                obs_y_err = cls.data_ergspec_error
+                obs_y_e = cls.data_ergspec_error
                 mo_y = cls.model_ergspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             else:
                 obs_y = cls.data_re_ergspec
-                obs_y_err = cls.data_re_ergspec_error
+                obs_y_e = cls.data_re_ergspec_error
                 mo_y = cls.model_re_ergspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_err))
+                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             
         else:
             raise ValueError(f'unsupported style argument: {style}')
@@ -835,53 +852,63 @@ class Plot(object):
         yall = np.array(list(chain.from_iterable(obs_y)))
         ymin = 0.5 * np.min(yall[yall > 0]).astype(float)
         ymax = 2 * np.max(yall[yall > 0]).astype(float)
+        
+        fig_data = {}
             
         for i, name in enumerate(cls.data_names):
                 
             if ploter == 'plotly':
-                obs = go.Scatter(x=obs_x[i].astype(float), 
-                                 y=obs_y[i].astype(float), 
-                                 mode='markers', 
-                                 name=f'obs of {name}', 
-                                 showlegend=False, 
-                                 error_x=dict(
-                                     type='data',
-                                     symmetric=False,
-                                     array=obs_x_he[i].astype(float),
-                                     arrayminus=obs_x_le[i].astype(float),
-                                     color=Plot.colors[i],
-                                     thickness=1.5,
-                                     width=0),
-                                 error_y=dict(
-                                     type='data',
-                                     array=obs_y_err[i].astype(float),
-                                     color=Plot.colors[i],
-                                     thickness=1.5,
-                                     width=0), 
-                                 marker=dict(symbol='cross-thin', size=0, color=Plot.colors[i]))
-                mo = go.Scatter(x=obs_x[i].astype(float), 
-                                y=mo_y[i].astype(float), 
-                                name=name, 
-                                showlegend=True, 
-                                mode='lines', 
-                                line=dict(width=2, color=Plot.colors[i]))
-                res = go.Scatter(x=obs_x[i].astype(float), 
-                                 y=res_y[i].astype(float), 
-                                 name=f'res of {name}', 
-                                 showlegend=False, 
-                                 mode='markers', 
-                                 marker=dict(symbol='cross-thin', size=10, color=Plot.colors[i], 
-                                             line=dict(width=1.5, color=Plot.colors[i])))
+                obs = go.Scatter(
+                    x=obs_x[i].astype(float), 
+                    y=obs_y[i].astype(float), 
+                    mode='markers', 
+                    name=f'obs of {name}', 
+                    showlegend=False, 
+                    error_x=dict(
+                        type='data',
+                        symmetric=False,
+                        array=obs_x_he[i].astype(float),
+                        arrayminus=obs_x_le[i].astype(float),
+                        color=Plot.colors[i],
+                        thickness=1.5,
+                        width=0),
+                    error_y=dict(
+                        type='data',
+                        array=obs_y_e[i].astype(float),
+                        color=Plot.colors[i],
+                        thickness=1.5,
+                        width=0), 
+                    marker=dict(symbol='cross-thin', size=0, color=Plot.colors[i]))
+                mo = go.Scatter(
+                    x=obs_x[i].astype(float), 
+                    y=mo_y[i].astype(float), 
+                    name=name, 
+                    showlegend=True, 
+                    mode='lines', 
+                    line=dict(width=2, color=Plot.colors[i]))
+                res = go.Scatter(
+                    x=obs_x[i].astype(float), 
+                    y=res_y[i].astype(float), 
+                    name=f'res of {name}', 
+                    showlegend=False, 
+                    mode='markers', 
+                    marker=dict(symbol='cross-thin', size=10, color=Plot.colors[i], 
+                                line=dict(width=1.5, color=Plot.colors[i])))
                 
                 fig.add_trace(obs, row=1, col=1)
                 fig.add_trace(mo, row=1, col=1)
                 fig.add_trace(res, row=2, col=1)
                 
             elif ploter == 'matplotlib':
-                ax1.errorbar(obs_x[i], obs_y[i], xerr = [obs_x_le[i], obs_x_he[i]], yerr=obs_y_err[i], 
+                ax1.errorbar(obs_x[i], obs_y[i], xerr = [obs_x_le[i], obs_x_he[i]], yerr=obs_y_e[i], 
                              fmt='none', ecolor=Plot.colors[i], elinewidth=0.8, capsize=0, capthick=0, label=name)
                 ax1.plot(obs_x[i], mo_y[i], color=Plot.colors[i], lw=1.0)
                 ax2.scatter(obs_x[i], res_y[i], marker='+', color=Plot.colors[i], s=40, linewidths=0.8)
+                
+            fig_data[name] = {
+                'obs': {'x': obs_x[i], 'y': obs_y[i], 'x_le': obs_x_le[i], 'x_he': obs_x_he[i], 'y_e': obs_y_e[i]}, 
+                'mo': {'x': obs_x[i], 'y': mo_y[i]}, 
+                'res': {'x': obs_x[i], 'y': res_y[i]}}
                 
         if ploter == 'plotly':
             fig.update_xaxes(title_text='', row=1, col=1, type='log')
@@ -892,12 +919,10 @@ class Plot(object):
             fig.update_layout(template='plotly_white', height=700, width=600)
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
             
-            if show: fig.show()
-            
         elif ploter == 'matplotlib':
             ax1.set_xscale('log')
             ax1.set_yscale('log')
-            ax1.set_ylabel(ylabel)
+            ax1.set_ylabel(f'$\\rm {ylabel}$')
             ax1.set_ylim([ymin, ymax])
             ax1.minorticks_on()
             ax1.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
@@ -927,56 +952,112 @@ class Plot(object):
             ax2.spines['left'].set_linewidth(1.0)
             ax2.spines['right'].set_linewidth(1.0)
             
-            if show: plt.show()
-            
-        return fig
+        return Figure(fig, fig_data, ploter)
             
         
     @staticmethod
-    def post_corner(cls, ploter='plotly', show=True):
+    def post_corner(cls, ploter='plotly'):
         
         if not isinstance(cls, Posterior):
             raise TypeError('cls is not Posterior type, cannot call corner method')
         
         data = cls.posterior_sample[:, :-1].copy()
         weights = np.ones(cls.posterior_sample.shape[0]) / cls.posterior_sample.shape[0]
-        
-        title_fmt = '%s = $%.2f_{-%.2f}^{+%.2f}$'
-        pkeys = [f'par#{key}' for key in cls.free_par.keys()]
-        plabel = [label for label in cls.free_plabels]
-        value = cls.par_best_ci
-        error = cls.par_error(value)
+
+        title_fmt = '$%.2f_{-%.2f}^{+%.2f}~(%.2f)$'
+        plabels = [f'p{key}({label})' for label, key in zip(cls.free_plabels, cls.free_par.keys())]
+        best = cls.par_best_ci
+        median = cls.par_median
+        error = cls.par_error(median)
         
         if ploter == 'plotly':
             
             levels = 1.0 - np.exp(-0.5 * np.array([1, 2]) ** 2)
             
-            fig = corner_plotly(data, 
-                                bins=30, 
-                                weights=weights, 
-                                smooth1d=2, 
-                                smooth=2, 
-                                labels=plabel, 
-                                levels=levels, 
-                                values=value, 
-                                errors=error)
+            fig = corner_plotly(
+                data, 
+                bins=30, 
+                weights=weights, 
+                smooth1d=2, 
+                smooth=2, 
+                labels=plabels, 
+                levels=levels)
             
-            if show: fig.show()
+            for i in range(cls.free_nparams):
+                fig.add_trace(
+                    go.Scatter(
+                        x=[median[i]],
+                        y=[0.01],
+                        mode='markers',
+                        name=plabels[i],
+                        showlegend=False, 
+                        error_x=dict(
+                            type='data',
+                            symmetric=False,
+                            array=[error[i][1]], 
+                            arrayminus=[error[i][0]], 
+                            color='#FF0092',
+                            thickness=1,
+                            width=0),
+                        marker=dict(symbol='circle', size=5, color='#FF0092')), 
+                    row=i + 1, col=i + 1)
+                
+            for yi in range(cls.free_nparams):
+                for xi in range(yi):
+                    fig.add_vline(best[xi], line_width=1, line_color='#FF0092', row=yi + 1, col=xi + 1)
+                    fig.add_hline(best[yi], line_width=1, line_color='#FF0092', row=yi + 1, col=xi + 1)
+                    fig.add_trace(
+                        go.Scatter(
+                            x=[best[xi]], 
+                            y=[best[yi]], 
+                            mode='markers', 
+                            name=f'{plabels[xi]}&{plabels[yi]}', 
+                            showlegend=False, 
+                            marker=dict(symbol='square', size=5, color='#FF0092')),
+                        row=yi + 1, col=xi + 1)
+
+        elif ploter == 'getdist':
             
-        elif ploter == 'matplotlib':
+            fig = plots.get_subplot_plotter()
+            fig.settings.num_plot_contours = 2
+            fig.settings.num_shades = 30
+            fig.settings.title_limit_fontsize = 10
+
+            mcsample = MCSamples(samples=data, names=plabels, sampler=cls.sampler)
+            mcsample.updateSettings({"contours": [0.6827, 0.9545, 0.9973]})
+            
+            fig.triangle_plot(mcsample, plabels, shaded=True)
+            
+            for i in range(cls.free_nparams):
+                ax = fig.subplots[i, i]
+                ax.set_title(title_fmt % (median[i], error[i][0], error[i][1], best[i]), 
+                             math_fontfamily='stix')
+                ax.errorbar(median[i], 0.05, xerr=[[error[i][0]], [error[i][1]]], 
+                            fmt='or', ms=2, ecolor='r', elinewidth=0.7)
+                ax.tick_params(axis='both', which='both', zorder=10)
+                
+            for yi in range(cls.free_nparams):
+                for xi in range(yi):
+                    ax = fig.subplots[yi, xi]
+                    ax.axvline(best[xi], color='r', lw=0.7, ls='-')
+                    ax.axhline(best[yi], color='r', lw=0.7, ls='-')
+                    ax.scatter(best[xi], best[yi], marker='s', color='r', s=10, linewidths=0, zorder=10)
+                    ax.tick_params(axis='both', which='both', zorder=10)
+
+        elif ploter == 'cornerpy':
         
-            levels = 1.0 - np.exp(-0.5 * np.array([1, 1.5, 2]) ** 2)
+            levels = 1.0 - np.exp(-0.5 * np.array([1, 2]) ** 2)
             
             rcParams['font.family'] = 'sans-serif'
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
-            
+
             fig = corner.corner(
                 data, 
                 bins=30, 
-                color='blue', 
+                color='#08519c', 
                 weights=weights, 
-                labels=plabel, 
+                labels=plabels, 
                 show_titles=True, 
                 use_math_text=True, 
                 smooth1d=2, 
@@ -992,22 +1073,21 @@ class Plot(object):
             
             for i in range(cls.free_nparams):
                 ax = axes[i, i]
-                ax.set_title(title_fmt % (pkeys[i], value[i], error[i][0], error[i][1]))
-                ax.errorbar(value[i], 0.005, 
-                            xerr=[[error[i][0]], [error[i][1]]], 
+                ax.set_title(title_fmt % (median[i], error[i][0], error[i][1], best[i]), 
+                             math_fontfamily='stix')
+                ax.errorbar(median[i], 0.005, xerr=[[error[i][0]], [error[i][1]]], 
                             fmt='or', ms=2, ecolor='r', elinewidth=1)
                 
             for yi in range(cls.free_nparams):
                 for xi in range(yi):
                     ax = axes[yi, xi]
-                    ax.errorbar(value[xi], value[yi], 
-                                xerr=[[error[xi][0]], [error[xi][1]]],
-                                yerr=[[error[yi][0]], [error[yi][1]]],
-                                fmt='or', ms=2, ecolor='r', elinewidth=1)
-        
-            if show: plt.show()
+                    ax.axvline(best[xi], color='r', lw=1, ls='-')
+                    ax.axhline(best[yi], color='r', lw=1, ls='-')
+                    ax.scatter(best[xi], best[yi], marker='s', color='r', s=20, linewidths=0)
             
-        return fig
+        fig_data = None
+            
+        return Figure(fig, fig_data, ploter)
 
 
 
@@ -1016,7 +1096,8 @@ class ModelPlot(object):
     colors = px.colors.qualitative.Plotly \
         + px.colors.qualitative.D3 \
             + px.colors.qualitative.G10 \
-                + px.colors.qualitative.T10
+                + px.colors.qualitative.T10 \
+                    + px.colors.qualitative.Alphabet
     
     def __init__(self, ploter='plotly', style='NE', CI=False, yrange=None):
         
@@ -1069,6 +1150,8 @@ class ModelPlot(object):
             self.ax.spines['right'].set_visible(False)
             self.ax.spines['top'].set_visible(False)
             
+        self.fig_data = {}
+            
         self.model_index = -1
         
         
@@ -1081,7 +1164,7 @@ class ModelPlot(object):
         return 'rgba(%d, %d, %d, %f)' % tuple(rgb)
         
         
-    def add_model(self, model, E, T=None, show=True):
+    def add_model(self, model, E, T=None):
         
         if not isinstance(model, Model):
             raise TypeError('model is not Model type, cannot call add_model method')
@@ -1093,82 +1176,122 @@ class ModelPlot(object):
         if self.style == 'NE':
             if model.type not in ['add', 'tinv']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
-                
-            y = model.phtspec(E, T).astype(float)
+            
+            y = model.best_phtspec(E, T).astype(float)
             if self.CI:
                 y_sample = model.phtspec_sample(E, T)
-                # y = y_sample['median'].astype(float)
                 y_ci = y_sample['Isigma'].astype(float)
                 
         elif self.style == 'Fv' or self.style == 'ENE':
             if model.type not in ['add', 'tinv']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
-            y = model.flxspec(E, T).astype(float)
+            y = model.best_flxspec(E, T).astype(float)
             if self.CI:
                 y_sample = model.flxspec_sample(E, T)
-                # y = y_sample['median'].astype(float)
                 y_ci = y_sample['Isigma'].astype(float)
                 
         elif self.style == 'vFv' or self.style == 'EENE':
             if model.type not in ['add', 'tinv', 'math']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
-            y = model.ergspec(E, T).astype(float)
+            y = model.best_ergspec(E, T).astype(float)
             if self.CI:
                 y_sample = model.ergspec_sample(E, T)
-                # y = y_sample['median'].astype(float)
                 y_ci = y_sample['Isigma'].astype(float)
 
         elif self.style == 'NoU':
             if model.type not in ['mul', 'math']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
-            y = model.nouspec(E).astype(float)
+            y = model.best_nouspec(E).astype(float)
             if self.CI:
                 y_sample = model.nouspec_sample(E)
-                # y = y_sample['median'].astype(float)
                 y_ci = y_sample['Isigma'].astype(float)
                 
         else:
             raise ValueError(f'unsupported style argument: {self.style}')
         
         if self.ploter == 'plotly':
-            mo = go.Scatter(x=x, 
-                            y=y, 
-                            mode='lines', 
-                            name=model.expr, 
-                            showlegend=True, 
-                            line=dict(width=2, color=ModelPlot.colors[self.model_index]))
+            mo = go.Scatter(
+                x=x, 
+                y=y, 
+                mode='lines', 
+                name=model.expr, 
+                showlegend=True, 
+                line=dict(width=2, color=ModelPlot.colors[self.model_index]))
             self.fig.add_trace(mo)
             
             if self.CI:
-                low = go.Scatter(x=x, 
-                                 y=y_ci[0], 
-                                 mode='lines', 
-                                 name=f'{model.expr} lower', 
-                                 fill=None, 
-                                 line_color='rgba(0,0,0,0)', 
-                                 showlegend=False)
+                low = go.Scatter(
+                    x=x, 
+                    y=y_ci[0], 
+                    mode='lines', 
+                    name=f'{model.expr} lower', 
+                    fill=None, 
+                    line_color='rgba(0,0,0,0)', 
+                    showlegend=False)
                 self.fig.add_trace(low)
                 
-                upp = go.Scatter(x=x, 
-                                 y=y_ci[1], 
-                                 mode='lines', 
-                                 name=f'{model.expr} CI', 
-                                 fill='tonexty', 
-                                 line_color='rgba(0,0,0,0)', 
-                                 fillcolor=ModelPlot.get_rgb(ModelPlot.colors[self.model_index], 0.5), 
-                                 showlegend=True)
+                upp = go.Scatter(
+                    x=x, 
+                    y=y_ci[1], 
+                    mode='lines', 
+                    name=f'{model.expr} CI', 
+                    fill='tonexty', 
+                    line_color='rgba(0,0,0,0)', 
+                    fillcolor=ModelPlot.get_rgb(ModelPlot.colors[self.model_index], 0.5), 
+                    showlegend=True)
                 self.fig.add_trace(upp)
-                
-            if show: self.fig.show()
 
         elif self.ploter == 'matplotlib':
-            self.ax.plot(x, y, lw=1.0, color=ModelPlot.colors[self.model_index])
+            self.ax.plot(x, y, lw=1.0, color=ModelPlot.colors[self.model_index], label=model.expr)
             if self.CI: 
-                self.ax.fill_between(x, y_ci[0], y_ci[1], fc=ModelPlot.colors[self.model_index], alpha=0.5)
-            
-            if show: plt.show()
-            
-        return self.fig
+                self.ax.fill_between(x, y_ci[0], y_ci[1], fc=ModelPlot.colors[self.model_index], 
+                                     alpha=0.5, label=f'{model.expr} CI')
+            self.ax.legend(frameon=True)
+
+        if self.CI:
+            self.fig_data[model.expr] = {'x': x, 'y': y, 'y_ci': y_ci}
+        else:
+            self.fig_data[model.expr] = {'x': x, 'y': y}
+
+
+    def get_fig(self):
+
+        return Figure(self.fig, self.fig_data, self.ploter)
+
+
+
+class Figure(object):
+    
+    def __init__(self, fig, fig_data, plotter):
+        
+        self.fig = fig
+        self.fig_data = fig_data
+        self.plotter = plotter
+        
+        if self.is_notebook() and self.plotter == 'plotly':
+            self.fig.show()
+
+
+    @staticmethod
+    def is_notebook():
+        return 'ipykernel' in sys.modules
+
+
+    def save(self, fname):
+        
+        if self.fig_data is not None:
+            json_dump(self.fig_data, f'{fname}.json')
+        
+        if self.plotter == 'plotly':
+            self.fig.write_html(f'{fname}.html')
+        elif self.plotter == 'matplotlib':
+            self.fig.savefig(f'{fname}.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
+        elif self.plotter == 'cornerpy':
+            self.fig.savefig(f'{fname}.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
+        elif self.plotter == 'getdist':
+            self.fig.export(f'{fname}.pdf')
+        else:
+            raise ValueError(f'unsupported plotter: {self.plotter}')

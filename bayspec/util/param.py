@@ -18,6 +18,8 @@ class Par(object):
         self._val = val
         self._prior = prior
         self._post = post
+        self._version = 0
+        
         self.comment = comment
         self.scale = scale
         self.unit = unit
@@ -39,6 +41,19 @@ class Par(object):
         for mate in self.mates:
             if mate.val != self.val:
                 mate.val = self.val
+
+        self._bump_version()
+
+
+    def _bump_version(self):
+        
+        self._version += 1
+        
+
+    @property
+    def version(self):
+        
+        return self._version
                 
                 
     @property
@@ -58,8 +73,8 @@ class Par(object):
         for mate in self.mates:
             if mate.prior != self.prior:
                 mate.prior = self.prior
-            
-            
+
+
     @property
     def prior_info(self):
         
@@ -67,8 +82,8 @@ class Par(object):
             return self.prior.info
         else:
             return None
-        
-        
+
+
     @property
     def post(self):
         

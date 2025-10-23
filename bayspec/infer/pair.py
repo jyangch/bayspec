@@ -1,7 +1,9 @@
 import numpy as np
+
 from ..data.data import Data
 from ..model.model import Model
 from .statistic import Statistic
+from ..util.tools import cached_property, clear_cached_property
 
 
 
@@ -63,13 +65,17 @@ class Pair(object):
         if not isinstance(self.model, Model):
             raise ValueError('model argument should be Model type')
         
+        self._PAIR = object()
+        
+        clear_cached_property(self)
+        
         self.data.fit_with = self.model
         
         
     def _convolve(self):
         
         flat_phtflux = self.model.integ(self.data.ebin, self.data.tarr)
-        phtflux = [flat_phtflux[i:j].copy() for (i, j) in zip(self.data.bin_start, self.data.bin_stop)]
+        phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.data.bin_start, self.data.bin_stop)]
         ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, self.data.corr_rsp_drm)]
         
         return ctsrate
@@ -78,7 +84,7 @@ class Pair(object):
     def _re_convolve(self):
         
         flat_phtflux = self.model.integ(self.data.ebin, self.data.tarr)
-        phtflux = [flat_phtflux[i:j].copy() for (i, j) in zip(self.data.bin_start, self.data.bin_stop)]
+        phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.data.bin_start, self.data.bin_stop)]
         re_ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, self.data.corr_rsp_re_drm)]
         
         return re_ctsrate
@@ -308,26 +314,25 @@ class Pair(object):
         return [fluxdensity / cts for cts in ctsrate]
 
 
-    @property
+    @cached_property()
     def stat_func(self):
         
         return lambda S, B, m, ts, tb, sigma_S, sigma_B, stat: \
             np.inf if np.isnan(m).any() or np.isinf(m).any() else \
-                self._allowed_stats[stat](**{'S': np.float64(S), 'B': np.float64(B), \
-                    'm': np.float64(m), 'ts': np.float64(ts), 'tb': np.float64(tb), \
-                    'sigma_S': np.float64(sigma_S), 'sigma_B': np.float64(sigma_B)})
+                self._allowed_stats[stat](S=S, B=B, m=m, ts=ts, tb=tb, \
+                    sigma_S=sigma_S, sigma_B=sigma_B)
 
 
     def _stat_calculate(self):
         
         return np.array(list(map(self.stat_func, 
-                                 self.data.src_counts, 
-                                 self.data.bkg_counts, 
-                                 self.model.conv_ctsrate, 
-                                 self.data.corr_src_efficiency, 
-                                 self.data.corr_bkg_efficiency, 
-                                 self.data.src_errors, 
-                                 self.data.bkg_errors, 
+                                 self.data.src_counts_f64, 
+                                 self.data.bkg_counts_f64, 
+                                 self.model.conv_ctsrate_f64, 
+                                 self.data.corr_src_efficiency_f64, 
+                                 self.data.corr_bkg_efficiency_f64, 
+                                 self.data.src_errors_f64, 
+                                 self.data.bkg_errors_f64, 
                                  self.data.stats))).astype(float)
 
 

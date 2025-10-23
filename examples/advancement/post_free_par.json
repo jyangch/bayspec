@@ -1,0 +1,57 @@
+[
+    {
+        "par#": "3",
+        "Class": "model",
+        "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
+        "Component": "cpl",
+        "Parameter": "$\\alpha$",
+        "Mean": "-1.293",
+        "Median": "-1.289",
+        "Best": "-1.277",
+        "1sigma CI": "[-1.331, -1.254]"
+    },
+    {
+        "par#": "5",
+        "Class": "model",
+        "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
+        "Component": "cpl",
+        "Parameter": "log$A$",
+        "Mean": "-0.917",
+        "Median": "-0.907",
+        "Best": "-0.880",
+        "1sigma CI": "[-0.987, -0.846]"
+    },
+    {
+        "par#": "7",
+        "Class": "model",
+        "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
+        "Component": "csbpl",
+        "Parameter": "$\\alpha_{2}$",
+        "Mean": "-1.406",
+        "Median": "-1.406",
+        "Best": "-1.398",
+        "1sigma CI": "[-1.429, -1.382]"
+    },
+    {
+        "par#": "9",
+        "Class": "model",
+        "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
+        "Component": "csbpl",
+        "Parameter": "log$E_{p}$",
+        "Mean": "2.430",
+        "Median": "2.431",
+        "Best": "2.437",
+        "1sigma CI": "[2.414, 2.447]"
+    },
+    {
+        "par#": "10",
+        "Class": "model",
+        "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
+        "Component": "csbpl",
+        "Parameter": "log$A$",
+        "Mean": "-0.549",
+        "Median": "-0.551",
+        "Best": "-0.566",
+        "1sigma CI": "[-0.583, -0.517]"
+    }
+]

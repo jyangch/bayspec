@@ -1,0 +1,10 @@
+[
+    {
+        "cfg#": "1",
+        "Class": "model",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "redshift",
+        "Value": 0.0
+    }
+]

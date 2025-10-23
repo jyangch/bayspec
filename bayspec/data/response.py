@@ -2,11 +2,13 @@ import inspect
 import numpy as np
 from io import BytesIO
 from copy import deepcopy
+import astropy.io.fits as fits
+from collections import OrderedDict
+
 from ..util.info import Info
 from ..util.param import Par
 from ..util.prior import unif
-import astropy.io.fits as fits
-from collections import OrderedDict
+from ..util.tools import cached_property
 
 
 
@@ -17,6 +19,8 @@ class Response(object):
         chbin, 
         phbin, 
         drm, 
+        ra=Par(0, frozen=True), 
+        dec=Par(0, frozen=True), 
         factor=Par(1, frozen=True)
         ):
         
@@ -32,6 +36,8 @@ class Response(object):
         self._chbin = chbin
         self._phbin = phbin
         self._drm = drm
+        self._ra = ra
+        self._dec = dec
         self._factor = factor
         
         
@@ -153,6 +159,42 @@ class Response(object):
     def drm(self):
 
         return self._drm
+    
+    
+    @property
+    def ra(self):
+        
+        return self._ra
+    
+    
+    @ra.setter
+    def ra(self, new_ra):
+        
+        if new_ra is None:
+            self._ra = Par(0, unif(0, 360))
+        else:
+            self._ra = new_ra
+
+        if not isinstance(self._ra, Par):
+            raise ValueError('<ra> parameter should be Param type')
+
+
+    @property
+    def dec(self):
+
+        return self._dec
+
+
+    @dec.setter
+    def dec(self, new_dec):
+
+        if new_dec is None:
+            self._dec = Par(0, unif(-90, 90))
+        else:
+            self._dec = new_dec
+
+        if not isinstance(self._dec, Par):
+            raise ValueError('<dec> parameter should be Param type')
 
 
     @property
@@ -323,57 +365,21 @@ class BalrogResponse(Response, metaclass=DisableMethodsMeta):
         return self._balrog_drm
     
     
-    @property
-    def ra(self):
-        
-        return self._ra
-    
-    
-    @ra.setter
-    def ra(self, new_ra):
-        
-        if new_ra is None:
-            self._ra = Par(0, unif(0, 360))
-        else:
-            self._ra = new_ra
-
-        if not isinstance(self._ra, Par):
-            raise ValueError('<ra> parameter should be Param type')
-
-
-    @property
-    def dec(self):
-
-        return self._dec
-
-
-    @dec.setter
-    def dec(self, new_dec):
-
-        if new_dec is None:
-            self._dec = Par(0, unif(-90, 90))
-        else:
-            self._dec = new_dec
-
-        if not isinstance(self._dec, Par):
-            raise ValueError('<dec> parameter should be Param type')
-    
-    
-    @property
+    @cached_property()
     def chbin(self):
 
         return np.vstack([self.balrog_drm.ebounds[:-1], 
                           self.balrog_drm.ebounds[1:]]).T
     
     
-    @property
+    @cached_property()
     def phbin(self):
 
         return np.vstack([self.balrog_drm.monte_carlo_energies[:-1], 
                           self.balrog_drm.monte_carlo_energies[1:]]).T
 
 
-    @property
+    @cached_property(lambda self: (self.ra.value, self.dec.value))
     def drm(self):
         
         self.balrog_drm.set_location(self.ra.value, self.dec.value)
@@ -384,7 +390,7 @@ class BalrogResponse(Response, metaclass=DisableMethodsMeta):
 
             for i, j in zip(np.where(np.isnan(drm))[0], np.where(np.isnan(drm))[1]):
 
-                drm[i, j] = 0.
+                drm[i, j] = 0.0
 
         return drm.T
 

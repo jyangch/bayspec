@@ -1,0 +1,344 @@
+[
+    {
+        "par#": "1*",
+        "Class": "model",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "$\\alpha$",
+        "Value": -1.0,
+        "Prior": "unif(-8, 4)"
+    },
+    {
+        "par#": "2*",
+        "Class": "model",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "log$E_{c}$",
+        "Value": 2.0,
+        "Prior": "unif(0, 4)"
+    },
+    {
+        "par#": "3*",
+        "Class": "model",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "log$A$",
+        "Value": -1.0,
+        "Prior": "unif(-6, 5)"
+    },
+    {
+        "par#": "4",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n6",
+        "Parameter": "sf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "5",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n6",
+        "Parameter": "bf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "6",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n6",
+        "Parameter": "rf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "7*",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n6",
+        "Parameter": "ra",
+        "Value": 115.0,
+        "Prior": "unif(0, 360)"
+    },
+    {
+        "par#": "8*",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n6",
+        "Parameter": "dec",
+        "Value": 52.0,
+        "Prior": "unif(-90, 90)"
+    },
+    {
+        "par#": "9",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n7",
+        "Parameter": "sf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "10",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n7",
+        "Parameter": "bf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "11",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n7",
+        "Parameter": "rf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "12",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n7",
+        "Parameter": "ra",
+        "Value": 115.0,
+        "Prior": "=par#{22,37,17,32,27,7}"
+    },
+    {
+        "par#": "13",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n7",
+        "Parameter": "dec",
+        "Value": 52.0,
+        "Prior": "=par#{18,8,33,38,28,23}"
+    },
+    {
+        "par#": "14",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n8",
+        "Parameter": "sf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "15",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n8",
+        "Parameter": "bf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "16",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n8",
+        "Parameter": "rf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "17",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n8",
+        "Parameter": "ra",
+        "Value": 115.0,
+        "Prior": "=par#{22,37,32,27,7,12}"
+    },
+    {
+        "par#": "18",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n8",
+        "Parameter": "dec",
+        "Value": 52.0,
+        "Prior": "=par#{8,33,38,28,13,23}"
+    },
+    {
+        "par#": "19",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n9",
+        "Parameter": "sf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "20",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n9",
+        "Parameter": "bf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "21",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n9",
+        "Parameter": "rf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "22",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n9",
+        "Parameter": "ra",
+        "Value": 115.0,
+        "Prior": "=par#{37,17,32,27,7,12}"
+    },
+    {
+        "par#": "23",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "n9",
+        "Parameter": "dec",
+        "Value": 52.0,
+        "Prior": "=par#{18,8,33,38,28,13}"
+    },
+    {
+        "par#": "24",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "na",
+        "Parameter": "sf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "25",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "na",
+        "Parameter": "bf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "26",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "na",
+        "Parameter": "rf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "27",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "na",
+        "Parameter": "ra",
+        "Value": 115.0,
+        "Prior": "=par#{22,37,17,32,7,12}"
+    },
+    {
+        "par#": "28",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "na",
+        "Parameter": "dec",
+        "Value": 52.0,
+        "Prior": "=par#{18,8,33,38,13,23}"
+    },
+    {
+        "par#": "29",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "nb",
+        "Parameter": "sf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "30",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "nb",
+        "Parameter": "bf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "31",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "nb",
+        "Parameter": "rf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "32",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "nb",
+        "Parameter": "ra",
+        "Value": 115.0,
+        "Prior": "=par#{22,37,17,27,7,12}"
+    },
+    {
+        "par#": "33",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "nb",
+        "Parameter": "dec",
+        "Value": 52.0,
+        "Prior": "=par#{18,8,38,28,13,23}"
+    },
+    {
+        "par#": "34",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "b1",
+        "Parameter": "sf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "35",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "b1",
+        "Parameter": "bf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "36",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "b1",
+        "Parameter": "rf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "37",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "b1",
+        "Parameter": "ra",
+        "Value": 115.0,
+        "Prior": "=par#{22,17,32,27,7,12}"
+    },
+    {
+        "par#": "38",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "b1",
+        "Parameter": "dec",
+        "Value": 52.0,
+        "Prior": "=par#{18,8,33,28,13,23}"
+    }
+]

@@ -8,10 +8,7 @@
             ]
         ],
         "Statistic": "pgstat",
-        "Grouping": {
-            "min_sigma": 2,
-            "max_bin": 10
-        },
+        "Grouping": "None",
         "Time": "None"
     },
     {
@@ -23,10 +20,7 @@
             ]
         ],
         "Statistic": "pgstat",
-        "Grouping": {
-            "min_sigma": 2,
-            "max_bin": 10
-        },
+        "Grouping": "None",
         "Time": "None"
     }
 ]

@@ -1,6 +1,7 @@
 [
     {
         "par#": "1*",
+        "Class": "model",
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "$\\alpha$",
@@ -9,6 +10,7 @@
     },
     {
         "par#": "2*",
+        "Class": "model",
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "log$E_{c}$",
@@ -17,6 +19,7 @@
     },
     {
         "par#": "3*",
+        "Class": "model",
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "log$A$",
@@ -25,22 +28,16 @@
     },
     {
         "par#": "4",
+        "Class": "data",
         "Expression": "data",
         "Component": "nai",
-        "Parameter": "rf",
+        "Parameter": "sf",
         "Value": 1.0,
         "Prior": "frozen"
     },
     {
         "par#": "5",
-        "Expression": "data",
-        "Component": "nai",
-        "Parameter": "sf",
-        "Value": 1.0,
-        "Prior": "frozen"
-    },
-    {
-        "par#": "6",
+        "Class": "data",
         "Expression": "data",
         "Component": "nai",
         "Parameter": "bf",
@@ -48,7 +45,53 @@
         "Prior": "frozen"
     },
     {
+        "par#": "6",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "nai",
+        "Parameter": "rf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
         "par#": "7",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "nai",
+        "Parameter": "ra",
+        "Value": 0.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "8",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "nai",
+        "Parameter": "dec",
+        "Value": 0.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "9",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "bgo",
+        "Parameter": "sf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "10",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "bgo",
+        "Parameter": "bf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "11",
+        "Class": "data",
         "Expression": "data",
         "Component": "bgo",
         "Parameter": "rf",
@@ -56,19 +99,21 @@
         "Prior": "frozen"
     },
     {
-        "par#": "8",
+        "par#": "12",
+        "Class": "data",
         "Expression": "data",
         "Component": "bgo",
-        "Parameter": "sf",
-        "Value": 1.0,
+        "Parameter": "ra",
+        "Value": 0.0,
         "Prior": "frozen"
     },
     {
-        "par#": "9",
+        "par#": "13",
+        "Class": "data",
         "Expression": "data",
         "Component": "bgo",
-        "Parameter": "bf",
-        "Value": 1.0,
+        "Parameter": "dec",
+        "Value": 0.0,
         "Prior": "frozen"
     }
 ]

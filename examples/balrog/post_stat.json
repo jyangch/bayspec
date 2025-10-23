@@ -1,0 +1,58 @@
+[
+    {
+        "Data": "n6",
+        "Model": "cpl",
+        "Statistic": "pgstat",
+        "Value": "157.82",
+        "Bins": "121"
+    },
+    {
+        "Data": "n7",
+        "Model": "cpl",
+        "Statistic": "pgstat",
+        "Value": "125.95",
+        "Bins": "119"
+    },
+    {
+        "Data": "n8",
+        "Model": "cpl",
+        "Statistic": "pgstat",
+        "Value": "159.88",
+        "Bins": "120"
+    },
+    {
+        "Data": "n9",
+        "Model": "cpl",
+        "Statistic": "pgstat",
+        "Value": "143.89",
+        "Bins": "119"
+    },
+    {
+        "Data": "na",
+        "Model": "cpl",
+        "Statistic": "pgstat",
+        "Value": "138.87",
+        "Bins": "119"
+    },
+    {
+        "Data": "nb",
+        "Model": "cpl",
+        "Statistic": "pgstat",
+        "Value": "167.44",
+        "Bins": "119"
+    },
+    {
+        "Data": "b1",
+        "Model": "cpl",
+        "Statistic": "pgstat",
+        "Value": "149.12",
+        "Bins": "117"
+    },
+    {
+        "Data": "Total",
+        "Model": "Total",
+        "Statistic": "stat/dof",
+        "Value": "1042.97/829",
+        "Bins": "834"
+    }
+]

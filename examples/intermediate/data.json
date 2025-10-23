@@ -1,0 +1,28 @@
+[
+    {
+        "Name": "LE",
+        "Noticing": [
+            [
+                0.5,
+                4
+            ]
+        ],
+        "Statistic": "cstat",
+        "Grouping": {
+            "min_nevt": 5
+        },
+        "Time": "None"
+    },
+    {
+        "Name": "ME",
+        "Noticing": [
+            [
+                8,
+                900
+            ]
+        ],
+        "Statistic": "pgstat",
+        "Grouping": "None",
+        "Time": "None"
+    }
+]

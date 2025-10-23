@@ -1,8 +1,11 @@
+import os
 import numpy as np
+from collections import OrderedDict
+
 from .infer import Infer
 from ..util.info import Info
 from ..util.post import Post
-from collections import OrderedDict
+from ..util.tools import json_dump
 
 
 
@@ -217,6 +220,16 @@ class Posterior(Infer):
         return Info.from_dict(IC_info)
     
     
+    def save(self, savepath):
+        
+        if not os.path.exists(savepath):
+            os.makedirs(savepath)
+        
+        json_dump(self.free_par_info.data_list_dict, savepath + '/post_free_par.json')
+        json_dump(self.stat_info.data_list_dict, savepath + '/post_stat.json')
+        json_dump(self.IC_info.data_list_dict, savepath + '/post_IC.json')
+
+
     def __str__(self):
         
         print(self.free_par_info.table)

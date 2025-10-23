@@ -1,10 +1,13 @@
+import os
 import warnings
 import numpy as np
+from collections import OrderedDict
+
 from ..util.info import Info
 from ..util.prior import unif
 from ..util.param import Par, Cfg
 from ..util.tools import SuperDict
-from collections import OrderedDict
+from ..util.tools import cached_property, json_dump
 
 
 
@@ -29,31 +32,31 @@ class Model(object):
         pass
         
         
-    @property
+    @cached_property()
     def mdicts(self):
         
         return OrderedDict([(self.expr, self)])
     
     
-    @property
+    @cached_property()
     def fdicts(self):
         
         return OrderedDict([(ex, mo.func) for ex, mo in self.mdicts.items()])
-
     
-    @property
-    def pdicts(self):
-        
-        return OrderedDict([(ex, mo.params) for ex, mo in self.mdicts.items()])
-
-
-    @property
+    
+    @cached_property()
     def cdicts(self):
         
         return OrderedDict([(ex, mo.config) for ex, mo in self.mdicts.items()])
+
+    
+    @cached_property()
+    def pdicts(self):
+        
+        return OrderedDict([(ex, mo.params) for ex, mo in self.mdicts.items()])
     
     
-    @property
+    @cached_property()
     def cfg(self):
 
         cid = 0
@@ -67,7 +70,7 @@ class Model(object):
         return cfg
     
     
-    @property
+    @cached_property()
     def par(self):
         
         pid = 0
@@ -79,6 +82,12 @@ class Model(object):
                 par[str(pid)] = pr
                 
         return par
+    
+    
+    @property
+    def pvalues(self):
+
+        return tuple([pr.value for pr in self.par.values()])
                 
 
     @property
@@ -91,7 +100,7 @@ class Model(object):
             for cl, cg in config.items():
                 cid += 1
                 
-                all_config.append(\
+                all_config.append(
                     {'cfg#': str(cid), 
                      'Component': expr, 
                      'Parameter': cl, 
@@ -110,7 +119,7 @@ class Model(object):
             for pl, pr in params.items():
                 pid += 1
                 
-                all_params.append(\
+                all_params.append(
                     {'par#': str(pid), 
                      'Component': expr, 
                      'Parameter': pl, 
@@ -136,43 +145,37 @@ class Model(object):
         del par_info['Posterior']
         
         return Info.from_dict(par_info)
+    
+    
+    def save(self, savepath):
+        
+        if not os.path.exists(savepath):
+            os.makedirs(savepath)
+        
+        json_dump(self.cfg_info.data_list_dict, savepath + '/model_cfg.json')
+        json_dump(self.par_info.data_list_dict, savepath + '/model_par.json')
 
 
     def integ(self, ebin, tarr=None, ngrid=5):
         
         scale = np.linspace(0, 1, ngrid)
-        egrid = (ebin[:, 0].reshape(-1, 1) + (ebin[:, 1] - ebin[:, 0]).reshape(-1, 1) * scale).flatten()
+        egrid = ebin[:, [0]] + (ebin[:, [1]] - ebin[:, [0]]) * scale
         
-        egrid = np.where(egrid == 0, 1e-10, egrid)
+        egrid = np.maximum(egrid, 1e-10)
         
         if self.type == 'add':
-            fgrid = self.func(egrid)
-            
-            egrid = egrid.reshape(-1, 5)
-            fgrid = fgrid.reshape(-1, 5)
-            
-            phtflux = np.trapz(fgrid, egrid, axis=1)
-            return phtflux
+            fgrid = self.func(egrid.ravel()).reshape(-1, ngrid)
+            return np.trapz(fgrid, egrid, axis=1)
             
         elif self.type == 'tinv':
-            tgrid = np.repeat(tarr, ngrid)
-            fgrid = self.func(egrid, tgrid)
-            
-            egrid = egrid.reshape(-1, 5)
-            fgrid = fgrid.reshape(-1, 5)
-        
-            phtflux = np.trapz(fgrid, egrid, axis=1)
-            return phtflux
+            tgrid = np.repeat(tarr[:, None], ngrid, axis=1)
+            fgrid = self.func(egrid.ravel(), tgrid.ravel()).reshape(-1, ngrid)
+            return np.trapz(fgrid, egrid, axis=1)
             
         elif self.type == 'mul':
             ewidt = ebin[:, 1] - ebin[:, 0]
-            fgrid = self.func(egrid)
-        
-            egrid = egrid.reshape(-1, 5)
-            fgrid = fgrid.reshape(-1, 5)
-        
-            frac = np.trapz(fgrid, egrid, axis=1) / ewidt
-            return frac
+            fgrid = self.func(egrid.ravel()).reshape(-1, ngrid)
+            return np.trapz(fgrid, egrid, axis=1) / ewidt
             
         else:
             msg = f'integ is invalid for {self.type} type model'
@@ -231,7 +234,7 @@ class Model(object):
     def convolve_data(self, data):
         
         flat_phtflux = self.integ(data.ebin, data.tarr)
-        phtflux = [flat_phtflux[i:j].copy() for (i, j) in zip(data.bin_start, data.bin_stop)]
+        phtflux = [flat_phtflux[i:j] for (i, j) in zip(data.bin_start, data.bin_stop)]
         ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, data.corr_rsp_drm)]
         ctsspec = [cr / chw for (cr, chw) in zip(ctsrate, data.rsp_chbin_width)]
         
@@ -241,8 +244,17 @@ class Model(object):
     def _convolve(self):
         
         flat_phtflux = self.integ(self.fit_to.ebin, self.fit_to.tarr)
-        phtflux = [flat_phtflux[i:j].copy() for (i, j) in zip(self.fit_to.bin_start, self.fit_to.bin_stop)]
+        phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.fit_to.bin_start, self.fit_to.bin_stop)]
         ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, self.fit_to.corr_rsp_drm)]
+        
+        return ctsrate
+    
+    
+    def _convolve_f64(self):
+        
+        flat_phtflux = self.integ(self.fit_to.ebin, self.fit_to.tarr)
+        phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.fit_to.bin_start, self.fit_to.bin_stop)]
+        ctsrate = [np.dot(pf, drm).astype(np.float64) for (pf, drm) in zip(phtflux, self.fit_to.corr_rsp_drm)]
         
         return ctsrate
     
@@ -250,7 +262,7 @@ class Model(object):
     def _re_convolve(self):
         
         flat_phtflux = self.integ(self.fit_to.ebin, self.fit_to.tarr)
-        phtflux = [flat_phtflux[i:j].copy() for (i, j) in zip(self.fit_to.bin_start, self.fit_to.bin_stop)]
+        phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.fit_to.bin_start, self.fit_to.bin_stop)]
         re_ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, self.fit_to.corr_rsp_re_drm)]
         
         return re_ctsrate
@@ -262,6 +274,12 @@ class Model(object):
         return self._convolve()
     
     
+    @property
+    def conv_ctsrate_f64(self):
+        
+        return self._convolve_f64()
+
+
     @property
     def conv_re_ctsrate(self):
         
@@ -689,8 +707,8 @@ class Model(object):
             sample[i] = self.ergflux(emin1, emax1, ngrid, epoch) / self.ergflux(emin2, emax2, ngrid, epoch)
             
         return self.sample_statistic(sample)
-        
-        
+
+
     def __add__(self, other):
         
         return CompositeModel(self, '+', other)
@@ -831,7 +849,7 @@ class CompositeModel(Model):
                 self.m2.mdicts[ex].expr = self._generate_unique_name(ex, family)
 
 
-    @property
+    @cached_property()
     def expr(self):
         
         if self.op == '()':
@@ -842,8 +860,8 @@ class CompositeModel(Model):
         else:
             return f'({self.m1.expr}{self.op}{self.m2.expr})'
         
-        
-    @property
+
+    @cached_property()
     def type(self):
         
         assert self.m1.type in self._allowed_types, f'unsupported model.type: {self.m1.type}'
@@ -861,7 +879,7 @@ class CompositeModel(Model):
             return self.tdict[type_op]
             
             
-    @property
+    @cached_property()
     def comment(self):
         
         return '\n'.join([f'{expr}: {mo.comment}' for expr, mo in self.mdicts.items()])
@@ -883,7 +901,7 @@ class CompositeModel(Model):
             raise ValueError(f'Unknown operation: {self.op}')
         
         
-    @property
+    @cached_property()
     def mdicts(self):
         
         return OrderedDict({**self.m1.mdicts, **self.m2.mdicts})
@@ -953,7 +971,7 @@ class CompositeModel(Model):
                 return 'math'
 
 
-    @property
+    @cached_property()
     def tdict(self):
         
         return {'add(add)': False,

@@ -15,9 +15,7 @@ def corner_plotly(
     smooth=1, 
     labels=None,
     quantiles=None,
-    levels=None, 
-    values=None, 
-    errors=None
+    levels=None
     ):
     
     xs = _parse_input(xs)
@@ -29,19 +27,13 @@ def corner_plotly(
         ranges = [[x.min(), x.max()] for x in xs]
     
     if color is None:
-        color = '#205295'
+        color = '#08519c'
         
     if levels is None:
         levels = 1.0 - np.exp(-0.5 * np.array([1, 2]) ** 2)
         
     if quantiles is None:
         quantiles = []
-        
-    if values is None:
-        values = []
-        
-    if errors is None:
-        errors = []
         
     if labels is None:
         labels = [f'label{i}' for i in range(K)]
@@ -67,8 +59,7 @@ def corner_plotly(
             go.Scatter(x=x0, y=y0, mode='lines', 
                        name=labels[i], showlegend=False, 
                        line=dict(width=2, color=color)), 
-            row=i + 1, col=i + 1
-            )
+            row=i + 1, col=i + 1)
 
         if len(quantiles) > 0:
             qvalues = quantile(x, quantiles, weights=weights)
@@ -79,29 +70,8 @@ def corner_plotly(
                         type="line",
                         x0=q, y0=0, x1=q, y1=yq,
                         name=labels[i], showlegend=False, 
-                        line=dict(color=color, dash="dash")
-                        ),
-                    row=i + 1, col=i + 1
-                    )
-                
-        fig.add_trace(
-            go.Scatter(x=[values[i]], 
-                        y=[0.01], 
-                        mode='markers', 
-                        name=f'{labels[i]}', 
-                        showlegend=False, 
-                        error_x=dict(
-                            type='data',
-                            symmetric=False,
-                            array=[errors[i][1]], 
-                            arrayminus=[errors[i][0]], 
-                            color='#FF0092',
-                            thickness=2,
-                            width=0),
-                        marker=dict(symbol='circle', size=5, color='#FF0092')
-                        ),
-            row=i + 1, col=i + 1
-            )
+                        line=dict(color=color, dash="dash")),
+                    row=i + 1, col=i + 1)
             
         for j, y in enumerate(xs):
             if j >= i:
@@ -109,9 +79,7 @@ def corner_plotly(
 
             fig = plot_hist2d(
                 y, x, [bins[j], bins[i]], [ranges[j], ranges[i]],
-                weights, smooth, [labels[j], labels[i]], levels, 
-                [values[j], values[i]], [errors[j], errors[i]], fig, (i, j)
-                )
+                weights, smooth, [labels[j], labels[i]], levels, fig, (i, j))
 
     fig.update_layout(template='plotly_white', height=200*K, width=200*K)
     
@@ -132,7 +100,7 @@ def corner_plotly(
     return fig
 
 
-def plot_hist2d(x, y, bins, ranges, weights, smooth, labels, levels, values, errors, fig, subfig_idx):
+def plot_hist2d(x, y, bins, ranges, weights, smooth, labels, levels, fig, subfig_idx):
     
     i2, j2 = subfig_idx
     
@@ -204,42 +172,12 @@ def plot_hist2d(x, y, bins, ranges, weights, smooth, labels, levels, values, err
             contours=dict(
                 start=min(V),
                 end=max(V),
-                size=max(V) - min(V),
-            ),
+                size=max(V) - min(V)),
             ncontours=len(V),
             colorscale='Blues',
             line=dict(width=2),
-            showscale=False
-            ),
-        row=i2 + 1, col=j2 + 1
-        )
-    
-    fig.add_trace(
-        go.Scatter(x=[values[0]], 
-                   y=[values[1]], 
-                    mode='markers', 
-                    name=f'{labels[0]}&{labels[1]}', 
-                    showlegend=False, 
-                    error_x=dict(
-                        type='data',
-                        symmetric=False,
-                        array=[errors[0][1]], 
-                        arrayminus=[errors[0][0]], 
-                        color='#FF0092', 
-                        thickness=2, 
-                        width=0),
-                    error_y=dict(
-                        type='data',
-                        symmetric=False,
-                        array=[errors[1][1]], 
-                        arrayminus=[errors[1][0]], 
-                        color='#FF0092',
-                        thickness=2, 
-                        width=0),
-                    marker=dict(symbol='circle', size=5, color='#FF0092')
-                    ),
-        row=i2 + 1, col=j2 + 1
-        )
+            showscale=False),
+        row=i2 + 1, col=j2 + 1)
 
     return fig
 

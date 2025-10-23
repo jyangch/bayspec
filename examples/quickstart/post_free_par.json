@@ -1,32 +1,35 @@
 [
     {
         "par#": "1",
+        "Class": "model",
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "$\\alpha$",
-        "Mean": "-1.563",
-        "Median": "-1.563",
-        "Best": "-1.562",
-        "1sigma CI": "[-1.573, -1.553]"
+        "Mean": "-1.562",
+        "Median": "-1.562",
+        "Best": "-1.563",
+        "1sigma CI": "[-1.572, -1.552]"
     },
     {
         "par#": "2",
+        "Class": "model",
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "log$E_{c}$",
-        "Mean": "2.691",
-        "Median": "2.691",
-        "Best": "2.689",
-        "1sigma CI": "[2.674, 2.708]"
+        "Mean": "2.690",
+        "Median": "2.689",
+        "Best": "2.690",
+        "1sigma CI": "[2.672, 2.708]"
     },
     {
         "par#": "3",
+        "Class": "model",
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "log$A$",
         "Mean": "-0.771",
         "Median": "-0.771",
         "Best": "-0.771",
-        "1sigma CI": "[-0.777, -0.765]"
+        "1sigma CI": "[-0.777, -0.764]"
     }
 ]

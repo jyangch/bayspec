@@ -1,15 +1,18 @@
+import os
 import copy
 import inspect
 import warnings
 import numpy as np
 from io import BytesIO
 from scipy import special
+from collections import OrderedDict
+
 from ..util.info import Info
 from ..util.tools import SuperDict
-from collections import OrderedDict
 from .spectrum import Source, Background
 from ..util.significance import pgsig, ppsig
 from .response import Response, Redistribution, Auxiliary
+from ..util.tools import cached_property, clear_cached_property, json_dump
 
 
 
@@ -38,15 +41,15 @@ class Data(object):
             for item in new_data:
                 if isinstance(item, tuple):
                     self._setitem(*item)
-                    
-            self._extract()
-                    
+
+            self._update()
+
         elif isinstance(new_data, dict):
             for item in new_data.items():
                 self._setitem(*item)
-                
-            self._extract()
-            
+
+            self._update()
+
         else:
             raise ValueError('unsupported data type')
 
@@ -63,12 +66,16 @@ class Data(object):
         self._data[key] = value
 
 
-    def _extract(self):
+    def _update(self):
         
         if self.data is None:
             raise ValueError('data is None')
         
-        self.names = [key for key in self.data.keys()]
+        self._UPDATE = object()
+        
+        clear_cached_property(self)
+        
+        self.names = [name for name in self.data.keys()]
         self.srcs = [unit.src_ins for unit in self.data.values()]
         self.bkgs = [unit.bkg_ins for unit in self.data.values()]
         self.rsps = [unit.rsp_ins for unit in self.data.values()]
@@ -78,6 +85,8 @@ class Data(object):
         self.rebns = [unit.rebn for unit in self.data.values()]
         self.times = [unit.time for unit in self.data.values()]
         self.weights = np.array([unit.weight for unit in self.data.values()])
+        self.cdicts = OrderedDict([(name, unit.config) for name, unit in self.data.items()])
+        self.pdicts = OrderedDict([(name, unit.params) for name, unit in self.data.items()])
 
 
     @property
@@ -108,13 +117,21 @@ class Data(object):
                 self._fit_with.fit_to = self
 
 
-    @property
-    def pdicts(self):
+    @cached_property()
+    def cfg(self):
+
+        cid = 0
+        cfg = SuperDict()
         
-        return OrderedDict([(key, unit.pdicts) for key, unit in self.data.items()])
+        for config in self.cdicts.values():
+            for cg in config.values():
+                cid += 1
+                cfg[str(cid)] = cg
+                
+        return cfg
 
 
-    @property
+    @cached_property()
     def par(self):
         
         pid = 0
@@ -129,348 +146,372 @@ class Data(object):
     
     
     @property
+    def pvalues(self):
+
+        return tuple([pr.value for pr in self.par.values()])
+    
+    
+    @cached_property()
     def ebin(self):
         
         return np.vstack([unit.ebin for unit in self.data.values()])
     
     
-    @property
+    @cached_property()
     def nbin(self):
 
         return [unit.nbin for unit in self.data.values()]
     
     
-    @property
+    @cached_property()
     def tarr(self):
         
         return np.hstack([unit.tarr for unit in self.data.values()])
     
     
-    @property
+    @cached_property()
     def bin_start(self):
         
         return np.cumsum([0] + self.nbin)[:-1]
     
     
-    @property
+    @cached_property()
     def bin_stop(self):
         
         return np.cumsum([0] + self.nbin)[1:]
     
     
-    @property
+    @cached_property()
     def src_efficiency(self):
 
         return [unit.src_efficiency for unit in self.data.values()]
 
 
-    @property
+    @cached_property()
     def bkg_efficiency(self):
 
         return [unit.bkg_efficiency for unit in self.data.values()]
 
 
-    @property
+    @cached_property()
     def alpha(self):
         
         return [unit.alpha for unit in self.data.values()]
 
 
-    @property
+    @cached_property()
     def src_counts(self):
         
         return [unit.src_counts for unit in self.data.values()]
     
     
-    @property
+    @cached_property()
+    def src_counts_f64(self):
+
+        return [np.float64(unit.src_counts) for unit in self.data.values()]
+
+
+    @cached_property()
     def src_re_counts(self):
         
         return [unit.src_re_counts for unit in self.data.values()]
     
     
-    @property
+    @cached_property()
     def src_errors(self):
         
         return [unit.src_errors for unit in self.data.values()]
+    
+    
+    @cached_property()
+    def src_errors_f64(self):
+        
+        return [np.float64(unit.src_errors) for unit in self.data.values()]
 
 
-    @property
+    @cached_property()
     def src_re_errors(self):
 
         return [unit.src_re_errors for unit in self.data.values()]
     
     
-    @property
+    @cached_property()
     def bkg_counts(self):
         
         return [unit.bkg_counts for unit in self.data.values()]
+    
+    
+    @cached_property()
+    def bkg_counts_f64(self):
+
+        return [np.float64(unit.bkg_counts) for unit in self.data.values()]
 
 
-    @property
+    @cached_property()
     def bkg_re_counts(self):
 
         return [unit.bkg_re_counts for unit in self.data.values()]
 
 
-    @property
+    @cached_property()
     def bkg_errors(self):
 
         return [unit.bkg_errors for unit in self.data.values()]
+    
+    
+    @cached_property()
+    def bkg_errors_f64(self):
+
+        return [np.float64(unit.bkg_errors) for unit in self.data.values()]
 
 
-    @property
+    @cached_property()
     def bkg_re_errors(self):
 
         return [unit.bkg_re_errors for unit in self.data.values()]
     
     
-    @property
+    @cached_property()
     def rsp_chbin(self):
         
         return [unit.rsp_chbin for unit in self.data.values()]
 
 
-    @property
+    @cached_property()
     def rsp_re_chbin(self):
 
         return [unit.rsp_re_chbin for unit in self.data.values()]
     
     
-    @property
+    @cached_property()
     def rsp_chbin_mean(self):
         
         return [unit.rsp_chbin_mean for unit in self.data.values()]
 
 
-    @property
+    @cached_property()
     def rsp_re_chbin_mean(self):
 
         return [unit.rsp_re_chbin_mean for unit in self.data.values()]
 
 
-    @property
+    @cached_property()
     def rsp_chbin_width(self):
         
         return [unit.rsp_chbin_width for unit in self.data.values()]
 
 
-    @property
+    @cached_property()
     def rsp_re_chbin_width(self):
 
         return [unit.rsp_re_chbin_width for unit in self.data.values()]
     
     
-    @property
+    @cached_property()
     def rsp_chbin_tarr(self):
         
         return [unit.rsp_chbin_tarr for unit in self.data.values()]
     
     
-    @property
+    @cached_property()
     def rsp_re_chbin_tarr(self):
         
         return [unit.rsp_re_chbin_tarr for unit in self.data.values()]
 
 
-    @property
+    @cached_property(lambda self: self.pvalues)
     def rsp_drm(self):
 
         return [unit.rsp_drm for unit in self.data.values()]
 
 
-    @property
+    @cached_property(lambda self: self.pvalues)
     def rsp_re_drm(self):
 
         return [unit.rsp_re_drm for unit in self.data.values()]
     
     
-    @property
+    @cached_property()
     def npoints(self):
         
         return np.array([unit.npoint for unit in self.data.values()])
-    
-    
-    @property
-    def rsp_factor(self):
-        
-        return [unit.rsp_factor for unit in self.data.values()]
-    
-    
-    @property
-    def src_factor(self):
-
-        return [unit.src_factor for unit in self.data.values()]
 
 
-    @property
-    def bkg_factor(self):
-
-        return [unit.bkg_factor for unit in self.data.values()]
-
-
-    @property
+    @cached_property(lambda self: self.pvalues)
     def corr_rsp_drm(self):
         
         return [unit.corr_rsp_drm for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def corr_rsp_re_drm(self):
         
         return [unit.corr_rsp_re_drm for unit in self.data.values()]
 
 
-    @property
+    @cached_property(lambda self: self.pvalues)
     def corr_src_efficiency(self):
         
         return [unit.corr_src_efficiency for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
+    def corr_src_efficiency_f64(self):
+        
+        return [np.float64(unit.corr_src_efficiency) for unit in self.data.values()]
+
+
+    @cached_property(lambda self: self.pvalues)
     def corr_bkg_efficiency(self):
         
         return [unit.corr_bkg_efficiency for unit in self.data.values()]
+    
+    
+    @cached_property(lambda self: self.pvalues)
+    def corr_bkg_efficiency_f64(self):
+        
+        return [np.float64(unit.corr_bkg_efficiency) for unit in self.data.values()]
 
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def src_ctsrate(self):
         
         return [unit.src_ctsrate for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def src_re_ctsrate(self):
         
         return [unit.src_re_ctsrate for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def src_ctsrate_error(self):
         
         return [unit.src_ctsrate_error for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def src_re_ctsrate_error(self):
         
         return [unit.src_re_ctsrate_error for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def src_ctsspec(self):
         
         return [unit.src_ctsspec for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def src_re_ctsspec(self):
         
         return [unit.src_re_ctsspec for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def src_ctsspec_error(self):
         
         return [unit.src_ctsspec_error for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def src_re_ctsspec_error(self):
         
         return [unit.src_re_ctsspec_error for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def bkg_ctsrate(self):
         
         return [unit.bkg_ctsrate for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def bkg_re_ctsrate(self):
         
         return [unit.bkg_re_ctsrate for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def bkg_ctsrate_error(self):
         
         return [unit.bkg_ctsrate_error for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def bkg_re_ctsrate_error(self):
         
         return [unit.bkg_re_ctsrate_error for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def bkg_ctsspec(self):
         
         return [unit.bkg_ctsspec for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def bkg_re_ctsspec(self):
         
         return [unit.bkg_re_ctsspec for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def bkg_ctsspec_error(self):
         
         return [unit.bkg_ctsspec_error for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def bkg_re_ctsspec_error(self):
         
         return [unit.bkg_re_ctsspec_error for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def net_ctsrate(self):
         
         return [unit.net_ctsrate for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def net_re_ctsrate(self):
         
         return [unit.net_re_ctsrate for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def net_ctsrate_error(self):
         
         return [unit.net_ctsrate_error for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def net_re_ctsrate_error(self):
         
         return [unit.net_re_ctsrate_error for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def net_ctsspec(self):
         
         return [unit.net_ctsspec for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def net_re_ctsspec(self):
         
         return [unit.net_re_ctsspec for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def net_ctsspec_error(self):
         
         return [unit.net_ctsspec_error for unit in self.data.values()]
     
     
-    @property
+    @cached_property(lambda self: self.pvalues)
     def net_re_ctsspec_error(self):
         
         return [unit.net_re_ctsspec_error for unit in self.data.values()]
@@ -577,6 +618,25 @@ class Data(object):
     
     
     @property
+    def all_config(self):
+        
+        cid = 0
+        all_config = list()
+        
+        for expr, config in self.cdicts.items():
+            for cl, cg in config.items():
+                cid += 1
+                
+                all_config.append(
+                    {'cfg#': str(cid), 
+                     'Component': expr, 
+                     'Parameter': cl, 
+                     'Value': cg.val})
+
+        return all_config
+    
+    
+    @property
     def all_params(self):
         
         pid = 0
@@ -586,7 +646,7 @@ class Data(object):
             for pl, pr in params.items():
                 pid += 1
                 
-                all_params.append(\
+                all_params.append(
                     {'par#': str(pid), 
                      'Component': expr, 
                      'Parameter': pl, 
@@ -599,6 +659,12 @@ class Data(object):
     
     
     @property
+    def cfg_info(self):
+            
+        return Info.from_list_dict(self.all_config)
+    
+    
+    @property
     def par_info(self):
         
         par_info = Info.list_dict_to_dict(self.all_params)
@@ -606,6 +672,14 @@ class Data(object):
         del par_info['Posterior']
         
         return Info.from_dict(par_info)
+    
+    
+    def save(self, savepath):
+        
+        if not os.path.exists(savepath):
+            os.makedirs(savepath)
+        
+        json_dump(self.info.data_list_dict, savepath + '/data.json')
                 
                 
     @property
@@ -641,13 +715,13 @@ class Data(object):
     def __setitem__(self, key, value):
         
         self._setitem(key, value)
-        self._extract()
+        self._update()
 
 
     def __delitem__(self, key):
         
         del self._data[key]
-        self._extract()
+        self._update()
 
 
     def __contains__(self, key):
@@ -1129,10 +1203,29 @@ class DataUnit(object):
 
         if not isinstance(self._weight, (int, float)):
             raise ValueError('<weight> parameter should be int or float')
+        
+        
+    def _update_params(self):
+
+        self.params = OrderedDict()
+        self.params['sf'] = self.src_ins.factor
+        self.params['bf'] = self.bkg_ins.factor
+        self.params['rf'] = self.rsp_ins.factor
+        self.params['ra'] = self.rsp_ins.ra
+        self.params['dec'] = self.rsp_ins.dec
+
+    
+    def _update_config(self):
+        
+        self.config = OrderedDict()
 
 
     def _update(self):
+
+        self._UPDATE = object()
         
+        clear_cached_property(self)
+
         self._update_src()
         self._update_bkg()
         self._update_rmf()
@@ -1147,6 +1240,8 @@ class DataUnit(object):
             self._update_notc()
             self._update_grpg()
             self._update_rebn()
+            self._update_config()
+            self._update_params()
         else:
             self.qualifying = None
             self.noticing = None
@@ -1154,63 +1249,81 @@ class DataUnit(object):
             self.rebining = None
             self.grouping_slice = None
             self.rebining_slice = None
+            self.config = None
+            self.params = None
             
             warnings.warn('data unit is uncomplete with missing src or rsp!')
 
 
-    @property
-    def pdicts(self):
+    @cached_property()
+    def cfg(self):
+
+        cid = 0
+        cfg = SuperDict()
+
+        for cg in self.config.values():
+            cid += 1
+            cfg[str(cid)] = cg
+
+        return cfg
+
+
+    @cached_property()
+    def par(self):
         
-        pdicts = OrderedDict()
-        pdicts['rf'] = self.rsp_ins.factor
-        pdicts['sf'] = self.src_ins.factor
-        pdicts['bf'] = self.bkg_ins.factor
+        pid = 0
+        par = SuperDict()
         
-        if hasattr(self.rsp_ins, 'ra'):
-            pdicts['ra'] = self.rsp_ins.ra
-        if hasattr(self.rsp_ins, 'dec'):
-            pdicts['dec'] = self.rsp_ins.dec
-
-        return pdicts
+        for pr in self.params.values():
+            pid += 1
+            par[str(pid)] = pr
+                
+        return par
 
 
     @property
+    def pvalues(self):
+
+        return tuple([pr.value for pr in self.par.values()])
+
+
+    @cached_property()
     def ebin(self):
         
         return np.array(self.rsp_ins.phbin, dtype=float)
         
         
-    @property
+    @cached_property()
     def nbin(self):
         
         return self.rsp_ins.phbin.shape[0]
 
 
-    @property
+    @cached_property()
     def tarr(self):
 
         return np.repeat(self.time, self.nbin)
     
     
-    @property
+    @cached_property()
     def src_efficiency(self):
         
         return self.src_ins.exposure
     
     
-    @property
+    @cached_property()
     def bkg_efficiency(self):
         
         return self.bkg_ins.exposure * self.bkg_ins.backscale / self.src_ins.backscale
     
     
-    @property
+    @cached_property()
     def alpha(self):
         
         return self.src_efficiency / self.bkg_efficiency
     
     
-    @property
+    @cached_property()
     def src_counts(self):
         
         src_cts_cumsum = np.r_[0, np.cumsum(self.src_ins.counts)]
@@ -1219,7 +1332,7 @@ class DataUnit(object):
         return src_cts_cumsum[gr_stops] - src_cts_cumsum[gr_starts]
     
     
-    @property
+    @cached_property()
     def src_re_counts(self):
         
         src_cts_cumsum = np.r_[0, np.cumsum(self.src_ins.counts)]
@@ -1228,7 +1341,7 @@ class DataUnit(object):
         return src_cts_cumsum[rb_stops] - src_cts_cumsum[rb_starts]
 
 
-    @property
+    @cached_property()
     def src_errors(self):
         
         src_err_cumsum = np.r_[0, np.cumsum(self.src_ins.errors**2)]
@@ -1237,7 +1350,7 @@ class DataUnit(object):
         return np.sqrt(src_err_cumsum[gr_stops] - src_err_cumsum[gr_starts])
     
     
-    @property
+    @cached_property()
     def src_re_errors(self):
         
         src_err_cumsum = np.r_[0, np.cumsum(self.src_ins.errors**2)]
@@ -1246,7 +1359,7 @@ class DataUnit(object):
         return np.sqrt(src_err_cumsum[rb_stops] - src_err_cumsum[rb_starts])
     
     
-    @property
+    @cached_property()
     def bkg_counts(self):
         
         bkg_cts_cumsum = np.r_[0, np.cumsum(self.bkg_ins.counts)]
@@ -1255,7 +1368,7 @@ class DataUnit(object):
         return bkg_cts_cumsum[gr_stops] - bkg_cts_cumsum[gr_starts]
     
     
-    @property
+    @cached_property()
     def bkg_re_counts(self):
         
         bkg_cts_cumsum = np.r_[0, np.cumsum(self.bkg_ins.counts)]
@@ -1264,7 +1377,7 @@ class DataUnit(object):
         return bkg_cts_cumsum[rb_stops] - bkg_cts_cumsum[rb_starts]
 
 
-    @property
+    @cached_property()
     def bkg_errors(self):
         
         bkg_err_cumsum = np.r_[0, np.cumsum(self.bkg_ins.errors**2)]
@@ -1273,7 +1386,7 @@ class DataUnit(object):
         return np.sqrt(bkg_err_cumsum[gr_stops] - bkg_err_cumsum[gr_starts])
     
     
-    @property
+    @cached_property()
     def bkg_re_errors(self):
         
         bkg_err_cumsum = np.r_[0, np.cumsum(self.bkg_ins.errors**2)]
@@ -1282,7 +1395,7 @@ class DataUnit(object):
         return np.sqrt(bkg_err_cumsum[rb_stops] - bkg_err_cumsum[rb_starts])
 
 
-    @property
+    @cached_property()
     def rsp_chbin(self):
         
         ch_left = self.rsp_ins.chbin[self.grouping_slice[:,0], 0]
@@ -1291,7 +1404,7 @@ class DataUnit(object):
         return np.column_stack([ch_left, ch_right])
     
     
-    @property
+    @cached_property()
     def rsp_re_chbin(self):
         
         ch_left = self.rsp_ins.chbin[self.rebining_slice[:,0], 0]
@@ -1299,44 +1412,44 @@ class DataUnit(object):
 
         return np.column_stack([ch_left, ch_right])
     
-    
-    @property
+
+    @cached_property()
     def rsp_chbin_mean(self):
 
         return np.mean(self.rsp_chbin, axis=1)
     
     
-    @property
+    @cached_property()
     def rsp_re_chbin_mean(self):
 
         return np.mean(self.rsp_re_chbin, axis=1)
 
 
-    @property
+    @cached_property()
     def rsp_chbin_width(self):
 
         return np.diff(self.rsp_chbin, axis=1).reshape(1, -1)[0]
     
     
-    @property
+    @cached_property()
     def rsp_re_chbin_width(self):
 
         return np.diff(self.rsp_re_chbin, axis=1).reshape(1, -1)[0]
     
     
-    @property
+    @cached_property()
     def rsp_chbin_tarr(self):
         
-        return np.repeat(self._time, self.rsp_chbin_mean.shape[0])
+        return np.repeat(self.time, self.rsp_chbin_mean.shape[0])
     
     
-    @property
+    @cached_property()
     def rsp_re_chbin_tarr(self):
         
-        return np.repeat(self._time, self.rsp_re_chbin_mean.shape[0])
+        return np.repeat(self.time, self.rsp_re_chbin_mean.shape[0])
 
 
-    @property
+    @cached_property(lambda self: self.pvalues[-2:])
     def rsp_drm(self):
 
         rsp_drm_cumsum = np.hstack([np.zeros((self.rsp_ins.drm.shape[0], 1), dtype=float), 
@@ -1346,7 +1459,7 @@ class DataUnit(object):
         return rsp_drm_cumsum[:, gr_stops] - rsp_drm_cumsum[:, gr_starts]
 
 
-    @property
+    @cached_property(lambda self: self.pvalues[-2:])
     def rsp_re_drm(self):
 
         rsp_drm_cumsum = np.hstack([np.zeros((self.rsp_ins.drm.shape[0], 1), dtype=float), 
@@ -1356,193 +1469,175 @@ class DataUnit(object):
         return rsp_drm_cumsum[:, rb_stops] - rsp_drm_cumsum[:, rb_starts]
 
 
-    @property
+    @cached_property()
     def npoint(self):
         
         return self.src_counts.shape[0]
 
 
-    @property
-    def rsp_factor(self):
-        
-        return self.rsp_ins.factor.value
-
-
-    @property
-    def src_factor(self):
-        
-        return self.src_ins.factor.value
-
-
-    @property
-    def bkg_factor(self):
-        
-        return self.bkg_ins.factor.value
-
-
-    @property
+    @cached_property(lambda self: self.pvalues[-3:])
     def corr_rsp_drm(self):
         
-        return self.rsp_drm * self.rsp_factor
+        return self.rsp_drm * self.rsp_ins.factor.value
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[-3:])
     def corr_rsp_re_drm(self):
         
-        return self.rsp_re_drm * self.rsp_factor
+        return self.rsp_re_drm * self.rsp_ins.factor.value
 
 
-    @property
+    @cached_property(lambda self: self.pvalues[0])
     def corr_src_efficiency(self):
         
-        return self.src_efficiency * self.src_factor
+        return self.src_efficiency * self.src_ins.factor.value
 
 
-    @property
+    @cached_property(lambda self: self.pvalues[1])
     def corr_bkg_efficiency(self):
         
-        return self.bkg_efficiency * self.bkg_factor
+        return self.bkg_efficiency * self.bkg_ins.factor.value
 
 
-    @property
+    @cached_property(lambda self: self.pvalues[0])
     def src_ctsrate(self):
         
         return self.src_counts / self.corr_src_efficiency
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[0])
     def src_re_ctsrate(self):
         
         return self.src_re_counts / self.corr_src_efficiency
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[0])
     def src_ctsrate_error(self):
         
         return self.src_errors  / self.corr_src_efficiency
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[0])
     def src_re_ctsrate_error(self):
         
         return self.src_re_errors  / self.corr_src_efficiency
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[0])
     def src_ctsspec(self):
         
         return self.src_ctsrate / self.rsp_chbin_width
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[0])
     def src_re_ctsspec(self):
         
         return self.src_re_ctsrate / self.rsp_re_chbin_width
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[0])
     def src_ctsspec_error(self):
         
         return self.src_ctsrate_error / self.rsp_chbin_width
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[0])
     def src_re_ctsspec_error(self):
         
         return self.src_re_ctsrate_error / self.rsp_re_chbin_width
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[1])
     def bkg_ctsrate(self):
         
         return self.bkg_counts  / self.corr_bkg_efficiency
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[1])
     def bkg_re_ctsrate(self):
         
         return self.bkg_re_counts  / self.corr_bkg_efficiency
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[1])
     def bkg_ctsrate_error(self):
         
         return self.bkg_errors  / self.corr_bkg_efficiency
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[1])
     def bkg_re_ctsrate_error(self):
         
         return self.bkg_re_errors  / self.corr_bkg_efficiency
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[1])
     def bkg_ctsspec(self):
         
         return self.bkg_ctsrate / self.rsp_chbin_width
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[1])
     def bkg_re_ctsspec(self):
         
         return self.bkg_re_ctsrate / self.rsp_re_chbin_width
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[1])
     def bkg_ctsspec_error(self):
         
         return self.bkg_ctsrate_error / self.rsp_chbin_width
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[1])
     def bkg_re_ctsspec_error(self):
         
         return self.bkg_re_ctsrate_error / self.rsp_re_chbin_width
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[:2])
     def net_ctsrate(self):
         
         return self.src_ctsrate - self.bkg_ctsrate
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[:2])
     def net_re_ctsrate(self):
         
         return self.src_re_ctsrate - self.bkg_re_ctsrate
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[:2])
     def net_ctsrate_error(self):
         
         return np.sqrt(self.src_ctsrate_error ** 2 + self.bkg_ctsrate_error ** 2)
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[:2])
     def net_re_ctsrate_error(self):
         
         return np.sqrt(self.src_re_ctsrate_error ** 2 + self.bkg_re_ctsrate_error ** 2)
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[:2])
     def net_ctsspec(self):
         
         return self.src_ctsspec - self.bkg_ctsspec
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[:2])
     def net_re_ctsspec(self):
         
         return self.src_re_ctsspec - self.bkg_re_ctsspec
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[:2])
     def net_ctsspec_error(self):
         
         return np.sqrt(self.src_ctsspec_error ** 2 + self.bkg_ctsspec_error ** 2)
     
     
-    @property
+    @cached_property(lambda self: self.pvalues[:2])
     def net_re_ctsspec_error(self):
         
         return np.sqrt(self.src_re_ctsspec_error ** 2 + self.bkg_re_ctsspec_error ** 2)

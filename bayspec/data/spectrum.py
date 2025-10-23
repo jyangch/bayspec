@@ -2,10 +2,11 @@ import inspect
 import numpy as np
 from io import BytesIO
 from copy import deepcopy
-from ..util.info import Info
-from ..util.param import Par
 import astropy.io.fits as fits
 from collections import OrderedDict
+
+from ..util.info import Info
+from ..util.param import Par
 
 
 

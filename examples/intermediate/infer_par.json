@@ -1,0 +1,128 @@
+[
+    {
+        "par#": "1*",
+        "Class": "model",
+        "Expression": "(AS_TbAbs*cpl)",
+        "Component": "AS_TbAbs",
+        "Parameter": "NH",
+        "Value": 1.0,
+        "Prior": "unif(0.0001, 20)"
+    },
+    {
+        "par#": "2*",
+        "Class": "model",
+        "Expression": "(AS_TbAbs*cpl)",
+        "Component": "cpl",
+        "Parameter": "$\\alpha$",
+        "Value": -1.0,
+        "Prior": "unif(-8, 4)"
+    },
+    {
+        "par#": "3*",
+        "Class": "model",
+        "Expression": "(AS_TbAbs*cpl)",
+        "Component": "cpl",
+        "Parameter": "log$E_{c}$",
+        "Value": 2.0,
+        "Prior": "unif(0, 4)"
+    },
+    {
+        "par#": "4*",
+        "Class": "model",
+        "Expression": "(AS_TbAbs*cpl)",
+        "Component": "cpl",
+        "Parameter": "log$A$",
+        "Value": -1.0,
+        "Prior": "unif(-6, 5)"
+    },
+    {
+        "par#": "5",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "LE",
+        "Parameter": "sf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "6",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "LE",
+        "Parameter": "bf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "7",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "LE",
+        "Parameter": "rf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "8",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "LE",
+        "Parameter": "ra",
+        "Value": 0.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "9",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "LE",
+        "Parameter": "dec",
+        "Value": 0.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "10",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "ME",
+        "Parameter": "sf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "11",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "ME",
+        "Parameter": "bf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "12",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "ME",
+        "Parameter": "rf",
+        "Value": 1.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "13",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "ME",
+        "Parameter": "ra",
+        "Value": 0.0,
+        "Prior": "frozen"
+    },
+    {
+        "par#": "14",
+        "Class": "data",
+        "Expression": "data",
+        "Component": "ME",
+        "Parameter": "dec",
+        "Value": 0.0,
+        "Prior": "frozen"
+    }
+]

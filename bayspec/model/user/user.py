@@ -1,7 +1,8 @@
+from collections import OrderedDict
+
 from ..model import Model
 from ...util.prior import unif
 from ...util.param import Par, Cfg
-from collections import OrderedDict
 #+++++++editable area+++++++
 # import other package
 #+++++++editable area+++++++

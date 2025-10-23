@@ -1,14 +1,15 @@
 import numpy as np
 import subprocess as sp
 import astropy.units as u
-from ..model import Additive
-from ...util.prior import unif
-from ...util.param import Par, Cfg
 from collections import OrderedDict
 from os.path import dirname, abspath
 from scipy.special import gamma, zeta
 from astropy.cosmology import Planck18
 docs_path = dirname(dirname(dirname(abspath(__file__)))) + '/docs'
+
+from ..model import Additive
+from ...util.prior import unif
+from ...util.param import Par, Cfg
 
 
 

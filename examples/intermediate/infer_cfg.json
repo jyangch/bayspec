@@ -1,0 +1,18 @@
+[
+    {
+        "cfg#": "1",
+        "Class": "model",
+        "Expression": "(AS_TbAbs*cpl)",
+        "Component": "AS_TbAbs",
+        "Parameter": "redshift",
+        "Value": 0.0
+    },
+    {
+        "cfg#": "2",
+        "Class": "model",
+        "Expression": "(AS_TbAbs*cpl)",
+        "Component": "cpl",
+        "Parameter": "redshift",
+        "Value": 0.0
+    }
+]

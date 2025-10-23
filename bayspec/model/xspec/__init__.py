@@ -1,9 +1,10 @@
 import numpy as np
-from ..model import Model
 import xspec_models_cxc as xsp
+from collections import OrderedDict
+
+from ..model import Model
 from ...util.prior import unif
 from ...util.param import Par, Cfg
-from collections import OrderedDict
 
 
 __all__ = []

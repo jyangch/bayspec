@@ -3,21 +3,21 @@
         "Data": "nai",
         "Model": "cpl",
         "Statistic": "pgstat",
-        "Value": "388.50",
-        "Bins": "109"
+        "Value": "405.02",
+        "Bins": "119"
     },
     {
         "Data": "bgo",
         "Model": "cpl",
         "Statistic": "pgstat",
-        "Value": "31.07",
-        "Bins": "28"
+        "Value": "149.73",
+        "Bins": "117"
     },
     {
         "Data": "Total",
         "Model": "Total",
         "Statistic": "stat/dof",
-        "Value": "419.58/134",
-        "Bins": "137"
+        "Value": "554.75/233",
+        "Bins": "236"
     }
 ]
