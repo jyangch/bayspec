@@ -205,7 +205,7 @@ following three sections:
 
     earr = np.logspace(1, 3, 100)
 
-    modelplot = Plot.model(ploter='plotly', style='vFv', CI=True)
+    modelplot = Plot.model(ploter='plotly', style='vFv', post=True)
     modelplot.add_model(model, E=earr)
     fig = modelplot.get_fig()
     fig.save(f'{savepath}/model')

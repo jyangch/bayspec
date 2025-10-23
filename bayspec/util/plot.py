@@ -538,10 +538,10 @@ class Plot(object):
 
 
     @staticmethod
-    def model(ploter='plotly', style='NE', CI=False, yrange=None):
-        
-        modelplot = ModelPlot(ploter=ploter, style=style, CI=CI, yrange=yrange)
-            
+    def model(ploter='plotly', style='NE', post=False, yrange=None):
+
+        modelplot = ModelPlot(ploter=ploter, style=style, post=post, yrange=yrange)
+
         return modelplot
 
 
@@ -1099,11 +1099,11 @@ class ModelPlot(object):
                 + px.colors.qualitative.T10 \
                     + px.colors.qualitative.Alphabet
     
-    def __init__(self, ploter='plotly', style='NE', CI=False, yrange=None):
+    def __init__(self, ploter='plotly', style='NE', post=False, yrange=None):
         
         self.ploter = ploter
         self.style = style
-        self.CI = CI
+        self.post = post
         self.yrange = yrange
         
         if self.style == 'NE':
@@ -1177,37 +1177,45 @@ class ModelPlot(object):
             if model.type not in ['add', 'tinv']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
-            y = model.best_phtspec(E, T).astype(float)
-            if self.CI:
+            if self.post:
+                y = model.best_phtspec(E, T).astype(float)
                 y_sample = model.phtspec_sample(E, T)
                 y_ci = y_sample['Isigma'].astype(float)
+            else:
+                y = model.phtspec(E, T).astype(float)
                 
         elif self.style == 'Fv' or self.style == 'ENE':
             if model.type not in ['add', 'tinv']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
-            y = model.best_flxspec(E, T).astype(float)
-            if self.CI:
+            if self.post:
+                y = model.best_flxspec(E, T).astype(float)
                 y_sample = model.flxspec_sample(E, T)
                 y_ci = y_sample['Isigma'].astype(float)
+            else:
+                y = model.flxspec(E, T).astype(float)
                 
         elif self.style == 'vFv' or self.style == 'EENE':
             if model.type not in ['add', 'tinv', 'math']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
-            y = model.best_ergspec(E, T).astype(float)
-            if self.CI:
+            if self.post:
+                y = model.best_ergspec(E, T).astype(float)
                 y_sample = model.ergspec_sample(E, T)
                 y_ci = y_sample['Isigma'].astype(float)
+            else:
+                y = model.ergspec(E, T).astype(float)
 
         elif self.style == 'NoU':
             if model.type not in ['mul', 'math']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
-            y = model.best_nouspec(E).astype(float)
-            if self.CI:
+            if self.post:
+                y = model.best_nouspec(E).astype(float)
                 y_sample = model.nouspec_sample(E)
                 y_ci = y_sample['Isigma'].astype(float)
+            else:
+                y = model.nouspec(E).astype(float)
                 
         else:
             raise ValueError(f'unsupported style argument: {self.style}')
@@ -1222,7 +1230,7 @@ class ModelPlot(object):
                 line=dict(width=2, color=ModelPlot.colors[self.model_index]))
             self.fig.add_trace(mo)
             
-            if self.CI:
+            if self.post:
                 low = go.Scatter(
                     x=x, 
                     y=y_ci[0], 
@@ -1246,12 +1254,12 @@ class ModelPlot(object):
 
         elif self.ploter == 'matplotlib':
             self.ax.plot(x, y, lw=1.0, color=ModelPlot.colors[self.model_index], label=model.expr)
-            if self.CI: 
+            if self.post: 
                 self.ax.fill_between(x, y_ci[0], y_ci[1], fc=ModelPlot.colors[self.model_index], 
                                      alpha=0.5, label=f'{model.expr} CI')
             self.ax.legend(frameon=True)
 
-        if self.CI:
+        if self.post:
             self.fig_data[model.expr] = {'x': x, 'y': y, 'y_ci': y_ci}
         else:
             self.fig_data[model.expr] = {'x': x, 'y': y}
