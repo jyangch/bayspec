@@ -38,6 +38,7 @@ setup(
         "plotly>=5.22.0",
         "matplotlib>=3.2.1",
         "corner>=2.2.1",
+        "getdist>=1.7.2",
         "astropy>=5.2.2",
         "emcee>=3.1.1",
         "pymultinest>=2.12"
