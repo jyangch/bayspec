@@ -265,6 +265,24 @@ class Pair(object):
     
     
     @property
+    def residual(self):
+        
+        return list(map(lambda oi, mi, si: (oi - mi) / si, 
+                        self.data.net_ctsrate, 
+                        self.conv_ctsrate, 
+                        self.data.net_ctsrate_error))
+        
+        
+    @property
+    def re_residual(self):
+        
+        return list(map(lambda oi, mi, si: (oi - mi) / si, 
+                        self.data.net_re_ctsrate, 
+                        self.conv_re_ctsrate, 
+                        self.data.net_re_ctsrate_error))
+    
+    
+    @property
     def cts_to_flux(self):
         
         ctsrate = [np.sum(cr) for cr in self.data.net_ctsrate]

@@ -528,6 +528,24 @@ class Infer(object):
     def model_re_cts_to_pht(self):
         
         return [value for model in self.Model for value in model.re_cts_to_pht]
+    
+    
+    @property
+    def residual(self):
+        
+        return list(map(lambda oi, mi, si: (oi - mi) / si, 
+                        self.data_ctsrate, 
+                        self.model_ctsrate, 
+                        self.data_ctsrate_error))
+
+
+    @property
+    def re_residual(self):
+        
+        return list(map(lambda oi, mi, si: (oi - mi) / si, 
+                        self.data_re_ctsrate, 
+                        self.model_re_ctsrate, 
+                        self.data_re_ctsrate_error))
 
 
     @property

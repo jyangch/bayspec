@@ -771,10 +771,12 @@ class Plot(object):
             obs_x = cls.data_chbin_mean
             obs_x_le = [chw / 2 for chw in cls.data_chbin_width]
             obs_x_he = [chw / 2 for chw in cls.data_chbin_width]
+            res_y = cls.residual
         else:
             obs_x = cls.data_re_chbin_mean
             obs_x_le = [chw / 2 for chw in cls.data_re_chbin_width]
             obs_x_he = [chw / 2 for chw in cls.data_re_chbin_width]
+            res_y = cls.re_residual
         
         if style == 'CC':
             ylabel = 'Counts/s/channel'
@@ -783,12 +785,10 @@ class Plot(object):
                 obs_y = cls.data_ctsrate
                 obs_y_e = cls.data_ctsrate_error
                 mo_y = cls.model_ctsrate
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             else:
                 obs_y = cls.data_re_ctsrate
                 obs_y_e = cls.data_re_ctsrate_error
                 mo_y = cls.model_re_ctsrate
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             
         elif style == 'CE':
             ylabel = 'Counts/s/keV'
@@ -797,12 +797,10 @@ class Plot(object):
                 obs_y = cls.data_ctsspec
                 obs_y_e = cls.data_ctsspec_error
                 mo_y = cls.model_ctsspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             else:
                 obs_y = cls.data_re_ctsspec
                 obs_y_e = cls.data_re_ctsspec_error
                 mo_y = cls.model_re_ctsspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
                 
         elif style == 'NE':
             ylabel = 'Photons/cm^2/s/keV'
@@ -811,12 +809,10 @@ class Plot(object):
                 obs_y = cls.data_phtspec
                 obs_y_e = cls.data_phtspec_error
                 mo_y = cls.model_phtspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             else:
                 obs_y = cls.data_re_phtspec
                 obs_y_e = cls.data_re_phtspec_error
                 mo_y = cls.model_re_phtspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
                 
         elif style == 'Fv' or style == 'ENE':
             ylabel = 'erg/cm^2/s/keV'
@@ -825,12 +821,10 @@ class Plot(object):
                 obs_y = cls.data_flxspec
                 obs_y_e = cls.data_flxspec_error
                 mo_y = cls.model_flxspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             else:
                 obs_y = cls.data_re_flxspec
                 obs_y_e = cls.data_re_flxspec_error
                 mo_y = cls.model_re_flxspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
                 
         elif style == 'vFv' or style == 'EENE':
             ylabel = 'erg/cm^2/s'
@@ -839,12 +833,10 @@ class Plot(object):
                 obs_y = cls.data_ergspec
                 obs_y_e = cls.data_ergspec_error
                 mo_y = cls.model_ergspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             else:
                 obs_y = cls.data_re_ergspec
                 obs_y_e = cls.data_re_ergspec_error
                 mo_y = cls.model_re_ergspec
-                res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             
         else:
             raise ValueError(f'unsupported style argument: {style}')
@@ -1297,8 +1289,10 @@ class Figure(object):
             self.fig.write_html(f'{fname}.html')
         elif self.plotter == 'matplotlib':
             self.fig.savefig(f'{fname}.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
+            plt.close(self.fig)
         elif self.plotter == 'cornerpy':
             self.fig.savefig(f'{fname}.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
+            plt.close(self.fig)
         elif self.plotter == 'getdist':
             self.fig.export(f'{fname}.pdf')
         else:

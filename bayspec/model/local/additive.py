@@ -37,7 +37,44 @@ class pl(Additive):
         zi = 1 + redshift
         E = E * zi
 
-        phtspec = Amp * (E / 100) ** alpha
+        phtspec = Amp * E ** alpha
+        return phtspec
+
+
+
+class plpl(Additive):
+
+    def __init__(self):
+        super().__init__()
+        
+        self.expr = 'plpl'
+        self.comment = 'double power law model'
+        
+        self.params = OrderedDict()
+        self.params[r'$\alpha_1$'] = Par(-1, unif(-8, 5))
+        self.params[r'log$A_1$'] = Par(-1, unif(-10, 8))
+        self.params[r'$\alpha_2$'] = Par(-1, unif(-8, 5))
+        self.params[r'log$A_2$'] = Par(-1, unif(-10, 8))
+
+
+    def func(self, E, T=None, O=None):
+        alpha1 = self.params[r'$\alpha_1$'].value
+        logA1 = self.params[r'log$A_1$'].value
+        alpha2 = self.params[r'$\alpha_2$'].value
+        logA2 = self.params[r'log$A_2$'].value
+        
+        Amp1 = 10 ** logA1
+        Amp2 = 10 ** logA2
+
+        if alpha1 <= alpha2:
+            return np.ones_like(E) * np.nan
+        
+        redshift = self.config['redshift'].value
+
+        zi = 1 + redshift
+        E = E * zi
+
+        phtspec = Amp1 * E ** alpha1 + Amp2 * E ** alpha2
         return phtspec
 
 
@@ -99,7 +136,7 @@ class cpl(Additive):
         zi = 1 + redshift
         E = E * zi
 
-        phtspec = Amp * (E / 100) ** alpha * np.exp(-1.0 * E / Ec)
+        phtspec = Amp * E ** alpha * np.exp(-1.0 * E / Ec)
         return phtspec
 
 
@@ -132,7 +169,7 @@ class ppl(Additive):
         E = E * zi
 
         Ec = Ep / (2 + alpha)
-        phtspec = Amp * (E / 100) ** alpha * np.exp(-1.0 * E / Ec)
+        phtspec = Amp * E ** alpha * np.exp(-1.0 * E / Ec)
         return phtspec
     
     
