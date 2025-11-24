@@ -90,6 +90,10 @@ class Response(object):
             mchan = 1
             
         matrix = matData.field(5)
+        
+        if matrix[0].ndim == 0:
+            matrix = matrix.reshape(-1, 1)
+        
         drm = np.zeros([numEnerBins, numDetChans])
         
         for fc, nc, i in zip(fchan, nchan, range(numEnerBins)):
