@@ -3,14 +3,14 @@
         "Data": "nai",
         "Model": "cpl",
         "Statistic": "pgstat",
-        "Value": "405.02",
+        "Value": "405.16",
         "Bins": "119"
     },
     {
         "Data": "bgo",
         "Model": "cpl",
         "Statistic": "pgstat",
-        "Value": "149.73",
+        "Value": "149.58",
         "Bins": "117"
     },
     {

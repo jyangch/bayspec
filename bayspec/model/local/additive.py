@@ -22,8 +22,8 @@ class pl(Additive):
         self.comment = 'power law model'
         
         self.params = OrderedDict()
-        self.params[r'$\alpha$'] = Par(-1, unif(-8, 5))
-        self.params[r'log$A$'] = Par(-1, unif(-10, 8))
+        self.params[r'$\alpha$'] = Par(0, unif(-10, 10))
+        self.params[r'log$A$'] = Par(0, unif(-10, 10))
 
 
     def func(self, E, T=None, O=None):
@@ -51,10 +51,10 @@ class plpl(Additive):
         self.comment = 'double power law model'
         
         self.params = OrderedDict()
-        self.params[r'$\alpha_1$'] = Par(-1, unif(-8, 5))
-        self.params[r'log$A_1$'] = Par(-1, unif(-10, 8))
-        self.params[r'$\alpha_2$'] = Par(-1, unif(-8, 5))
-        self.params[r'log$A_2$'] = Par(-1, unif(-10, 8))
+        self.params[r'$\alpha_1$'] = Par(0, unif(-10, 10))
+        self.params[r'log$A_1$'] = Par(0, unif(-10, 10))
+        self.params[r'$\alpha_2$'] = Par(0, unif(-10, 10))
+        self.params[r'log$A_2$'] = Par(0, unif(-10, 10))
 
 
     def func(self, E, T=None, O=None):
@@ -67,7 +67,7 @@ class plpl(Additive):
         Amp2 = 10 ** logA2
 
         if alpha1 <= alpha2:
-            return np.ones_like(E) * np.nan
+            alpha1, alpha2 = alpha2, alpha1
         
         redshift = self.config['redshift'].value
 
@@ -88,8 +88,8 @@ class bb(Additive):
         self.comment = 'black-body model'
 
         self.params = OrderedDict()
-        self.params[r'log$kT$'] = Par(2, unif(0, 3))
-        self.params[r'log$A$'] = Par(-1, unif(-6, 5))
+        self.params[r'log$kT$'] = Par(1, unif(-1, 3))
+        self.params[r'log$A$'] = Par(0, unif(-6, -6))
 
 
     def func(self, E, T=None, O=None):
@@ -120,7 +120,7 @@ class cpl(Additive):
         self.params = OrderedDict()
         self.params[r'$\alpha$'] = Par(-1, unif(-8, 4))
         self.params[r'log$E_{c}$'] = Par(2, unif(0, 4))
-        self.params[r'log$A$'] = Par(-1, unif(-6, 5))
+        self.params[r'log$A$'] = Par(0, unif(-10, 10))
 
 
     def func(self, E, T=None, O=None):
@@ -152,7 +152,7 @@ class ppl(Additive):
         self.params = OrderedDict()
         self.params[r'$\alpha$'] = Par(-1, unif(-2, 2))
         self.params[r'log$E_{p}$'] = Par(2, unif(0, 4))
-        self.params[r'log$A$'] = Par(-1, unif(-6, 5))
+        self.params[r'log$A$'] = Par(0, unif(-10, 10))
 
 
     def func(self, E, T=None, O=None):
@@ -184,9 +184,9 @@ class band(Additive):
 
         self.params = OrderedDict()
         self.params[r'$\alpha$'] = Par(-1, unif(-2, 2))
-        self.params[r'$\beta$'] = Par(-4, unif(-6, -2))
+        self.params[r'$\beta$'] = Par(-3, unif(-6, -2))
         self.params[r'log$E_{p}$'] = Par(2, unif(0, 4))
-        self.params[r'log$A$'] = Par(-1, unif(-6, 5))
+        self.params[r'log$A$'] = Par(0, unif(-6, 6))
 
 
     def func(self, E, T=None, O=None):
@@ -273,7 +273,7 @@ class dband(Additive):
         self.params = OrderedDict()
         self.params[r'$\alpha_{1}$'] = Par(1, unif(-2, 2))
         self.params[r'$\alpha_{2}$'] = Par(-1, unif(-2, 2))
-        self.params[r'$\beta$'] = Par(-3, unif(-5, -2))
+        self.params[r'$\beta$'] = Par(-3, unif(-6, -2))
         self.params[r'log$E_{b}$'] = Par(1, unif(0, 3))
         self.params[r'log$E_{p}$'] = Par(3, unif(1, 4))
         self.params[r'log$A$'] = Par(0, unif(-6, 6))
@@ -324,7 +324,7 @@ class sbpl(Additive):
         self.params[r'$\alpha$'] = Par(-1, unif(-4, 3))
         self.params[r'$\beta$'] = Par(-2, unif(-5, 2))
         self.params[r'log$E_{b}$'] = Par(2, unif(0, 4))
-        self.params[r'log$A$'] = Par(-1, unif(-6, 5))
+        self.params[r'log$A$'] = Par(0, unif(-6, 6))
         
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0)
@@ -368,7 +368,7 @@ class ssbpl(Additive):
 
         self.params = OrderedDict()
         self.params[r'$\alpha$'] = Par(-1, unif(-4, 3))
-        self.params[r'$\beta$'] = Par(-3, unif(-5, -2))
+        self.params[r'$\beta$'] = Par(-3, unif(-6, -2))
         self.params[r'log$E_{p}$'] = Par(2, unif(0, 4))
         self.params[r'log$A$'] = Par(0, unif(-6, 6))
         

@@ -499,8 +499,6 @@ class Model(object):
         
     def at_par(self, theta):
         
-        theta = np.array(theta, dtype=float)
-        
         for i, thi in enumerate(theta): 
             self.par[i+1].val = thi
 

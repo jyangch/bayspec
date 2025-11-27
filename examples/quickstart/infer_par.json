@@ -23,8 +23,8 @@
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "log$A$",
-        "Value": -1.0,
-        "Prior": "unif(-6, 5)"
+        "Value": 0.0,
+        "Prior": "unif(-10, 10)"
     },
     {
         "par#": "4",

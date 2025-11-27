@@ -17,9 +17,9 @@
         "Component": "cpl",
         "Parameter": "log$E_{c}$",
         "Mean": "2.690",
-        "Median": "2.689",
-        "Best": "2.690",
-        "1sigma CI": "[2.672, 2.708]"
+        "Median": "2.690",
+        "Best": "2.691",
+        "1sigma CI": "[2.673, 2.707]"
     },
     {
         "par#": "3",
@@ -27,9 +27,9 @@
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "log$A$",
-        "Mean": "-0.771",
-        "Median": "-0.771",
-        "Best": "-0.771",
-        "1sigma CI": "[-0.777, -0.764]"
+        "Mean": "2.353",
+        "Median": "2.353",
+        "Best": "2.355",
+        "1sigma CI": "[2.338, 2.368]"
     }
 ]

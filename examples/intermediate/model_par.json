@@ -27,8 +27,8 @@
         "par#": "4",
         "Component": "cpl",
         "Parameter": "log$A$",
-        "Value": -1.0,
-        "Prior": "unif(-6, 5)",
+        "Value": 0.0,
+        "Prior": "unif(-10, 10)",
         "Frozen": false
     }
 ]

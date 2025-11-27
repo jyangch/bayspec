@@ -4,6 +4,7 @@ import ctypes
 import numpy as np
 from scipy.optimize import minimize
 from collections import OrderedDict
+from collections.abc import Callable
 
 from .pair import Pair
 from ..util.info import Info
@@ -20,6 +21,10 @@ class Infer(object):
         
         self.pairs = pairs
         
+        self.loglike_func = None
+        self.logprior_func = None
+        self.prior_transform_func = None
+
         
     @property
     def pairs(self):
@@ -549,6 +554,27 @@ class Infer(object):
 
 
     @property
+    def prior_list(self):
+        
+        return [par.prior.pdf(par.val) for par in self.free_par.values()]
+    
+    
+    @property
+    def prior(self):
+        
+        return np.prod(self.prior_list)
+    
+    
+    @property
+    def logprior(self):
+        
+        if self.prior == 0:
+            return -np.inf
+        else:
+            return np.log(self.prior)
+
+
+    @property
     def stat_list(self):
         
         return np.hstack([pair.stat_list for pair in self.Pair])
@@ -563,19 +589,19 @@ class Infer(object):
     @property
     def stat(self):
         
-        return np.sum(self.stat_list * self.weight_list)
+        return np.sum([[pair.stat for pair in self.Pair]])
     
     
     @property
     def loglike_list(self):
         
-        return -0.5 * self.stat_list
+        return np.hstack([pair.loglike_list for pair in self.Pair])
     
     
     @property
     def loglike(self):
         
-        return -0.5 * self.stat
+        return np.sum([[pair.loglike for pair in self.Pair]])
     
     
     @property
@@ -587,25 +613,13 @@ class Infer(object):
     @property
     def npoint(self):
         
-        return np.sum(self.npoint_list)
+        return np.sum([[pair.npoint for pair in self.Pair]])
     
     
     @property
     def dof(self):
         
         return self.npoint - self.free_nparams
-        
-
-    @property
-    def prior_list(self):
-        
-        return [par.prior.pdf(par.val) for par in self.free_par.values()]
-    
-    
-    @property
-    def logprior(self):
-        
-        return np.log(np.prod(self.prior_list))
         
         
     @property
@@ -719,65 +733,8 @@ class Infer(object):
         
         json_dump(self.cfg_info.data_list_dict, savepath + '/infer_cfg.json')
         json_dump(self.par_info.data_list_dict, savepath + '/infer_par.json')
-
-
-    def at_par(self, theta):
-        
-        theta = np.array(theta, dtype=float)
-        
-        for i, thi in enumerate(theta): 
-            self.free_par[i+1].val = thi
-            
-
-    def _loglike(self, theta):
-        
-        self.at_par(theta)
-        
-        return np.sum([[pair.loglike for pair in self.Pair]])
-
-
-    def _prior_transform(self, cube):
-        
-        theta = np.array(cube)
-        
-        for i, cui in enumerate(cube): 
-            theta[i] = self.free_par[i+1].prior.ppf(cui)
-            
-        return theta
-    
-    
-    def _logprior(self, theta):
-        
-        pprs = np.zeros_like(theta)
-
-        for i, thi in enumerate(theta):
-            pprs[i] = self.free_par[i+1].prior.pdf(thi)
-            
-        ppr = np.prod(pprs)
-        
-        if ppr == 0:
-            return -np.inf
-        else:
-            return np.log(ppr)
         
         
-    def _logprior_sample(self, theta_sample):
-        
-        pprs_sample = np.zeros_like(theta_sample)
-        
-        for i in range(theta_sample.shape[1]):
-            pprs_sample[:, i] = self.free_par[i+1].prior.pdf(theta_sample[:, i])
-            
-        ppr_sample = np.prod(pprs_sample, axis=1)
-        
-        return np.where(ppr_sample == 0, -np.inf, np.log(ppr_sample))
-
-
-    def _logprob(self, theta):
-
-        return self._logprior(theta) + self._loglike(theta)
-
-
     def __str__(self):
         
         print(self.cfg_info.table)
@@ -785,21 +742,125 @@ class Infer(object):
         
         return ''
 
+
+    def at_par(self, theta):
         
-    def multinest_loglike(self, cube, ndim, nparams):
+        for i, thi in enumerate(theta): 
+            self.free_par[i+1].val = thi
+
+ 
+    @property
+    def prior_transform_func(self):
         
-        for i in range(ndim):
-            self.free_par[i+1].val = cube[i]
-        
-        return np.sum([[pair.loglike for pair in self.Pair]])
+        return self._prior_transform_func
 
 
-    def multinest_prior_transform(self, cube, ndim, nparams):
+    @prior_transform_func.setter
+    def prior_transform_func(self, new_prior_transform_func):
         
-        for i in range(ndim):
-            cube[i] = self.free_par[i+1].prior.ppf(cube[i])
+        if isinstance(new_prior_transform_func, (Callable, type(None))):
+            self._prior_transform_func = new_prior_transform_func
+        else:
+            raise ValueError('prior_transform_func is expected to be Callable or None')
+
+
+    @property
+    def logprior_func(self):
         
+        return self._logprior_func
+
+
+    @logprior_func.setter
+    def logprior_func(self, new_logprior_func):
+        
+        if isinstance(new_logprior_func, (Callable, type(None))):
+            self._logprior_func = new_logprior_func
+        else:
+            raise ValueError('logprior_func is expected to be Callable or None')
+
+
+    @property
+    def loglike_func(self):
+        
+        return self._loglike_func
+
+
+    @loglike_func.setter
+    def loglike_func(self, new_loglike_func):
+        
+        if isinstance(new_loglike_func, (Callable, type(None))):
+            self._loglike_func = new_loglike_func
+        else:
+            raise ValueError('loglike_func is expected to be Callable or None')
+
+
+    def prior_transform(self, cube):
+        
+        if self.prior_transform_func is None:
+        
+            theta = np.array(cube)
+            
+            for i, cui in enumerate(cube): 
+                theta[i] = self.free_par[i+1].prior.ppf(cui)
+            
+            return theta
+
+        else:
+            return self.prior_transform_func(self, cube)
     
+    
+    def calc_logprior(self, theta):
+        
+        self.at_par(theta)
+        
+        if self.logprior_func is None:
+            return self.logprior
+        else:
+            return self.logprior_func(self, theta)
+            
+
+    def calc_loglike(self, theta):
+        
+        self.at_par(theta)
+        
+        if self.loglike_func is None:
+            return self.loglike
+        else:
+            return self.loglike_func(self, theta)
+
+
+    def calc_logprob(self, theta):
+        
+        lp = self.calc_logprior(theta)
+        
+        if not np.isfinite(lp):
+            return -np.inf
+        
+        return lp + self.calc_loglike(theta)
+    
+    
+    def calc_logprior_sample(self, theta_sample):
+        
+        prior_list_sample = np.zeros_like(theta_sample, dtype=float)
+        
+        for i in range(theta_sample.shape[1]):
+            prior_list_sample[:, i] = self.free_par[i+1].prior.pdf(theta_sample[:, i])
+            
+        prior_sample = np.prod(prior_list_sample, axis=1)
+        
+        return np.where(prior_sample == 0, -np.inf, np.log(prior_sample))
+    
+    
+    def multinest_prior_transform(self, cube):
+        
+        return self.prior_transform(cube)
+
+        
+    def multinest_calc_loglike(self, theta):
+        
+        return self.calc_loglike(theta)
+
+
     def multinest(self, nlive=500, resume=True, verbose=False, savepath='./'):
         
         import pymultinest
@@ -815,10 +876,13 @@ class Infer(object):
         
         if not os.path.exists(savepath):
             os.makedirs(savepath)
-
-        pymultinest.run(self.multinest_loglike, self.multinest_prior_transform, self.free_nparams, 
-                        resume=resume, verbose=verbose, n_live_points=nlive, outputfiles_basename=self.prefix, 
-                        sampling_efficiency=0.8, importance_nested_sampling=True, multimodal=True)
+            
+        pymultinest.solve(LogLikelihood=self.multinest_calc_loglike, 
+                          Prior=self.multinest_prior_transform, 
+                          n_dims=self.free_nparams, resume=resume, 
+                          verbose=verbose, n_live_points=nlive, 
+                          outputfiles_basename=self.prefix, sampling_efficiency=0.8, 
+                          importance_nested_sampling=True, multimodal=True)
 
         self.Analyzer = pymultinest.Analyzer(outputfiles_basename=self.prefix, n_params=self.free_nparams)
         
@@ -827,7 +891,7 @@ class Infer(object):
         if (not self.resume) or (not os.path.exists(self.prefix + 'post_equal_weights.txt')):
             self.posterior_sample = self.Analyzer.get_equal_weighted_posterior()
             self.posterior_sample[:, -1] = self.posterior_sample[:, -1] + \
-                self._logprior_sample(self.posterior_sample[:, 0:-1])
+                self.calc_logprior_sample(self.posterior_sample[:, 0:-1])
             np.savetxt(self.prefix + 'post_equal_weights.txt', self.posterior_sample)
         else:
             self.posterior_sample = np.loadtxt(self.prefix + 'post_equal_weights.txt')
@@ -841,13 +905,9 @@ class Infer(object):
         return Posterior(self)
 
 
-    def emcee_logprob(self, theta):
+    def emcee_calc_logprob(self, theta):
         
-        lp = self._logprior(theta)
-        
-        if not np.isfinite(lp):
-            return -np.inf
-        return lp + self._loglike(theta)
+        return self.calc_logprob(theta)
     
     
     def emcee(self, nstep=1000, discard=100, resume=True, savepath='./'):
@@ -872,7 +932,7 @@ class Infer(object):
         pos = self.free_pvalues + 1e-4 * np.random.randn(nwalkers, ndim)
 
         if (not self.resume) or (not os.path.exists(self.prefix + '.npz')):
-            sampler = emcee.EnsembleSampler(nwalkers, ndim, self.emcee_logprob)
+            sampler = emcee.EnsembleSampler(nwalkers, ndim, self.emcee_calc_logprob)
             sampler.run_mcmc(pos, self.nstep, progress=True)
             
             self.params_samples = sampler.get_chain()
@@ -911,7 +971,7 @@ class Infer(object):
         self._you_free()
         
         np.random.seed(42)
-        nll = lambda *args: -2 * self._loglike(*args)
+        nll = lambda *args: -2 * self.calc_loglike(*args)
         pos = self.free_pvalues + 1e-4 * np.random.randn(self.free_nparams)
         soln = minimize(nll, pos, method=method, bounds=self.free_pranges)
         
