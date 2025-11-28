@@ -1,6 +1,9 @@
 # Ignore Python bytecode cache directories
 __pycache__/
 
+# Ignore copilot instructions files
+.github/
+
 # Ignore Visual Studio Code directories and settings
 .vscode/
 
