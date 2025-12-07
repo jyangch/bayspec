@@ -13,7 +13,7 @@
         "Class": "model",
         "Expression": "cpl",
         "Component": "cpl",
-        "Parameter": "log$E_{c}$",
+        "Parameter": "log$E_c$",
         "Value": 2.0,
         "Prior": "unif(0, 4)"
     },
@@ -23,8 +23,8 @@
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "log$A$",
-        "Value": -1.0,
-        "Prior": "unif(-6, 5)"
+        "Value": 0.0,
+        "Prior": "unif(-10, 10)"
     },
     {
         "par#": "4",
@@ -105,7 +105,7 @@
         "Component": "n7",
         "Parameter": "ra",
         "Value": 115.0,
-        "Prior": "=par#{17,27,37,22,32,7}"
+        "Prior": "=par#{27,37,22,7,17,32}"
     },
     {
         "par#": "13",
@@ -114,7 +114,7 @@
         "Component": "n7",
         "Parameter": "dec",
         "Value": 52.0,
-        "Prior": "=par#{8,23,28,18,38,33}"
+        "Prior": "=par#{28,8,33,18,38,23}"
     },
     {
         "par#": "14",
@@ -150,7 +150,7 @@
         "Component": "n8",
         "Parameter": "ra",
         "Value": 115.0,
-        "Prior": "=par#{27,37,12,22,32,7}"
+        "Prior": "=par#{12,27,37,22,7,32}"
     },
     {
         "par#": "18",
@@ -159,7 +159,7 @@
         "Component": "n8",
         "Parameter": "dec",
         "Value": 52.0,
-        "Prior": "=par#{8,23,28,13,38,33}"
+        "Prior": "=par#{28,8,33,13,38,23}"
     },
     {
         "par#": "19",
@@ -195,7 +195,7 @@
         "Component": "n9",
         "Parameter": "ra",
         "Value": 115.0,
-        "Prior": "=par#{17,27,37,12,32,7}"
+        "Prior": "=par#{12,27,37,7,17,32}"
     },
     {
         "par#": "23",
@@ -204,7 +204,7 @@
         "Component": "n9",
         "Parameter": "dec",
         "Value": 52.0,
-        "Prior": "=par#{8,28,18,13,38,33}"
+        "Prior": "=par#{28,8,33,13,18,38}"
     },
     {
         "par#": "24",
@@ -240,7 +240,7 @@
         "Component": "na",
         "Parameter": "ra",
         "Value": 115.0,
-        "Prior": "=par#{17,37,12,22,32,7}"
+        "Prior": "=par#{12,37,22,7,17,32}"
     },
     {
         "par#": "28",
@@ -249,7 +249,7 @@
         "Component": "na",
         "Parameter": "dec",
         "Value": 52.0,
-        "Prior": "=par#{8,23,18,13,38,33}"
+        "Prior": "=par#{8,33,13,18,38,23}"
     },
     {
         "par#": "29",
@@ -285,7 +285,7 @@
         "Component": "nb",
         "Parameter": "ra",
         "Value": 115.0,
-        "Prior": "=par#{17,27,37,12,22,7}"
+        "Prior": "=par#{12,27,37,22,7,17}"
     },
     {
         "par#": "33",
@@ -294,7 +294,7 @@
         "Component": "nb",
         "Parameter": "dec",
         "Value": 52.0,
-        "Prior": "=par#{8,23,28,18,13,38}"
+        "Prior": "=par#{28,8,13,18,38,23}"
     },
     {
         "par#": "34",
@@ -330,7 +330,7 @@
         "Component": "b1",
         "Parameter": "ra",
         "Value": 115.0,
-        "Prior": "=par#{17,27,12,22,32,7}"
+        "Prior": "=par#{12,27,22,7,17,32}"
     },
     {
         "par#": "38",
@@ -339,6 +339,6 @@
         "Component": "b1",
         "Parameter": "dec",
         "Value": 52.0,
-        "Prior": "=par#{8,23,28,18,13,33}"
+        "Prior": "=par#{28,8,33,13,18,23}"
     }
 ]

@@ -1156,10 +1156,13 @@ class ModelPlot(object):
         return 'rgba(%d, %d, %d, %f)' % tuple(rgb)
         
         
-    def add_model(self, model, E, T=None):
+    def add_model(self, model, E, T=None, post=None):
         
         if not isinstance(model, Model):
             raise TypeError('model is not Model type, cannot call add_model method')
+        
+        if post is None:
+            post = self.post
         
         self.model_index += 1
         
@@ -1169,7 +1172,7 @@ class ModelPlot(object):
             if model.type not in ['add', 'tinv']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
-            if self.post:
+            if post:
                 y = model.best_phtspec(E, T).astype(float)
                 y_sample = model.phtspec_sample(E, T)
                 y_ci = y_sample['Isigma'].astype(float)
@@ -1180,7 +1183,7 @@ class ModelPlot(object):
             if model.type not in ['add', 'tinv']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
-            if self.post:
+            if post:
                 y = model.best_flxspec(E, T).astype(float)
                 y_sample = model.flxspec_sample(E, T)
                 y_ci = y_sample['Isigma'].astype(float)
@@ -1191,7 +1194,7 @@ class ModelPlot(object):
             if model.type not in ['add', 'tinv', 'math']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
-            if self.post:
+            if post:
                 y = model.best_ergspec(E, T).astype(float)
                 y_sample = model.ergspec_sample(E, T)
                 y_ci = y_sample['Isigma'].astype(float)
@@ -1202,7 +1205,7 @@ class ModelPlot(object):
             if model.type not in ['mul', 'math']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
-            if self.post:
+            if post:
                 y = model.best_nouspec(E).astype(float)
                 y_sample = model.nouspec_sample(E)
                 y_ci = y_sample['Isigma'].astype(float)
@@ -1222,7 +1225,7 @@ class ModelPlot(object):
                 line=dict(width=2, color=ModelPlot.colors[self.model_index]))
             self.fig.add_trace(mo)
             
-            if self.post:
+            if post:
                 low = go.Scatter(
                     x=x, 
                     y=y_ci[0], 
@@ -1246,12 +1249,12 @@ class ModelPlot(object):
 
         elif self.ploter == 'matplotlib':
             self.ax.plot(x, y, lw=1.0, color=ModelPlot.colors[self.model_index], label=model.expr)
-            if self.post: 
+            if post: 
                 self.ax.fill_between(x, y_ci[0], y_ci[1], fc=ModelPlot.colors[self.model_index], 
                                      alpha=0.5, label=f'{model.expr} CI')
             self.ax.legend(frameon=True)
 
-        if self.post:
+        if post:
             self.fig_data[model.expr] = {'x': x, 'y': y, 'y_ci': y_ci}
         else:
             self.fig_data[model.expr] = {'x': x, 'y': y}

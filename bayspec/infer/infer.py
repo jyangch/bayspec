@@ -1,6 +1,7 @@
 import os
 import json
 import ctypes
+import tempfile
 import numpy as np
 from scipy.optimize import minimize
 from collections import OrderedDict
@@ -859,6 +860,33 @@ class Infer(object):
     def multinest_calc_loglike(self, theta):
         
         return self.calc_loglike(theta)
+    
+    
+    def multinest_safe_prior_transform(self, cube, ndim, nparams):
+        
+        try:
+            cube_arr = np.array([cube[i] for i in range(ndim)])
+            theta_arr = self.multinest_prior_transform(cube_arr)
+            for i in range(ndim):
+                cube[i] = theta_arr[i]
+        except Exception as e:
+            import sys
+            sys.stderr.write('ERROR in prior: %s\n' % e)
+            sys.exit(1)
+            
+            
+    def multinest_safe_calc_loglike(self, cube, ndim, nparams, lnew):
+        
+        try:
+            cube_arr = np.array([cube[i] for i in range(ndim)])
+            ll = float(self.multinest_calc_loglike(cube_arr))
+            if not np.isfinite(ll):
+                return -1e100
+            return ll
+        except Exception as e:
+            import sys
+            sys.stderr.write('ERROR in loglikelihood: %s\n' % e)
+            sys.exit(1)
 
 
     def multinest(self, nlive=500, resume=True, verbose=False, savepath='./'):
@@ -876,13 +904,13 @@ class Infer(object):
         
         if not os.path.exists(savepath):
             os.makedirs(savepath)
-            
-        pymultinest.solve(LogLikelihood=self.multinest_calc_loglike, 
-                          Prior=self.multinest_prior_transform, 
-                          n_dims=self.free_nparams, resume=resume, 
-                          verbose=verbose, n_live_points=nlive, 
-                          outputfiles_basename=self.prefix, sampling_efficiency=0.8, 
-                          importance_nested_sampling=True, multimodal=True)
+
+        pymultinest.run(LogLikelihood=self.multinest_safe_calc_loglike, 
+                        Prior=self.multinest_safe_prior_transform, 
+                        n_dims=self.free_nparams, resume=resume, 
+                        verbose=verbose, n_live_points=nlive, 
+                        outputfiles_basename=self.prefix, sampling_efficiency=0.8, 
+                        importance_nested_sampling=True, multimodal=True)
 
         self.Analyzer = pymultinest.Analyzer(outputfiles_basename=self.prefix, n_params=self.free_nparams)
         

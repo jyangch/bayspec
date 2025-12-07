@@ -3,6 +3,7 @@ from collections import OrderedDict
 from ..model import Model
 from ...util.prior import unif
 from ...util.param import Par, Cfg
+
 #+++++++editable area+++++++
 # import other package
 #+++++++editable area+++++++
@@ -23,6 +24,14 @@ class user(Model):
         self.comment = 'user-defined model'
         #+++++++editable area+++++++
         
+        self.config = OrderedDict()
+        #+++++++editable area+++++++
+        # set your model configuration
+        self.config['redshift'] = Cfg(0)
+        # above sentence define redshift 
+        # with value of 0
+        #+++++++editable area+++++++
+        
         self.params = OrderedDict()
         #+++++++editable area+++++++
         # set your model parameters
@@ -30,14 +39,6 @@ class user(Model):
         # above sentence define a parameter p1 
         # with value of 1 
         # with prior of uniform within [0, 2]
-        #+++++++editable area+++++++
-        
-        self.config = OrderedDict()
-        #+++++++editable area+++++++
-        # set your model configuration
-        self.config['redshift'] = Cfg(0)
-        # above sentence define redshift 
-        # with value of 0
         #+++++++editable area+++++++
 
 
@@ -55,21 +56,23 @@ class user(Model):
         if type is mul or math:
         dimensionless F(E, T)
         """
-
+        #+++++++editable area+++++++
+        # get the value of model configuration
+        redshift = self.config['redshift'].value
+        #+++++++editable area+++++++
+        
         #+++++++editable area+++++++
         # get the value of model parameter
         p1 = self.params['p1'].value
         #+++++++editable area+++++++
 
-        #+++++++editable area+++++++
-        # apply the model configuration
-        zi = 1 + self.redshift
+        # apply redshift correction
+        zi = 1 + redshift
         E = E * zi
-        #+++++++editable area+++++++
 
         #+++++++editable area+++++++
         # code your model
-        res = E ** p1 + T
+        phtspec = E ** p1 + T
         #+++++++editable area+++++++
 
-        return res
+        return phtspec

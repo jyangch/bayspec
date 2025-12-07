@@ -21,14 +21,15 @@ class Model(object):
         self.type = 'add'
         self.comment = 'model base class'
         
-        self.params = OrderedDict()
-        self.params['p'] = Par(1, unif(0, 2))
-        
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0)
+        
+        self.params = OrderedDict()
+        self.params['p'] = Par(1, unif(0, 2))
 
         
     def func(self, E, T=None, O=None):
+        
         pass
         
         

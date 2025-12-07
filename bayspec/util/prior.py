@@ -80,6 +80,17 @@ class unif(Prior):
         self.stat = stats.uniform(min, max - min)
 
 
+
+class logunif(Prior):
+    
+    def __init__(self, min, max, loc=0, scale=1):
+        
+        self.args = (min, max, loc, scale)
+        self.expr = 'logunif'
+        self.stat = stats.loguniform(*self.args)
+
+
+
 class norm(Prior):
     
     def __init__(self, loc, scale):
@@ -87,6 +98,16 @@ class norm(Prior):
         self.args = (loc, scale)
         self.expr = 'norm'
         self.stat = stats.norm(*self.args)
+
+
+
+class lognorm(Prior):
+    
+    def __init__(self, s, loc, scale):
+        
+        self.args = (s, loc, scale)
+        self.expr = 'lognorm'
+        self.stat = stats.lognorm(*self.args)
 
 
 
@@ -118,26 +139,6 @@ class cosine(Prior):
         self.expr = 'cosine'
         self.stat = stats.cosine(*self.args)
 
-
-
-class logunif(Prior):
-    
-    def __init__(self, a, b, loc, scale):
-        
-        self.args = (a, b, loc, scale)
-        self.expr = 'logunif'
-        self.stat = stats.loguniform(*self.args)
-
-
-
-class lognorm(Prior):
-    
-    def __init__(self, s, loc, scale):
-        
-        self.args = (s, loc, scale)
-        self.expr = 'lognorm'
-        self.stat = stats.lognorm(*self.args)
-        
 
 
 class beta(Prior):

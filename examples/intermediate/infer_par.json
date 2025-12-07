@@ -22,7 +22,7 @@
         "Class": "model",
         "Expression": "(AS_TbAbs*cpl)",
         "Component": "cpl",
-        "Parameter": "log$E_{c}$",
+        "Parameter": "log$E_c$",
         "Value": 2.0,
         "Prior": "unif(0, 4)"
     },

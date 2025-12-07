@@ -18,7 +18,7 @@
     {
         "par#": "3",
         "Component": "cpl",
-        "Parameter": "log$E_{c}$",
+        "Parameter": "log$E_c$",
         "Value": 2.0,
         "Prior": "unif(0, 4)",
         "Frozen": false

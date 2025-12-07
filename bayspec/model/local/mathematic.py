@@ -19,5 +19,7 @@ class Const(Mathematic):
         
     
     def func(self, E, T=None, O=None):
+        
         C = self.params[r'$C$'].value
+        
         return C

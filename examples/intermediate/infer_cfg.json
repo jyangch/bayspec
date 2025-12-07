@@ -14,5 +14,13 @@
         "Component": "cpl",
         "Parameter": "redshift",
         "Value": 0.0
+    },
+    {
+        "cfg#": "3",
+        "Class": "model",
+        "Expression": "(AS_TbAbs*cpl)",
+        "Component": "cpl",
+        "Parameter": "pivot_energy",
+        "Value": 1.0
     }
 ]

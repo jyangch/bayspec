@@ -6,20 +6,20 @@
         "Component": "cpl",
         "Parameter": "$\\alpha$",
         "Mean": "-0.513",
-        "Median": "-0.513",
-        "Best": "-0.516",
-        "1sigma CI": "[-0.531, -0.496]"
+        "Median": "-0.512",
+        "Best": "-0.512",
+        "1sigma CI": "[-0.528, -0.498]"
     },
     {
         "par#": "2",
         "Class": "model",
         "Expression": "cpl",
         "Component": "cpl",
-        "Parameter": "log$E_{c}$",
+        "Parameter": "log$E_c$",
         "Mean": "2.626",
         "Median": "2.626",
-        "Best": "2.629",
-        "1sigma CI": "[2.612, 2.640]"
+        "Best": "2.625",
+        "1sigma CI": "[2.613, 2.640]"
     },
     {
         "par#": "3",
@@ -27,10 +27,10 @@
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "log$A$",
-        "Mean": "-1.264",
-        "Median": "-1.264",
-        "Best": "-1.265",
-        "1sigma CI": "[-1.270, -1.257]"
+        "Mean": "-0.238",
+        "Median": "-0.240",
+        "Best": "-0.240",
+        "1sigma CI": "[-0.265, -0.211]"
     },
     {
         "par#": "7",
@@ -38,10 +38,10 @@
         "Expression": "data",
         "Component": "n6",
         "Parameter": "ra",
-        "Mean": "115.082",
-        "Median": "115.095",
-        "Best": "115.137",
-        "1sigma CI": "[114.515, 115.626]"
+        "Mean": "115.034",
+        "Median": "115.038",
+        "Best": "114.793",
+        "1sigma CI": "[114.474, 115.604]"
     },
     {
         "par#": "8",
@@ -49,9 +49,9 @@
         "Expression": "data",
         "Component": "n6",
         "Parameter": "dec",
-        "Mean": "52.185",
-        "Median": "52.211",
-        "Best": "52.067",
-        "1sigma CI": "[51.555, 52.811]"
+        "Mean": "52.288",
+        "Median": "52.291",
+        "Best": "52.342",
+        "1sigma CI": "[51.687, 52.874]"
     }
 ]
