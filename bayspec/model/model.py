@@ -157,32 +157,6 @@ class Model(object):
         json_dump(self.par_info.data_list_dict, savepath + '/model_par.json')
 
 
-    def integ(self, ebin, tarr=None, ngrid=5):
-        
-        scale = np.linspace(0, 1, ngrid)
-        egrid = ebin[:, [0]] + (ebin[:, [1]] - ebin[:, [0]]) * scale
-        
-        egrid = np.maximum(egrid, 1e-10)
-        
-        if self.type == 'add':
-            fgrid = self.func(egrid.ravel()).reshape(-1, ngrid)
-            return np.trapz(fgrid, egrid, axis=1)
-            
-        elif self.type == 'tinv':
-            tgrid = np.repeat(tarr[:, None], ngrid, axis=1)
-            fgrid = self.func(egrid.ravel(), tgrid.ravel()).reshape(-1, ngrid)
-            return np.trapz(fgrid, egrid, axis=1)
-            
-        elif self.type == 'mul':
-            ewidt = ebin[:, 1] - ebin[:, 0]
-            fgrid = self.func(egrid.ravel()).reshape(-1, ngrid)
-            return np.trapz(fgrid, egrid, axis=1) / ewidt
-            
-        else:
-            msg = f'integ is invalid for {self.type} type model'
-            raise TypeError(msg)
-        
-        
     @property
     def fit_to(self):
         
@@ -209,6 +183,32 @@ class Model(object):
         else:
             if self._fit_to.fit_with != self:
                 self._fit_to.fit_with = self
+
+
+    def integ(self, ebin, tarr=None, ngrid=5):
+        
+        scale = np.linspace(0, 1, ngrid)
+        egrid = ebin[:, [0]] + (ebin[:, [1]] - ebin[:, [0]]) * scale
+        
+        egrid = np.maximum(egrid, 1e-10)
+        
+        if self.type == 'add':
+            fgrid = self.func(egrid.ravel()).reshape(-1, ngrid)
+            return np.trapz(fgrid, egrid, axis=1)
+            
+        elif self.type == 'tinv':
+            tgrid = np.repeat(tarr[:, None], ngrid, axis=1)
+            fgrid = self.func(egrid.ravel(), tgrid.ravel()).reshape(-1, ngrid)
+            return np.trapz(fgrid, egrid, axis=1)
+            
+        elif self.type == 'mul':
+            ewidt = ebin[:, 1] - ebin[:, 0]
+            fgrid = self.func(egrid.ravel()).reshape(-1, ngrid)
+            return np.trapz(fgrid, egrid, axis=1) / ewidt
+            
+        else:
+            msg = f'integ is invalid for {self.type} type model'
+            raise TypeError(msg)
 
 
     def convolve_response(self, response, time=None):
@@ -378,53 +378,53 @@ class Model(object):
     
     
     @property
-    def cts_to_flux(self):
+    def rate_to_flux(self):
         
         ctsrate = [np.sum(cr) for cr in self.fit_to.net_ctsrate]
         ergflux = [np.sum([self.ergflux(emin, emax, 1000) for emin, emax in notc])
                    for notc in self.fit_to.notcs]
         
-        return [flux / cts for (flux, cts) in zip(ergflux, ctsrate)]
+        return [flux / rate for (flux, rate) in zip(ergflux, ctsrate)]
     
     
     @property
-    def conv_cts_to_flux(self):
+    def conv_rate_to_flux(self):
         
         ctsrate = [np.sum(cr) for cr in self.conv_ctsrate]
         ergflux = [np.sum([self.ergflux(emin, emax, 1000) for emin, emax in notc])
                    for notc in self.fit_to.notcs]
         
-        return [flux / cts for (flux, cts) in zip(ergflux, ctsrate)]
+        return [flux / rate for (flux, rate) in zip(ergflux, ctsrate)]
     
     
-    def cts_to_fluxdensity(self, at=1, unit='fv'):
+    def rate_to_fluxdensity(self, at=1, unit='Fv'):
         
         ctsrate = [np.sum(cr) for cr in self.fit_to.net_ctsrate]
-        if unit == 'NE':
+        if unit == 'NE':    # photons cm-2 s-1 keV-1
             fluxdensity = self.phtspec(at)
-        elif unit == 'fv':
+        elif unit == 'Fv':  # erg cm-2 s-1 keV-1
             fluxdensity = self.flxspec(at)
-        elif unit == 'Jy':
+        elif unit == 'Jy':  # Jansky
             fluxdensity = self.flxspec(at) * 1e6 / 2.416
         else:
             raise ValueError(f'unsupported value of unit: {unit}')
             
-        return [fluxdensity / cts for cts in ctsrate]
+        return [fluxdensity / rate for rate in ctsrate]
     
     
-    def conv_cts_to_fluxdensity(self, at=1, unit='fv'):
+    def conv_rate_to_fluxdensity(self, at=1, unit='fv'):
         
         ctsrate = [np.sum(cr) for cr in self.conv_ctsrate]
-        if unit == 'NE':
+        if unit == 'NE':    # photons cm-2 s-1 keV-1
             fluxdensity = self.phtspec(at)
-        elif unit == 'fv':
+        elif unit == 'Fv':  # erg cm-2 s-1 keV-1
             fluxdensity = self.flxspec(at)
-        elif unit == 'Jy':
+        elif unit == 'Jy':  # Jansky
             fluxdensity = self.flxspec(at) * 1e6 / 2.416
         else:
             raise ValueError(f'unsupported value of unit: {unit}')
             
-        return [fluxdensity / cts for cts in ctsrate]
+        return [fluxdensity / rate for rate in ctsrate]
 
 
     def phtspec(self, E, T=None):
@@ -438,6 +438,7 @@ class Model(object):
         
         
     def nouspec(self, E):
+        # dimensionless
         
         if self.type not in ['mul', 'math']:
             msg = f'fracspec is invalid for {self.type} type model'
@@ -447,7 +448,7 @@ class Model(object):
 
 
     def flxspec(self, E, T=None):
-        # fv in units of erg cm-2 s-1 keV-1
+        # Fv in units of erg cm-2 s-1 keV-1
         
         if self.type not in ['add', 'tinv']:
             msg = f'ene is invalid for {self.type} type model'
@@ -457,7 +458,7 @@ class Model(object):
         
     
     def ergspec(self, E, T=None):
-        # vfv in units of erg cm-2 s-1
+        # vFv in units of erg cm-2 s-1
         
         if self.type not in ['add', 'tinv']:
             msg = f'eene is invalid for {self.type} type model'
@@ -483,7 +484,7 @@ class Model(object):
             
         
     def ergflux(self, emin, emax, ngrid, epoch=None):
-        # integ(fv, E) in units of erg cm-2 s-1
+        # integ(Fv, E) in units of erg cm-2 s-1
         
         if self.type not in ['add', 'tinv']:
             msg = f'ergflux is invalid for {self.type} type model'
@@ -502,6 +503,242 @@ class Model(object):
         
         for i, thi in enumerate(theta): 
             self.par[i+1].val = thi
+
+
+    @property
+    def par_mean(self):
+        
+        return [par.val if par.frozen else par.post.mean for par in self.par.values()]
+
+
+    @property
+    def par_median(self):
+        
+        return [par.val if par.frozen else par.post.median for par in self.par.values()]
+
+
+    @property
+    def par_best(self):
+        
+        return [par.val if par.frozen else par.post.best for par in self.par.values()]
+
+
+    @property
+    def par_best_ci(self):
+        
+        return [par.val if par.frozen else par.post.best_ci for par in self.par.values()]
+
+
+    def best_phtspec(self, E, T=None):
+        
+        self.at_par(self.par_best)
+        
+        return self.phtspec(E, T)
+
+
+    def best_ci_phtspec(self, E, T=None):
+        
+        self.at_par(self.par_best_ci)
+        
+        return self.phtspec(E, T)
+    
+    
+    def median_phtspec(self, E, T=None):
+        
+        self.at_par(self.par_median)
+        
+        return self.phtspec(E, T)
+    
+    
+    def mean_phtspec(self, E, T=None):
+        
+        self.at_par(self.par_mean)
+        
+        return self.phtspec(E, T)
+    
+    
+    def best_nouspec(self, E):
+        
+        self.at_par(self.par_best)
+        
+        return self.nouspec(E)
+    
+    
+    def best_ci_nouspec(self, E):
+        
+        self.at_par(self.par_best_ci)
+        
+        return self.nouspec(E)
+    
+    
+    def median_nouspec(self, E):
+        
+        self.at_par(self.par_median)
+        
+        return self.nouspec(E)
+    
+    
+    def mean_nouspec(self, E):
+        
+        self.at_par(self.par_mean)
+        
+        return self.nouspec(E)
+    
+    
+    def best_flxspec(self, E, T=None):
+        
+        self.at_par(self.par_best)
+        
+        return self.flxspec(E, T)
+    
+    
+    def best_ci_flxspec(self, E, T=None):
+        
+        self.at_par(self.par_best_ci)
+        
+        return self.flxspec(E, T)
+    
+    
+    def median_flxspec(self, E, T=None):
+        
+        self.at_par(self.par_median)
+        
+        return self.flxspec(E, T)
+    
+    
+    def mean_flxspec(self, E, T=None):
+        
+        self.at_par(self.par_mean)
+        
+        return self.flxspec(E, T)
+    
+    
+    def best_ergspec(self, E, T=None):
+        
+        self.at_par(self.par_best)
+        
+        return self.ergspec(E, T)
+    
+    
+    def best_ci_ergspec(self, E, T=None):
+        
+        self.at_par(self.par_best_ci)
+        
+        return self.ergspec(E, T)
+    
+    
+    def median_ergspec(self, E, T=None):
+        
+        self.at_par(self.par_median)
+        
+        return self.ergspec(E, T)
+    
+    
+    def mean_ergspec(self, E, T=None):
+        
+        self.at_par(self.par_mean)
+        
+        return self.ergspec(E, T)
+    
+    
+    def best_phtflux(self, emin, emax, ngrid, epoch=None):
+        
+        self.at_par(self.par_best)
+        
+        return self.phtflux(emin, emax, ngrid, epoch)
+    
+    
+    def best_ci_phtflux(self, emin, emax, ngrid, epoch=None):
+        
+        self.at_par(self.par_best_ci)
+        
+        return self.phtflux(emin, emax, ngrid, epoch)
+    
+    
+    def median_phtflux(self, emin, emax, ngrid, epoch=None):
+        
+        self.at_par(self.par_median)
+        
+        return self.phtflux(emin, emax, ngrid, epoch)
+    
+    
+    def mean_phtflux(self, emin, emax, ngrid, epoch=None):
+        
+        self.at_par(self.par_mean)
+        
+        return self.phtflux(emin, emax, ngrid, epoch)
+    
+    
+    def best_ergflux(self, emin, emax, ngrid, epoch=None):
+        
+        self.at_par(self.par_best)
+        
+        return self.ergflux(emin, emax, ngrid, epoch)
+    
+    
+    def best_ci_ergflux(self, emin, emax, ngrid, epoch=None):
+        
+        self.at_par(self.par_best_ci)
+        
+        return self.ergflux(emin, emax, ngrid, epoch)
+    
+    
+    def median_ergflux(self, emin, emax, ngrid, epoch=None):
+        
+        self.at_par(self.par_median)
+        
+        return self.ergflux(emin, emax, ngrid, epoch)
+    
+    
+    def mean_ergflux(self, emin, emax, ngrid, epoch=None):
+        
+        self.at_par(self.par_mean)
+        
+        return self.ergflux(emin, emax, ngrid, epoch)
+    
+
+    def best_ergflux_ratio(self, erange1, erange2, ngrid, epoch=None):
+        
+        self.at_par(self.par_best)
+
+        emin1, emax1 = erange1
+
+        emin2, emax2 = erange2
+        
+        return self.ergflux(emin1, emax1, ngrid, epoch) / self.ergflux(emin2, emax2, ngrid, epoch)
+    
+    
+    def best_ci_ergflux_ratio(self, erange1, erange2, ngrid, epoch=None):
+        
+        self.at_par(self.par_best_ci)
+
+        emin1, emax1 = erange1
+
+        emin2, emax2 = erange2
+        
+        return self.ergflux(emin1, emax1, ngrid, epoch) / self.ergflux(emin2, emax2, ngrid, epoch)
+    
+    
+    def median_ergflux_ratio(self, erange1, erange2, ngrid, epoch=None):
+        
+        self.at_par(self.par_median)
+
+        emin1, emax1 = erange1
+
+        emin2, emax2 = erange2
+        
+        return self.ergflux(emin1, emax1, ngrid, epoch) / self.ergflux(emin2, emax2, ngrid, epoch)
+    
+    
+    def mean_ergflux_ratio(self, erange1, erange2, ngrid, epoch=None):
+        
+        self.at_par(self.par_mean)
+
+        emin1, emax1 = erange1
+
+        emin2, emax2 = erange2
+        
+        return self.ergflux(emin1, emax1, ngrid, epoch) / self.ergflux(emin2, emax2, ngrid, epoch)
 
 
     @property
@@ -545,86 +782,9 @@ class Model(object):
     
     
     @property
-    def posterior_statistic(self):
+    def par_sample(self):
         
         return self.sample_statistic(self.posterior_sample)
-    
-    
-    @property
-    def par_mean(self):
-        
-        return [par.val if par.frozen else par.post.mean for par in self.par.values()]
-    
-    
-    @property
-    def par_median(self):
-        
-        return [par.val if par.frozen else par.post.median for par in self.par.values()]
-    
-    
-    @property
-    def par_best(self):
-        
-        return [par.val if par.frozen else par.post.best for par in self.par.values()]
-    
-    
-    @property
-    def par_best_ci(self):
-        
-        return [par.val if par.frozen else par.post.best_ci for par in self.par.values()]
-    
-    
-    def best_phtspec(self, E, T=None):
-        
-        self.at_par(self.par_best_ci)
-        
-        return self.phtspec(E, T)
-    
-    
-    def best_nouspec(self, E):
-        
-        self.at_par(self.par_best_ci)
-        
-        return self.nouspec(E)
-    
-    
-    def best_flxspec(self, E, T=None):
-        
-        self.at_par(self.par_best_ci)
-        
-        return self.flxspec(E, T)
-    
-    
-    def best_ergspec(self, E, T=None):
-        
-        self.at_par(self.par_best_ci)
-        
-        return self.ergspec(E, T)
-    
-    
-    def best_phtflux(self, emin, emax, ngrid, epoch=None):
-        
-        self.at_par(self.par_best_ci)
-        
-        return self.phtflux(emin, emax, ngrid, epoch)
-    
-    
-    def best_ergflux(self, emin, emax, ngrid, epoch=None):
-        
-        self.at_par(self.par_best_ci)
-        
-        return self.ergflux(emin, emax, ngrid, epoch)
-
-
-    def best_ergflux_ratio(self, erange1, erange2, ngrid, epoch=None):
-        
-        self.at_par(self.par_best_ci)
-
-        emin1, emax1 = erange1
-
-        emin2, emax2 = erange2
-        
-        return self.ergflux(emin1, emax1, ngrid, epoch) / self.ergflux(emin2, emax2, ngrid, epoch)
 
 
     def phtspec_sample(self, E, T=None):

@@ -1,7 +1,6 @@
 import os
 import json
 import ctypes
-import tempfile
 import numpy as np
 from scipy.optimize import minimize
 from collections import OrderedDict
@@ -26,7 +25,7 @@ class Infer(object):
         self.logprior_func = None
         self.prior_transform_func = None
 
-        
+
     @property
     def pairs(self):
         
@@ -318,8 +317,93 @@ class Infer(object):
     def free_nparams(self):
         
         return self._free_nparams
+    
+    
+    @property
+    def cfg_info(self):
+        
+        cfg_info = Info.list_dict_to_dict(self.all_config)
+
+        return Info.from_dict(cfg_info)
+
+
+    @property
+    def par_info(self):
+        
+        self._you_free()
+        
+        all_params = self.all_params.copy()
+        
+        for par in all_params:
+            if par['par#'] in self.free_par:
+                par['par#'] = par['par#'] + '*'
+            else: 
+                if par['Frozen']:
+                    par['Prior'] = 'frozen'
+                else:
+                    par['Prior'] = '=par#{%s}'%(','.join(par['Mates']))
+        
+        par_info = Info.list_dict_to_dict(all_params)
+        
+        del par_info['Posterior']
+        del par_info['Mates']
+        del par_info['Frozen']
+        
+        return Info.from_dict(par_info)
+
+
+    @property
+    def notable_par_info(self):
+        
+        self._you_free()
+        
+        all_params = self.all_params.copy()
+        notable_params = list()
+        
+        for par in all_params:
+            if par['par#'] in self.free_par:
+                par['par#'] = par['par#'] + '*'
+            else: 
+                if par['Frozen']:
+                    par['Prior'] = 'frozen'
+                    if par['Class'] == 'data': 
+                        continue
+                else:
+                    par['Prior'] = '=par#{%s}'%(','.join(par['Mates']))
+            notable_params.append(par)
+        
+        par_info = Info.list_dict_to_dict(notable_params)
+        
+        del par_info['Posterior']
+        del par_info['Mates']
+        del par_info['Frozen']
+        
+        return Info.from_dict(par_info)
         
         
+    @property
+    def free_par_info(self):
+        
+        self._you_free()
+        
+        free_par_info = Info.list_dict_to_dict(self.free_params)
+        
+        del free_par_info['Posterior']
+        del free_par_info['Mates']
+        del free_par_info['Frozen']
+        
+        return Info.from_dict(free_par_info)
+    
+    
+    def save(self, savepath):
+        
+        if not os.path.exists(savepath):
+            os.makedirs(savepath)
+        
+        json_dump(self.cfg_info.data_list_dict, savepath + '/infer_cfg.json')
+        json_dump(self.par_info.data_list_dict, savepath + '/infer_par.json')
+
+
     @property
     def data_chbin_mean(self):
         
@@ -522,20 +606,8 @@ class Infer(object):
     def model_re_ergspec(self):
         
         return [value for model in self.Model for value in model.re_ergspec_at_rsp]
-    
-    
-    @property
-    def model_cts_to_pht(self):
-        
-        return [value for model in self.Model for value in model.cts_to_pht]
-    
-    
-    @property
-    def model_re_cts_to_pht(self):
-        
-        return [value for model in self.Model for value in model.re_cts_to_pht]
-    
-    
+
+
     @property
     def residual(self):
         
@@ -646,96 +718,11 @@ class Infer(object):
 
 
     @property
-    def cfg_info(self):
-        
-        cfg_info = Info.list_dict_to_dict(self.all_config)
-
-        return Info.from_dict(cfg_info)
-
-
-    @property
-    def par_info(self):
-        
-        self._you_free()
-        
-        all_params = self.all_params.copy()
-        
-        for par in all_params:
-            if par['par#'] in self.free_par:
-                par['par#'] = par['par#'] + '*'
-            else: 
-                if par['Frozen']:
-                    par['Prior'] = 'frozen'
-                else:
-                    par['Prior'] = '=par#{%s}'%(','.join(par['Mates']))
-        
-        par_info = Info.list_dict_to_dict(all_params)
-        
-        del par_info['Posterior']
-        del par_info['Mates']
-        del par_info['Frozen']
-        
-        return Info.from_dict(par_info)
-
-
-    @property
-    def notable_par_info(self):
-        
-        self._you_free()
-        
-        all_params = self.all_params.copy()
-        notable_params = list()
-        
-        for par in all_params:
-            if par['par#'] in self.free_par:
-                par['par#'] = par['par#'] + '*'
-            else: 
-                if par['Frozen']:
-                    par['Prior'] = 'frozen'
-                    if par['Class'] == 'data': 
-                        continue
-                else:
-                    par['Prior'] = '=par#{%s}'%(','.join(par['Mates']))
-            notable_params.append(par)
-        
-        par_info = Info.list_dict_to_dict(notable_params)
-        
-        del par_info['Posterior']
-        del par_info['Mates']
-        del par_info['Frozen']
-        
-        return Info.from_dict(par_info)
-        
-        
-    @property
-    def free_par_info(self):
-        
-        self._you_free()
-        
-        free_par_info = Info.list_dict_to_dict(self.free_params)
-        
-        del free_par_info['Posterior']
-        del free_par_info['Mates']
-        del free_par_info['Frozen']
-        
-        return Info.from_dict(free_par_info)
-
-
-    @property
     def stat_info(self):
         
         return Info.from_dict(self.all_stat)
-    
-    
-    def save(self, savepath):
-        
-        if not os.path.exists(savepath):
-            os.makedirs(savepath)
-        
-        json_dump(self.cfg_info.data_list_dict, savepath + '/infer_cfg.json')
-        json_dump(self.par_info.data_list_dict, savepath + '/infer_par.json')
-        
-        
+
+
     def __str__(self):
         
         print(self.cfg_info.table)

@@ -1,6 +1,7 @@
 from .additive import *
 from .tinvolved import *
 from .mathematic import *
+from .multiplicative import *
 from ..model import Model
 
 

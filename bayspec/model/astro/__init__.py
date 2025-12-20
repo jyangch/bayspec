@@ -114,6 +114,7 @@ for name, cls in model_classes.items():
                             self.params[pl] = Par(value, unif(min_value, max_value))
                 else:
                     value = pr.value
+                    if pl == 'piv': pl = 'pivot_energy'
                     self.config[pl] = Cfg(value)
                     
             if 'redshift' not in self.asmodel.parameters:
@@ -131,6 +132,7 @@ for name, cls in model_classes.items():
                 else:
                     pr.value = self.params[pl].value
             else:
+                if pl == 'piv': pl = 'pivot_energy'
                 pr.value = self.config[pl].value
                 
         if 'redshift' not in self.asmodel.parameters:

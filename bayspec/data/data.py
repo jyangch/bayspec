@@ -89,34 +89,6 @@ class Data(object):
         self.pdicts = OrderedDict([(name, unit.params) for name, unit in self.data.items()])
 
 
-    @property
-    def fit_with(self):
-        
-        try:
-            return self._fit_with
-        except AttributeError:
-            raise AttributeError('no model fit with')
-    
-    
-    @fit_with.setter
-    def fit_with(self, new_model):
-        
-        from ..model.model import Model
-        
-        self._fit_with = new_model
-        
-        if not isinstance(self._fit_with, Model): 
-            raise ValueError('fit_with argument should be Model type!')
-        
-        try:
-            self._fit_with.fit_to
-        except AttributeError:
-            self._fit_with.fit_to = self
-        else:
-            if self._fit_with.fit_to != self:
-                self._fit_with.fit_to = self
-
-
     @cached_property()
     def cfg(self):
 
@@ -151,6 +123,117 @@ class Data(object):
         return tuple([pr.value for pr in self.par.values()])
     
     
+    @property
+    def all_config(self):
+        
+        cid = 0
+        all_config = list()
+        
+        for expr, config in self.cdicts.items():
+            for cl, cg in config.items():
+                cid += 1
+                
+                all_config.append(
+                    {'cfg#': str(cid), 
+                     'Component': expr, 
+                     'Parameter': cl, 
+                     'Value': cg.val})
+
+        return all_config
+    
+    
+    @property
+    def all_params(self):
+        
+        pid = 0
+        all_params = list()
+        
+        for expr, params in self.pdicts.items():
+            for pl, pr in params.items():
+                pid += 1
+                
+                all_params.append(
+                    {'par#': str(pid), 
+                     'Component': expr, 
+                     'Parameter': pl, 
+                     'Value': pr.val, 
+                     'Prior': f'{pr.prior_info}', 
+                     'Frozen': pr.frozen, 
+                     'Posterior': f'{pr.post_info}'})
+
+        return all_params
+    
+    
+    @property
+    def cfg_info(self):
+            
+        return Info.from_list_dict(self.all_config)
+    
+    
+    @property
+    def par_info(self):
+        
+        par_info = Info.list_dict_to_dict(self.all_params)
+        
+        del par_info['Posterior']
+        
+        return Info.from_dict(par_info)
+
+
+    @property
+    def info(self):
+        
+        info_dict = OrderedDict()
+        info_dict['Name'] = [key for key in self.data.keys()]
+        info_dict['Noticing'] = [unit.notc for unit in self.data.values()]
+        info_dict['Statistic'] = [unit.stat for unit in self.data.values()]
+        info_dict['Grouping'] = [unit.grpg for unit in self.data.values()]
+        info_dict['Time'] = [unit.time for unit in self.data.values()]
+        
+        for key, values in info_dict.items():
+            for i, value in enumerate(values):
+                if value is None:
+                    info_dict[key][i] = 'None'
+
+        return Info.from_dict(info_dict)
+
+
+    def save(self, savepath):
+        
+        if not os.path.exists(savepath):
+            os.makedirs(savepath)
+        
+        json_dump(self.info.data_list_dict, savepath + '/data.json')
+
+
+    @property
+    def fit_with(self):
+        
+        try:
+            return self._fit_with
+        except AttributeError:
+            raise AttributeError('no model fit with')
+
+
+    @fit_with.setter
+    def fit_with(self, new_model):
+        
+        from ..model.model import Model
+        
+        self._fit_with = new_model
+        
+        if not isinstance(self._fit_with, Model): 
+            raise ValueError('fit_with argument should be Model type!')
+        
+        try:
+            self._fit_with.fit_to
+        except AttributeError:
+            self._fit_with.fit_to = self
+        else:
+            if self._fit_with.fit_to != self:
+                self._fit_with.fit_to = self
+
+
     @cached_property()
     def ebin(self):
         
@@ -329,12 +412,6 @@ class Data(object):
     def rsp_re_drm(self):
 
         return [unit.rsp_re_drm for unit in self.data.values()]
-    
-    
-    @cached_property()
-    def npoints(self):
-        
-        return np.array([unit.npoint for unit in self.data.values()])
 
 
     @cached_property(lambda self: self.pvalues)
@@ -517,6 +594,12 @@ class Data(object):
         return [unit.net_re_ctsspec_error for unit in self.data.values()]
     
     
+    @cached_property()
+    def npoints(self):
+        
+        return np.array([unit.npoint for unit in self.data.values()])
+    
+    
     def net_counts_upperlimit(self, cl=0.9):
         
         return [unit.net_counts_upperlimit(cl) for unit in self.data.values()]
@@ -599,89 +682,6 @@ class Data(object):
         return [factor * cts for (factor, cts) in zip(self.fit_with.re_cts_to_erg, self.net_re_ctsspec_error)]
 
 
-    @property
-    def info(self):
-        
-        info_dict = OrderedDict()
-        info_dict['Name'] = [key for key in self.data.keys()]
-        info_dict['Noticing'] = [unit.notc for unit in self.data.values()]
-        info_dict['Statistic'] = [unit.stat for unit in self.data.values()]
-        info_dict['Grouping'] = [unit.grpg for unit in self.data.values()]
-        info_dict['Time'] = [unit.time for unit in self.data.values()]
-        
-        for key, values in info_dict.items():
-            for i, value in enumerate(values):
-                if value is None:
-                    info_dict[key][i] = 'None'
-
-        return Info.from_dict(info_dict)
-    
-    
-    @property
-    def all_config(self):
-        
-        cid = 0
-        all_config = list()
-        
-        for expr, config in self.cdicts.items():
-            for cl, cg in config.items():
-                cid += 1
-                
-                all_config.append(
-                    {'cfg#': str(cid), 
-                     'Component': expr, 
-                     'Parameter': cl, 
-                     'Value': cg.val})
-
-        return all_config
-    
-    
-    @property
-    def all_params(self):
-        
-        pid = 0
-        all_params = list()
-        
-        for expr, params in self.pdicts.items():
-            for pl, pr in params.items():
-                pid += 1
-                
-                all_params.append(
-                    {'par#': str(pid), 
-                     'Component': expr, 
-                     'Parameter': pl, 
-                     'Value': pr.val, 
-                     'Prior': f'{pr.prior_info}', 
-                     'Frozen': pr.frozen, 
-                     'Posterior': f'{pr.post_info}'})
-
-        return all_params
-    
-    
-    @property
-    def cfg_info(self):
-            
-        return Info.from_list_dict(self.all_config)
-    
-    
-    @property
-    def par_info(self):
-        
-        par_info = Info.list_dict_to_dict(self.all_params)
-        
-        del par_info['Posterior']
-        
-        return Info.from_dict(par_info)
-    
-    
-    def save(self, savepath):
-        
-        if not os.path.exists(savepath):
-            os.makedirs(savepath)
-        
-        json_dump(self.info.data_list_dict, savepath + '/data.json')
-                
-                
     @property
     def expr(self):
         
@@ -1285,6 +1285,39 @@ class DataUnit(object):
     def pvalues(self):
 
         return tuple([pr.value for pr in self.par.values()])
+    
+    
+    @property
+    def info(self):
+        
+        info_dict = OrderedDict()
+        info_dict['src'] = self.src_name
+        info_dict['bkg'] = self.bkg_name
+        info_dict['rmf'] = self.rmf_name
+        info_dict['arf'] = self.arf_name
+        info_dict['rsp'] = self.rsp_name
+        info_dict['notc'] = self.notc
+        info_dict['stat'] = self.stat
+        info_dict['grpg'] = self.grpg
+        info_dict['time'] = self.time
+        info_dict['weight'] = self.weight
+        
+        for key, value in info_dict.items():
+            if value is None:
+                info_dict[key] = 'None'
+
+        info_dict = OrderedDict([('property', info_dict.keys()), 
+                                 (self.name, info_dict.values())])
+        
+        return Info.from_dict(info_dict)
+    
+    
+    def save(self, savepath):
+        
+        if not os.path.exists(savepath):
+            os.makedirs(savepath)
+        
+        json_dump(self.info.data_list_dict, savepath + '/dataunit.json')
 
 
     @cached_property()
@@ -1469,12 +1502,6 @@ class DataUnit(object):
         return rsp_drm_cumsum[:, rb_stops] - rsp_drm_cumsum[:, rb_starts]
 
 
-    @cached_property()
-    def npoint(self):
-        
-        return self.src_counts.shape[0]
-
-
     @cached_property(lambda self: self.pvalues[-3:])
     def corr_rsp_drm(self):
         
@@ -1643,6 +1670,12 @@ class DataUnit(object):
         return np.sqrt(self.src_re_ctsspec_error ** 2 + self.bkg_re_ctsspec_error ** 2)
     
     
+    @cached_property()
+    def npoint(self):
+        
+        return self.src_counts.shape[0]
+    
+    
     def net_counts_upperlimit(self, cl=0.9):
         
         N = np.sum(self.src_counts)
@@ -1655,31 +1688,6 @@ class DataUnit(object):
     def net_ctsrate_upperlimit(self, cl=0.9):
         
         return self.net_counts_upperlimit(cl) / self.corr_src_efficiency
-
-
-    @property
-    def info(self):
-        
-        info_dict = OrderedDict()
-        info_dict['src'] = self.src_name
-        info_dict['bkg'] = self.bkg_name
-        info_dict['rmf'] = self.rmf_name
-        info_dict['arf'] = self.arf_name
-        info_dict['rsp'] = self.rsp_name
-        info_dict['notc'] = self.notc
-        info_dict['stat'] = self.stat
-        info_dict['grpg'] = self.grpg
-        info_dict['time'] = self.time
-        info_dict['weight'] = self.weight
-        
-        for key, value in info_dict.items():
-            if value is None:
-                info_dict[key] = 'None'
-
-        info_dict = OrderedDict([('property', info_dict.keys()), 
-                                 (self.name, info_dict.values())])
-        
-        return Info.from_dict(info_dict)
     
     
     @property

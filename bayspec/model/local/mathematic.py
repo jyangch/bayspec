@@ -6,7 +6,7 @@ from ...util.prior import unif
 
 
 
-class Const(Mathematic):
+class const(Mathematic):
 
     def __init__(self):
         super().__init__()

@@ -190,8 +190,58 @@ class Pair(object):
     def re_cts_to_erg(self):
         
         return [erg / cts for (cts, erg) in zip(self.conv_re_ctsspec, self.re_ergspec_at_rsp)]
+
+
+    @property
+    def rate_to_flux(self):
+        
+        ctsrate = [np.sum(cr) for cr in self.data.net_ctsrate]
+        ergflux = [np.sum([self.model.ergflux(emin, emax, 1000) for emin, emax in notc])
+                   for notc in self.data.notcs]
+        
+        return [flux / rate for (flux, rate) in zip(ergflux, ctsrate)]
     
     
+    @property
+    def conv_rate_to_flux(self):
+        
+        ctsrate = [np.sum(cr) for cr in self.conv_ctsrate]
+        ergflux = [np.sum([self.model.ergflux(emin, emax, 1000) for emin, emax in notc])
+                   for notc in self.data.notcs]
+        
+        return [flux / rate for (flux, rate) in zip(ergflux, ctsrate)]
+    
+    
+    def rate_to_fluxdensity(self, at=1, unit='fv'):
+        
+        ctsrate = [np.sum(cr) for cr in self.data.net_ctsrate]
+        if unit == 'NE':    # photons cm-2 s-1 keV-1
+            fluxdensity = self.model.phtspec(at)
+        elif unit == 'Fv':  # erg cm-2 s-1 keV-1
+            fluxdensity = self.model.flxspec(at)
+        elif unit == 'Jy':  # Jansky
+            fluxdensity = self.model.flxspec(at) * 1e6 / 2.416
+        else:
+            raise ValueError(f'unsupported value of unit: {unit}')
+            
+        return [fluxdensity / rate for rate in ctsrate]
+    
+    
+    def conv_rate_to_fluxdensity(self, at=1, unit='fv'):
+        
+        ctsrate = [np.sum(cr) for cr in self.conv_ctsrate]
+        if unit == 'NE':    # photons cm-2 s-1 keV-1
+            fluxdensity = self.model.phtspec(at)
+        elif unit == 'Fv':  # erg cm-2 s-1 keV-1
+            fluxdensity = self.model.flxspec(at)
+        elif unit == 'Jy':  # Jansky
+            fluxdensity = self.model.flxspec(at) * 1e6 / 2.416
+        else:
+            raise ValueError(f'unsupported value of unit: {unit}')
+            
+        return [fluxdensity / rate for rate in ctsrate]
+
+
     @property
     def deconv_phtspec(self):
         
@@ -262,8 +312,8 @@ class Pair(object):
     def deconv_re_ergspec_error(self):
         
         return [factor * cts for (factor, cts) in zip(self.re_cts_to_erg, self.data.net_re_ctsspec_error)]
-    
-    
+
+
     @property
     def residual(self):
         
@@ -271,8 +321,8 @@ class Pair(object):
                         self.data.net_ctsrate, 
                         self.conv_ctsrate, 
                         self.data.net_ctsrate_error))
-        
-        
+
+
     @property
     def re_residual(self):
         
@@ -280,56 +330,6 @@ class Pair(object):
                         self.data.net_re_ctsrate, 
                         self.conv_re_ctsrate, 
                         self.data.net_re_ctsrate_error))
-    
-    
-    @property
-    def cts_to_flux(self):
-        
-        ctsrate = [np.sum(cr) for cr in self.data.net_ctsrate]
-        ergflux = [np.sum([self.model.ergflux(emin, emax, 1000) for emin, emax in notc])
-                   for notc in self.data.notcs]
-        
-        return [flux / cts for (flux, cts) in zip(ergflux, ctsrate)]
-    
-    
-    @property
-    def conv_cts_to_flux(self):
-        
-        ctsrate = [np.sum(cr) for cr in self.conv_ctsrate]
-        ergflux = [np.sum([self.model.ergflux(emin, emax, 1000) for emin, emax in notc])
-                   for notc in self.data.notcs]
-        
-        return [flux / cts for (flux, cts) in zip(ergflux, ctsrate)]
-    
-    
-    def cts_to_fluxdensity(self, at=1, unit='fv'):
-        
-        ctsrate = [np.sum(cr) for cr in self.data.net_ctsrate]
-        if unit == 'NE':
-            fluxdensity = self.model.phtspec(at)
-        elif unit == 'fv':
-            fluxdensity = self.model.flxspec(at)
-        elif unit == 'Jy':
-            fluxdensity = self.model.flxspec(at) * 1e6 / 2.416
-        else:
-            raise ValueError(f'unsupported value of unit: {unit}')
-            
-        return [fluxdensity / cts for cts in ctsrate]
-    
-    
-    def conv_cts_to_fluxdensity(self, at=1, unit='fv'):
-        
-        ctsrate = [np.sum(cr) for cr in self.conv_ctsrate]
-        if unit == 'NE':
-            fluxdensity = self.model.phtspec(at)
-        elif unit == 'fv':
-            fluxdensity = self.model.flxspec(at)
-        elif unit == 'Jy':
-            fluxdensity = self.model.flxspec(at) * 1e6 / 2.416
-        else:
-            raise ValueError(f'unsupported value of unit: {unit}')
-            
-        return [fluxdensity / cts for cts in ctsrate]
 
 
     @cached_property()

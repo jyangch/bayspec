@@ -589,7 +589,7 @@ class Plot(object):
             res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             
         elif style == 'NE':
-            ylabel = 'Photons/cm^2/s/keV'
+            ylabel = 'Photons/cm2/s/keV'
             
             obs_y = cls.deconv_phtspec
             obs_y_e = cls.deconv_phtspec_error
@@ -597,7 +597,7 @@ class Plot(object):
             res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             
         elif style == 'Fv' or style == 'ENE':
-            ylabel = 'erg/cm^2/s/keV'
+            ylabel = 'erg/cm2/s/keV'
             
             obs_y = cls.deconv_flxspec
             obs_y_e = cls.deconv_flxspec_error
@@ -605,7 +605,7 @@ class Plot(object):
             res_y = list(map(lambda oi, mi, si: (oi - mi) / si, obs_y, mo_y, obs_y_e))
             
         elif style == 'vFv' or style == 'EENE':
-            ylabel = 'erg/cm^2/s'
+            ylabel = 'erg/cm2/s'
             
             obs_y = cls.deconv_ergspec
             obs_y_e = cls.deconv_ergspec_error
@@ -742,13 +742,17 @@ class Plot(object):
             
     
     @staticmethod
-    def infer(cls, ploter='plotly', style='CE', rebin=True):
+    def infer(cls, ploter='plotly', style='CE', rebin=True, at_par='best'):
         
         if not isinstance(cls, (Infer, Posterior)):
             raise TypeError('cls is not Infer or Posterior type, cannot call infer method')
         
         if isinstance(cls, Posterior):
-            cls.at_par(cls.par_best_ci)
+            if at_par == 'best': cls.at_par(cls.par_best)
+            elif at_par == 'best_ci': cls.at_par(cls.par_best_ci)
+            elif at_par == 'median': cls.at_par(cls.par_median)
+            elif at_par == 'mean': cls.at_par(cls.par_mean)
+            else: raise ValueError(f'unsupported at_par argument: {at_par}')
         
         if ploter == 'plotly':
             fig = make_subplots(
@@ -803,7 +807,7 @@ class Plot(object):
                 mo_y = cls.model_re_ctsspec
                 
         elif style == 'NE':
-            ylabel = 'Photons/cm^2/s/keV'
+            ylabel = 'Photons/cm2/s/keV'
             
             if not rebin:
                 obs_y = cls.data_phtspec
@@ -815,7 +819,7 @@ class Plot(object):
                 mo_y = cls.model_re_phtspec
                 
         elif style == 'Fv' or style == 'ENE':
-            ylabel = 'erg/cm^2/s/keV'
+            ylabel = 'erg/cm2/s/keV'
             
             if not rebin:
                 obs_y = cls.data_flxspec
@@ -827,7 +831,7 @@ class Plot(object):
                 mo_y = cls.model_re_flxspec
                 
         elif style == 'vFv' or style == 'EENE':
-            ylabel = 'erg/cm^2/s'
+            ylabel = 'erg/cm2/s'
             
             if not rebin:
                 obs_y = cls.data_ergspec
@@ -948,7 +952,7 @@ class Plot(object):
             
         
     @staticmethod
-    def post_corner(cls, ploter='plotly'):
+    def post_corner(cls, ploter='plotly', at_par='best'):
         
         if not isinstance(cls, Posterior):
             raise TypeError('cls is not Posterior type, cannot call corner method')
@@ -958,7 +962,13 @@ class Plot(object):
 
         title_fmt = '$%.2f_{-%.2f}^{+%.2f}~(%.2f)$'
         plabels = [f'p{key}({label})' for label, key in zip(cls.free_plabels, cls.free_par.keys())]
-        best = cls.par_best_ci
+        
+        if at_par == 'best': truth = cls.par_best
+        elif at_par == 'best_ci': truth = cls.par_best_ci
+        elif at_par == 'median': truth = cls.par_median
+        elif at_par == 'mean': truth = cls.par_mean
+        else: raise ValueError(f'unsupported at_par argument: {at_par}')
+        
         median = cls.par_median
         error = cls.par_error(median)
         
@@ -996,12 +1006,12 @@ class Plot(object):
                 
             for yi in range(cls.free_nparams):
                 for xi in range(yi):
-                    fig.add_vline(best[xi], line_width=1, line_color='#FF0092', row=yi + 1, col=xi + 1)
-                    fig.add_hline(best[yi], line_width=1, line_color='#FF0092', row=yi + 1, col=xi + 1)
+                    fig.add_vline(truth[xi], line_width=1, line_color='#FF0092', row=yi + 1, col=xi + 1)
+                    fig.add_hline(truth[yi], line_width=1, line_color='#FF0092', row=yi + 1, col=xi + 1)
                     fig.add_trace(
                         go.Scatter(
-                            x=[best[xi]], 
-                            y=[best[yi]], 
+                            x=[truth[xi]], 
+                            y=[truth[yi]], 
                             mode='markers', 
                             name=f'{plabels[xi]}&{plabels[yi]}', 
                             showlegend=False, 
@@ -1022,7 +1032,7 @@ class Plot(object):
             
             for i in range(cls.free_nparams):
                 ax = fig.subplots[i, i]
-                ax.set_title(title_fmt % (median[i], error[i][0], error[i][1], best[i]), 
+                ax.set_title(title_fmt % (median[i], error[i][0], error[i][1], truth[i]), 
                              math_fontfamily='stix')
                 ax.errorbar(median[i], 0.05, xerr=[[error[i][0]], [error[i][1]]], 
                             fmt='or', ms=2, ecolor='r', elinewidth=0.7)
@@ -1031,9 +1041,9 @@ class Plot(object):
             for yi in range(cls.free_nparams):
                 for xi in range(yi):
                     ax = fig.subplots[yi, xi]
-                    ax.axvline(best[xi], color='r', lw=0.7, ls='-')
-                    ax.axhline(best[yi], color='r', lw=0.7, ls='-')
-                    ax.scatter(best[xi], best[yi], marker='s', color='r', s=10, linewidths=0, zorder=10)
+                    ax.axvline(truth[xi], color='r', lw=0.7, ls='-')
+                    ax.axhline(truth[yi], color='r', lw=0.7, ls='-')
+                    ax.scatter(truth[xi], truth[yi], marker='s', color='r', s=10, linewidths=0, zorder=10)
                     ax.tick_params(axis='both', which='both', zorder=10)
 
         elif ploter == 'cornerpy':
@@ -1065,7 +1075,7 @@ class Plot(object):
             
             for i in range(cls.free_nparams):
                 ax = axes[i, i]
-                ax.set_title(title_fmt % (median[i], error[i][0], error[i][1], best[i]), 
+                ax.set_title(title_fmt % (median[i], error[i][0], error[i][1], truth[i]), 
                              math_fontfamily='stix')
                 ax.errorbar(median[i], 0.005, xerr=[[error[i][0]], [error[i][1]]], 
                             fmt='or', ms=2, ecolor='r', elinewidth=1)
@@ -1073,9 +1083,9 @@ class Plot(object):
             for yi in range(cls.free_nparams):
                 for xi in range(yi):
                     ax = axes[yi, xi]
-                    ax.axvline(best[xi], color='r', lw=1, ls='-')
-                    ax.axhline(best[yi], color='r', lw=1, ls='-')
-                    ax.scatter(best[xi], best[yi], marker='s', color='r', s=20, linewidths=0)
+                    ax.axvline(truth[xi], color='r', lw=1, ls='-')
+                    ax.axhline(truth[yi], color='r', lw=1, ls='-')
+                    ax.scatter(truth[xi], truth[yi], marker='s', color='r', s=20, linewidths=0)
             
         fig_data = None
             
@@ -1099,11 +1109,11 @@ class ModelPlot(object):
         self.yrange = yrange
         
         if self.style == 'NE':
-            ylabel = 'Photons/cm^2/s/keV'
+            ylabel = 'Photons/cm2/s/keV'
         elif self.style == 'Fv' or self.style == 'ENE':
-            ylabel = 'erg/cm^2/s/keV'
+            ylabel = 'erg/cm2/s/keV'
         elif self.style == 'vFv' or self.style == 'EENE':
-            ylabel = 'erg/cm^2/s'
+            ylabel = 'erg/cm2/s'
         elif self.style == 'NoU':
             ylabel = 'dimensionless'
         else:
@@ -1156,7 +1166,7 @@ class ModelPlot(object):
         return 'rgba(%d, %d, %d, %f)' % tuple(rgb)
         
         
-    def add_model(self, model, E, T=None, post=None):
+    def add_model(self, model, E, T=None, post=None, at_par='best'):
         
         if not isinstance(model, Model):
             raise TypeError('model is not Model type, cannot call add_model method')
@@ -1173,7 +1183,11 @@ class ModelPlot(object):
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
             if post:
-                y = model.best_phtspec(E, T).astype(float)
+                if at_par == 'best': y = model.best_phtspec(E, T).astype(float)
+                elif at_par == 'best_ci': y = model.best_ci_phtspec(E, T).astype(float)
+                elif at_par == 'median': y = model.median_phtspec(E, T).astype(float)
+                elif at_par == 'mean': y = model.mean_phtspec(E, T).astype(float)
+                else: raise ValueError(f'unsupported at_par argument: {at_par}')
                 y_sample = model.phtspec_sample(E, T)
                 y_ci = y_sample['Isigma'].astype(float)
             else:
@@ -1184,7 +1198,11 @@ class ModelPlot(object):
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
             if post:
-                y = model.best_flxspec(E, T).astype(float)
+                if at_par == 'best': y = model.best_flxspec(E, T).astype(float)
+                elif at_par == 'best_ci': y = model.best_ci_flxspec(E, T).astype(float)
+                elif at_par == 'median': y = model.median_flxspec(E, T).astype(float)
+                elif at_par == 'mean': y = model.mean_flxspec(E, T).astype(float)
+                else: raise ValueError(f'unsupported at_par argument: {at_par}')
                 y_sample = model.flxspec_sample(E, T)
                 y_ci = y_sample['Isigma'].astype(float)
             else:
@@ -1195,7 +1213,11 @@ class ModelPlot(object):
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
             if post:
-                y = model.best_ergspec(E, T).astype(float)
+                if at_par == 'best': y = model.best_ergspec(E, T).astype(float)
+                elif at_par == 'best_ci': y = model.best_ci_ergspec(E, T).astype(float)
+                elif at_par == 'median': y = model.median_ergspec(E, T).astype(float)
+                elif at_par == 'mean': y = model.mean_ergspec(E, T).astype(float)
+                else: raise ValueError(f'unsupported at_par argument: {at_par}')
                 y_sample = model.ergspec_sample(E, T)
                 y_ci = y_sample['Isigma'].astype(float)
             else:
@@ -1206,7 +1228,11 @@ class ModelPlot(object):
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
             if post:
-                y = model.best_nouspec(E).astype(float)
+                if at_par == 'best': y = model.best_nouspec(E).astype(float)
+                elif at_par == 'best_ci': y = model.best_ci_nouspec(E).astype(float)
+                elif at_par == 'median': y = model.median_nouspec(E).astype(float)
+                elif at_par == 'mean': y = model.mean_nouspec(E).astype(float)
+                else: raise ValueError(f'unsupported at_par argument: {at_par}')
                 y_sample = model.nouspec_sample(E)
                 y_ci = y_sample['Isigma'].astype(float)
             else:

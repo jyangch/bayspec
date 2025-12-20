@@ -43,7 +43,7 @@ class Posterior(Infer):
             self.free_par[i+1].post = Post(sample, logprob)
             
         self._par_best_ci(q=0.6827)
-        self.at_par(self.par_best_ci)
+        self.at_par(self.par_best)
 
 
     def _par_best_ci(self, q=0.6827):
@@ -194,7 +194,8 @@ class Posterior(Infer):
         
         free_par_info['Mean'] = ['%.3f'%par for par in self.par_mean]
         free_par_info['Median'] = ['%.3f'%par for par in self.par_median]
-        free_par_info['Best'] = ['%.3f'%par for par in self.par_best_ci]
+        free_par_info['Best'] = ['%.3f'%par for par in self.par_best]
+        free_par_info['1sigma Best'] = ['%.3f'%par for par in self.par_best_ci]
         free_par_info['1sigma CI'] = ['[%.3f, %.3f]'%tuple(ci) for ci in self.par_Isigma]
         
         return Info.from_dict(free_par_info)
