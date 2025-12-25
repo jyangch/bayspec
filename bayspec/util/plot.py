@@ -749,7 +749,7 @@ class Plot(object):
         
         if isinstance(cls, Posterior):
             if at_par == 'best': cls.at_par(cls.par_best)
-            elif at_par == 'best_ci': cls.at_par(cls.par_best_ci)
+            elif at_par == 'best-ci': cls.at_par(cls.par_best_ci)
             elif at_par == 'median': cls.at_par(cls.par_median)
             elif at_par == 'mean': cls.at_par(cls.par_mean)
             else: raise ValueError(f'unsupported at_par argument: {at_par}')
@@ -964,7 +964,7 @@ class Plot(object):
         plabels = [f'p{key}({label})' for label, key in zip(cls.free_plabels, cls.free_par.keys())]
         
         if at_par == 'best': truth = cls.par_best
-        elif at_par == 'best_ci': truth = cls.par_best_ci
+        elif at_par == 'best-ci': truth = cls.par_best_ci
         elif at_par == 'median': truth = cls.par_median
         elif at_par == 'mean': truth = cls.par_mean
         else: raise ValueError(f'unsupported at_par argument: {at_par}')
@@ -1184,7 +1184,7 @@ class ModelPlot(object):
             
             if post:
                 if at_par == 'best': y = model.best_phtspec(E, T).astype(float)
-                elif at_par == 'best_ci': y = model.best_ci_phtspec(E, T).astype(float)
+                elif at_par == 'best-ci': y = model.best_ci_phtspec(E, T).astype(float)
                 elif at_par == 'median': y = model.median_phtspec(E, T).astype(float)
                 elif at_par == 'mean': y = model.mean_phtspec(E, T).astype(float)
                 else: raise ValueError(f'unsupported at_par argument: {at_par}')
@@ -1199,7 +1199,7 @@ class ModelPlot(object):
             
             if post:
                 if at_par == 'best': y = model.best_flxspec(E, T).astype(float)
-                elif at_par == 'best_ci': y = model.best_ci_flxspec(E, T).astype(float)
+                elif at_par == 'best-ci': y = model.best_ci_flxspec(E, T).astype(float)
                 elif at_par == 'median': y = model.median_flxspec(E, T).astype(float)
                 elif at_par == 'mean': y = model.mean_flxspec(E, T).astype(float)
                 else: raise ValueError(f'unsupported at_par argument: {at_par}')
@@ -1214,7 +1214,7 @@ class ModelPlot(object):
             
             if post:
                 if at_par == 'best': y = model.best_ergspec(E, T).astype(float)
-                elif at_par == 'best_ci': y = model.best_ci_ergspec(E, T).astype(float)
+                elif at_par == 'best-ci': y = model.best_ci_ergspec(E, T).astype(float)
                 elif at_par == 'median': y = model.median_ergspec(E, T).astype(float)
                 elif at_par == 'mean': y = model.mean_ergspec(E, T).astype(float)
                 else: raise ValueError(f'unsupported at_par argument: {at_par}')
@@ -1229,7 +1229,7 @@ class ModelPlot(object):
             
             if post:
                 if at_par == 'best': y = model.best_nouspec(E).astype(float)
-                elif at_par == 'best_ci': y = model.best_ci_nouspec(E).astype(float)
+                elif at_par == 'best-ci': y = model.best_ci_nouspec(E).astype(float)
                 elif at_par == 'median': y = model.median_nouspec(E).astype(float)
                 elif at_par == 'mean': y = model.mean_nouspec(E).astype(float)
                 else: raise ValueError(f'unsupported at_par argument: {at_par}')
