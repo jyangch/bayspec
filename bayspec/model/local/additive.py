@@ -77,7 +77,7 @@ class cpl(Additive):
         zi = 1 + redshift
         E = E * zi
 
-        phtspec = Amp * (E / epiv) ** alpha * np.exp(-1.0 * E / Ec)
+        phtspec = Amp * (E / epiv) ** alpha * np.exp(-E / Ec)
         
         return phtspec
 
@@ -131,7 +131,7 @@ class ppl(Additive):
         E = E * zi
 
         Ec = Ep / (2 + alpha)
-        phtspec = Amp * (E / epiv) ** alpha * np.exp(-1.0 * E / Ec)
+        phtspec = Amp * (E / epiv) ** alpha * np.exp(-E / Ec)
         
         return phtspec
 
@@ -235,6 +235,72 @@ class sb2pl(Additive):
             return Eb * 10 ** (delta * np.arctanh((alpha1 + alpha2 + 4) / (alpha1 - alpha2)))
         else:
             return np.nan
+
+
+
+class csb2pl(Additive):
+    
+    def __init__(self):
+        super().__init__()
+        
+        self.expr = 'csb2pl'
+        self.comment = '2-segment smoothly broken power law with high-energy cutoff'
+        
+        self.config = OrderedDict()
+        self.config['redshift'] = Cfg(0.0)
+        self.config['pivot_energy'] = Cfg(1.0)
+        self.config['smoothness'] = Cfg(0.3)
+        
+        self.params = OrderedDict()
+        self.params[r'$\alpha_1$'] = Par(1, unif(-2, 2))
+        self.params[r'$\alpha_2$'] = Par(-1, unif(-2, 2))
+        self.params[r'log$E_b$'] = Par(1, unif(-1, 3))
+        self.params[r'log$E_p$'] = Par(2, unif(0, 4))
+        self.params[r'log$A$'] = Par(0, unif(-10, 10))
+        
+        
+    @staticmethod
+    def _log_cosh(q):
+        """
+        Stable computation of ln(cosh(q)) using logaddexp
+        ln(cosh x) = log( (e^x + e^-x) / 2 )
+        """
+        return np.logaddexp(q, -q) - np.log(2.0)
+
+
+    def func(self, E, T=None, O=None):
+        
+        redshift = self.config['redshift'].value
+        epiv = self.config['pivot_energy'].value
+        delta = self.config['smoothness'].value
+        
+        alpha1 = self.params[r'$\alpha_1$'].value
+        alpha2 = self.params[r'$\alpha_2$'].value
+        logEb = self.params[r'log$E_b$'].value
+        logEp = self.params[r'log$E_p$'].value
+        logA = self.params[r'log$A$'].value
+
+        Eb = 10 ** logEb
+        Ep = 10 ** logEp
+        Amp = 10 ** logA
+
+        zi = 1 + redshift
+        E = E * zi
+
+        b = (alpha1 + alpha2) / 2
+        m = (alpha2 - alpha1) / 2
+        
+        q = np.log10(E / Eb) / delta
+        qpiv = np.log10(epiv / Eb) / delta
+        
+        a = m * delta * self._log_cosh(q)
+        apiv = m * delta * self._log_cosh(qpiv)
+        
+        Ec = Ep / (2 + alpha2)
+        
+        phtspec = Amp * (E / epiv) ** b * 10 ** (a - apiv) * np.exp(-E / Ec)
+        
+        return phtspec
 
 
 
@@ -562,7 +628,7 @@ class csbpl(Additive):
         f = ((E / Eb) ** (-alpha1 * omega) + (E / Eb) ** (-alpha2 * omega)) \
             ** (-1 / omega) * np.exp(-E / Ec)
         fpiv = ((epiv / Eb) ** (-alpha1 * omega) + (epiv / Eb) ** (-alpha2 * omega)) \
-            ** (-1 / omega) * np.exp(-epiv / Ec)
+            ** (-1 / omega)
         phtspec = Amp * (f / fpiv)
 
         return phtspec
