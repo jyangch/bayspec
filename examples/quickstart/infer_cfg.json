@@ -20,7 +20,7 @@
         "Class": "model",
         "Expression": "cpl",
         "Component": "cpl",
-        "Parameter": "vFv_peak",
+        "Parameter": "vfv_peak",
         "Value": true
     }
 ]

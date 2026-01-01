@@ -54,26 +54,26 @@ class cpl(Additive):
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
-        self.config['vFv_peak'] = Cfg(True)
+        self.config['vfv_peak'] = Cfg(True)
         
         
-    @cached_property(lambda self: self.config['vFv_peak'].value)
+    @cached_property(lambda self: self.config['vfv_peak'].value)
     def params(self):
         
         params = OrderedDict()
         
-        if self.config['vFv_peak'].value:
+        if self.config['vfv_peak'].value:
             params[r'$\alpha$'] = Par(-1, unif(-2, 2))
             params[r'log$E_p$'] = Par(2, unif(0, 4))
             params[r'log$A$'] = Par(0, unif(-10, 10))
 
-        elif not self.config['vFv_peak'].value:
+        elif not self.config['vfv_peak'].value:
             params[r'$\alpha$'] = Par(-1, unif(-8, 4))
             params[r'log$E_c$'] = Par(2, unif(0, 4))
             params[r'log$A$'] = Par(0, unif(-10, 10))
             
         else:
-            raise ValueError('Invalid value for vFv_peak config.')
+            raise ValueError('Invalid value for vfv_peak config.')
 
         return params
 
@@ -82,7 +82,7 @@ class cpl(Additive):
         
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
-        peak = self.config['vFv_peak'].value
+        peak = self.config['vfv_peak'].value
         
         alpha = self.params[r'$\alpha$'].value
         
@@ -122,29 +122,29 @@ class sbpl(Additive):
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
-        self.config['vFv_peak'] = Cfg(True)
+        self.config['vfv_peak'] = Cfg(True)
         self.config['smoothness'] = Cfg(0.3)
         
         
-    @cached_property(lambda self: self.config['vFv_peak'].value)
+    @cached_property(lambda self: self.config['vfv_peak'].value)
     def params(self):
         
         params = OrderedDict()
         
-        if self.config['vFv_peak'].value:
+        if self.config['vfv_peak'].value:
             params[r'$\alpha$'] = Par(-1, unif(-2, 2))
             params[r'$\beta$'] = Par(-3, unif(-6, -2))
             params[r'log$E_p$'] = Par(2, unif(0, 4))
             params[r'log$A$'] = Par(0, unif(-10, 10))
         
-        elif not self.config['vFv_peak'].value:
+        elif not self.config['vfv_peak'].value:
             params[r'$\alpha_1$'] = Par(-1, unif(-6, 4))
             params[r'$\alpha_2$'] = Par(-3, unif(-6, 4))
             params[r'log$E_b$'] = Par(2, unif(0, 4))
             params[r'log$A$'] = Par(0, unif(-10, 10))
             
         else:
-            raise ValueError('Invalid value for vFv_peak config.')
+            raise ValueError('Invalid value for vfv_peak config.')
 
         return params
 
@@ -159,7 +159,7 @@ class sbpl(Additive):
         
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
-        peak = self.config['vFv_peak'].value
+        peak = self.config['vfv_peak'].value
         delta = self.config['smoothness'].value
         
         if peak:
@@ -204,7 +204,7 @@ class sbpl(Additive):
     def slope_func(self, E, T=None, O=None):
         
         redshift = self.config['redshift'].value
-        peak = self.config['vFv_peak'].value
+        peak = self.config['vfv_peak'].value
         delta = self.config['smoothness'].value
         
         if peak:
@@ -248,23 +248,23 @@ class csbpl(Additive):
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
-        self.config['vFv_peak'] = Cfg(True)
+        self.config['vfv_peak'] = Cfg(True)
         self.config['smoothness'] = Cfg(0.3)
         
         
-    @cached_property(lambda self: self.config['vFv_peak'].value)
+    @cached_property(lambda self: self.config['vfv_peak'].value)
     def params(self):
         
         params = OrderedDict()
         
-        if self.config['vFv_peak'].value:
+        if self.config['vfv_peak'].value:
             params[r'$\alpha_1$'] = Par(1, unif(-2, 2))
             params[r'$\alpha_2$'] = Par(-1, unif(-2, 2))
             params[r'log$E_b$'] = Par(1, unif(-1, 3))
             params[r'log$E_p$'] = Par(2, unif(0, 4))
             params[r'log$A$'] = Par(0, unif(-10, 10))
         
-        elif not self.config['vFv_peak'].value:
+        elif not self.config['vfv_peak'].value:
             params[r'$\alpha_1$'] = Par(1, unif(-6, 4))
             params[r'$\alpha_2$'] = Par(-1, unif(-6, 4))
             params[r'log$E_b$'] = Par(1, unif(-1, 3))
@@ -272,7 +272,7 @@ class csbpl(Additive):
             params[r'log$A$'] = Par(0, unif(-10, 10))
             
         else:
-            raise ValueError('Invalid value for vFv_peak config.')
+            raise ValueError('Invalid value for vfv_peak config.')
 
         return params
 
@@ -287,7 +287,7 @@ class csbpl(Additive):
         
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
-        peak = self.config['vFv_peak'].value
+        peak = self.config['vfv_peak'].value
         delta = self.config['smoothness'].value
         
         alpha1 = self.params[r'$\alpha_1$'].value
@@ -558,29 +558,29 @@ class sb2pl(Additive):
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
-        self.config['vFv_peak'] = Cfg(True)
+        self.config['vfv_peak'] = Cfg(True)
         self.config['smoothness'] = Cfg(2.0)
         
         
-    @cached_property(lambda self: self.config['vFv_peak'].value)
+    @cached_property(lambda self: self.config['vfv_peak'].value)
     def params(self):
         
         params = OrderedDict()
         
-        if self.config['vFv_peak'].value:
+        if self.config['vfv_peak'].value:
             params[r'$\alpha$'] = Par(-1, unif(-2, 2))
             params[r'$\beta$'] = Par(-3, unif(-6, -2))
             params[r'log$E_p$'] = Par(2, unif(0, 4))
             params[r'log$A$'] = Par(0, unif(-10, 10))
         
-        elif not self.config['vFv_peak'].value:
+        elif not self.config['vfv_peak'].value:
             params[r'$\alpha_1$'] = Par(-1, unif(-6, 4))
             params[r'$\alpha_2$'] = Par(-3, unif(-6, 4))
             params[r'log$E_b$'] = Par(2, unif(0, 4))
             params[r'log$A$'] = Par(0, unif(-10, 10))
             
         else:
-            raise ValueError('Invalid value for vFv_peak config.')
+            raise ValueError('Invalid value for vfv_peak config.')
 
         return params
 
@@ -589,7 +589,7 @@ class sb2pl(Additive):
         
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
-        peak = self.config['vFv_peak'].value
+        peak = self.config['vfv_peak'].value
         omega = self.config['smoothness'].value
         
         if peak:
@@ -639,23 +639,23 @@ class csb2pl(Additive):
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
-        self.config['vFv_peak'] = Cfg(True)
+        self.config['vfv_peak'] = Cfg(True)
         self.config['smoothness'] = Cfg(2.0)
         
         
-    @cached_property(lambda self: self.config['vFv_peak'].value)
+    @cached_property(lambda self: self.config['vfv_peak'].value)
     def params(self):
         
         params = OrderedDict()
         
-        if self.config['vFv_peak'].value:
+        if self.config['vfv_peak'].value:
             params[r'$\alpha_1$'] = Par(1, unif(-2, 2))
             params[r'$\alpha_2$'] = Par(-1, unif(-2, 2))
             params[r'log$E_b$'] = Par(1, unif(-1, 3))
             params[r'log$E_p$'] = Par(2, unif(0, 4))
             params[r'log$A$'] = Par(0, unif(-10, 10))
         
-        elif not self.config['vFv_peak'].value:
+        elif not self.config['vfv_peak'].value:
             params[r'$\alpha_1$'] = Par(1, unif(-6, 4))
             params[r'$\alpha_2$'] = Par(-1, unif(-6, 4))
             params[r'log$E_b$'] = Par(1, unif(-1, 3))
@@ -663,7 +663,7 @@ class csb2pl(Additive):
             params[r'log$A$'] = Par(0, unif(-10, 10))
             
         else:
-            raise ValueError('Invalid value for vFv_peak config.')
+            raise ValueError('Invalid value for vfv_peak config.')
 
         return params
 
@@ -672,7 +672,7 @@ class csb2pl(Additive):
         
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
-        peak = self.config['vFv_peak'].value
+        peak = self.config['vfv_peak'].value
         omega = self.config['smoothness'].value
         
         alpha1 = self.params[r'$\alpha_1$'].value

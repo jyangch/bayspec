@@ -28,7 +28,7 @@
         "Class": "model",
         "Expression": "(AS_TbAbs*cpl)",
         "Component": "cpl",
-        "Parameter": "vFv_peak",
+        "Parameter": "vfv_peak",
         "Value": true
     }
 ]

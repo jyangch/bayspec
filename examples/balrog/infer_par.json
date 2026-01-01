@@ -105,7 +105,7 @@
         "Component": "n7",
         "Parameter": "ra",
         "Value": 115,
-        "Prior": "=par#{7,22,32,27,37,17}"
+        "Prior": "=par#{37,32,27,17,7,22}"
     },
     {
         "par#": "13",
@@ -114,7 +114,7 @@
         "Component": "n7",
         "Parameter": "dec",
         "Value": 52,
-        "Prior": "=par#{38,18,33,8,23,28}"
+        "Prior": "=par#{38,33,18,28,23,8}"
     },
     {
         "par#": "14",
@@ -150,7 +150,7 @@
         "Component": "n8",
         "Parameter": "ra",
         "Value": 115,
-        "Prior": "=par#{12,7,22,32,27,37}"
+        "Prior": "=par#{37,32,12,27,7,22}"
     },
     {
         "par#": "18",
@@ -159,7 +159,7 @@
         "Component": "n8",
         "Parameter": "dec",
         "Value": 52,
-        "Prior": "=par#{38,33,8,23,13,28}"
+        "Prior": "=par#{38,33,13,28,23,8}"
     },
     {
         "par#": "19",
@@ -195,7 +195,7 @@
         "Component": "n9",
         "Parameter": "ra",
         "Value": 115,
-        "Prior": "=par#{12,7,32,27,37,17}"
+        "Prior": "=par#{37,32,12,27,17,7}"
     },
     {
         "par#": "23",
@@ -204,7 +204,7 @@
         "Component": "n9",
         "Parameter": "dec",
         "Value": 52,
-        "Prior": "=par#{38,18,33,8,13,28}"
+        "Prior": "=par#{38,33,18,13,28,8}"
     },
     {
         "par#": "24",
@@ -240,7 +240,7 @@
         "Component": "na",
         "Parameter": "ra",
         "Value": 115,
-        "Prior": "=par#{12,7,22,32,37,17}"
+        "Prior": "=par#{37,32,12,17,7,22}"
     },
     {
         "par#": "28",
@@ -249,7 +249,7 @@
         "Component": "na",
         "Parameter": "dec",
         "Value": 52,
-        "Prior": "=par#{38,18,33,8,23,13}"
+        "Prior": "=par#{38,33,18,13,23,8}"
     },
     {
         "par#": "29",
@@ -285,7 +285,7 @@
         "Component": "nb",
         "Parameter": "ra",
         "Value": 115,
-        "Prior": "=par#{12,7,22,27,37,17}"
+        "Prior": "=par#{37,12,27,17,7,22}"
     },
     {
         "par#": "33",
@@ -294,7 +294,7 @@
         "Component": "nb",
         "Parameter": "dec",
         "Value": 52,
-        "Prior": "=par#{38,18,8,23,13,28}"
+        "Prior": "=par#{38,18,13,28,23,8}"
     },
     {
         "par#": "34",
@@ -330,7 +330,7 @@
         "Component": "b1",
         "Parameter": "ra",
         "Value": 115,
-        "Prior": "=par#{12,7,22,32,27,17}"
+        "Prior": "=par#{32,12,27,17,7,22}"
     },
     {
         "par#": "38",
@@ -339,6 +339,6 @@
         "Component": "b1",
         "Parameter": "dec",
         "Value": 52,
-        "Prior": "=par#{18,33,8,23,13,28}"
+        "Prior": "=par#{33,18,13,28,23,8}"
     }
 ]

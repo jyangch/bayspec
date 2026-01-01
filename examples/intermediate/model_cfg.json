@@ -20,7 +20,7 @@
     {
         "cfg#": "4",
         "Component": "cpl",
-        "Parameter": "vFv_peak",
+        "Parameter": "vfv_peak",
         "Value": "True"
     }
 ]
