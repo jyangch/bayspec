@@ -12,6 +12,8 @@ class const(Mathematic):
         
         self.expr = 'const'
         self.comment = 'constant model'
+        
+        self.config = OrderedDict()
 
         self.params = OrderedDict()
         self.params[r'$C$'] = Par(0, unif(-10, 10))

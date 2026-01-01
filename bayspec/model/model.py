@@ -988,10 +988,11 @@ class Mathematic(Model):
 class FrozenConst(Mathematic):
 
     def __init__(self, value):
-        super().__init__()
         
         self.expr = 'const'
         self.comment = f'constant model with value {value}'
+        
+        self.config = OrderedDict()
 
         self.params = OrderedDict()
         self.params['$C$'] = Par(value, frozen=True)
@@ -1000,6 +1001,7 @@ class FrozenConst(Mathematic):
     def func(self, E, T=None, O=None):
         
         C = self.params['$C$'].value
+        
         return C
 
 
