@@ -945,7 +945,7 @@ class Tinvolved(Model):
     @property
     def type(self):
         
-        return 'add'
+        return 'tinv'
 
 
     @type.setter
@@ -960,7 +960,7 @@ class Multiplicative(Model):
     @property
     def type(self):
         
-        return 'add'
+        return 'mul'
 
 
     @type.setter
@@ -975,7 +975,7 @@ class Mathematic(Model):
     @property
     def type(self):
         
-        return 'add'
+        return 'math'
 
 
     @type.setter
