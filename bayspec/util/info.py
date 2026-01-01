@@ -128,7 +128,8 @@ class Info(object):
                         headers='keys', 
                         tablefmt='fancy_grid', 
                         numalign='center', 
-                        stralign='center')
+                        stralign='center', 
+                        disable_numparse=True)
 
     def __str__(self):
         

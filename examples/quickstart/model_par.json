@@ -3,15 +3,15 @@
         "par#": "1",
         "Component": "cpl",
         "Parameter": "$\\alpha$",
-        "Value": -1.0,
-        "Prior": "unif(-8, 4)",
+        "Value": -1,
+        "Prior": "unif(-2, 2)",
         "Frozen": false
     },
     {
         "par#": "2",
         "Component": "cpl",
-        "Parameter": "log$E_c$",
-        "Value": 2.0,
+        "Parameter": "log$E_p$",
+        "Value": 2,
         "Prior": "unif(0, 4)",
         "Frozen": false
     },
@@ -19,7 +19,7 @@
         "par#": "3",
         "Component": "cpl",
         "Parameter": "log$A$",
-        "Value": 0.0,
+        "Value": 0,
         "Prior": "unif(-10, 10)",
         "Frozen": false
     }

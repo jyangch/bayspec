@@ -14,5 +14,13 @@
         "Component": "cpl",
         "Parameter": "pivot_energy",
         "Value": 1.0
+    },
+    {
+        "cfg#": "3",
+        "Class": "model",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "vFv_peak",
+        "Value": false
     }
 ]

@@ -11,7 +11,7 @@ class Par(object):
                  post=None, 
                  comment=None, 
                  scale='linear', 
-                 unit=1, 
+                 unit=None, 
                  frozen=False
                  ):
         
@@ -30,7 +30,7 @@ class Par(object):
     @property
     def val(self):
         
-        return float(self._val)
+        return self._val
 
 
     @val.setter
@@ -145,9 +145,15 @@ class Par(object):
     def value(self):
         
         if self.scale == 'linear':
-            return self.val * self.unit
+            if self.unit is None:
+                return self.val
+            else:
+                return self.val * self.unit
         elif self.scale == 'log':
-            return 10 ** self.val * self.unit
+            if self.unit is None:
+                return 10 ** self.val
+            else:
+                return 10 ** self.val * self.unit
         else:
             raise ValueError('invalid parameter scale')
     
@@ -190,7 +196,7 @@ class Cfg(Par):
                  post=None, 
                  comment=None, 
                  scale='linear', 
-                 unit=1, 
+                 unit=None, 
                  frozen=False
                  ):
         

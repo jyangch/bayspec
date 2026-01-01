@@ -22,10 +22,10 @@ class Model(object):
         self.comment = 'model base class'
         
         self.config = OrderedDict()
-        self.config['redshift'] = Cfg(0)
+        self.config['cfg'] = Cfg(0)
         
         self.params = OrderedDict()
-        self.params['p'] = Par(1, unif(0, 2))
+        self.params['par'] = Par(1, unif(0, 2))
 
         
     def func(self, E, T=None, O=None):
@@ -33,31 +33,31 @@ class Model(object):
         pass
         
         
-    @cached_property()
+    @property
     def mdicts(self):
         
         return OrderedDict([(self.expr, self)])
     
     
-    @cached_property()
+    @property
     def fdicts(self):
         
         return OrderedDict([(ex, mo.func) for ex, mo in self.mdicts.items()])
     
     
-    @cached_property()
+    @property
     def cdicts(self):
         
         return OrderedDict([(ex, mo.config) for ex, mo in self.mdicts.items()])
 
     
-    @cached_property()
+    @property
     def pdicts(self):
         
         return OrderedDict([(ex, mo.params) for ex, mo in self.mdicts.items()])
     
     
-    @cached_property()
+    @property
     def cfg(self):
 
         cid = 0
@@ -71,7 +71,7 @@ class Model(object):
         return cfg
     
     
-    @cached_property()
+    @property
     def par(self):
         
         pid = 0
@@ -105,7 +105,7 @@ class Model(object):
                     {'cfg#': str(cid), 
                      'Component': expr, 
                      'Parameter': cl, 
-                     'Value': cg.val})
+                     'Value': f'{cg.val}'})
 
         return all_config
     
@@ -926,36 +926,64 @@ class Model(object):
 
 
 class Additive(Model):
-    
-    def __init__(self):
-        super().__init__()
-        self.type = 'add'
+
+    @property
+    def type(self):
+        
+        return 'add'
+
+
+    @type.setter
+    def type(self, new_type):
+        
+        pass
 
 
 
 class Tinvolved(Model):
-    
-    def __init__(self):
-        super().__init__()
-        self.type = 'tinv'
+        
+    @property
+    def type(self):
+        
+        return 'add'
+
+
+    @type.setter
+    def type(self, new_type):
+        
+        pass
 
 
 
 class Multiplicative(Model):
-    
-    def __init__(self):
-        super().__init__()
-        self.type = 'mul'
+        
+    @property
+    def type(self):
+        
+        return 'add'
+
+
+    @type.setter
+    def type(self, new_type):
+        
+        pass
 
 
 
-class Mathematic(Model):
-    
-    def __init__(self):
-        super().__init__()
-        self.type = 'math'
+class Mathematic(Model):     
+        
+    @property
+    def type(self):
+        
+        return 'add'
 
-    
+
+    @type.setter
+    def type(self, new_type):
+        
+        pass
+
+
 
 class FrozenConst(Mathematic):
 
@@ -1008,7 +1036,7 @@ class CompositeModel(Model):
                 self.m2.mdicts[ex].expr = self._generate_unique_name(ex, family)
 
 
-    @cached_property()
+    @property
     def expr(self):
         
         if self.op == '()':
@@ -1020,7 +1048,7 @@ class CompositeModel(Model):
             return f'({self.m1.expr}{self.op}{self.m2.expr})'
         
 
-    @cached_property()
+    @property
     def type(self):
         
         assert self.m1.type in self._allowed_types, f'unsupported model.type: {self.m1.type}'
@@ -1038,7 +1066,7 @@ class CompositeModel(Model):
             return self.tdict[type_op]
             
             
-    @cached_property()
+    @property
     def comment(self):
         
         return '\n'.join([f'{expr}: {mo.comment}' for expr, mo in self.mdicts.items()])
@@ -1060,7 +1088,7 @@ class CompositeModel(Model):
             raise ValueError(f'Unknown operation: {self.op}')
         
         
-    @cached_property()
+    @property
     def mdicts(self):
         
         return OrderedDict({**self.m1.mdicts, **self.m2.mdicts})

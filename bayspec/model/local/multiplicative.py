@@ -10,7 +10,6 @@ from ...util.param import Par, Cfg
 class hecut(Multiplicative):
 
     def __init__(self):
-        super().__init__()
         
         self.expr = 'hecut'
         self.comment = 'high-energy cutoff model'

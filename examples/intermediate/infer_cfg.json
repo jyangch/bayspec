@@ -22,5 +22,13 @@
         "Component": "cpl",
         "Parameter": "pivot_energy",
         "Value": 1.0
+    },
+    {
+        "cfg#": "4",
+        "Class": "model",
+        "Expression": "(AS_TbAbs*cpl)",
+        "Component": "cpl",
+        "Parameter": "vFv_peak",
+        "Value": true
     }
 ]

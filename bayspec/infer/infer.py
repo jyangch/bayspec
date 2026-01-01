@@ -10,8 +10,7 @@ from .pair import Pair
 from ..util.info import Info
 from ..data.data import Data
 from ..model.model import Model
-from ..util.tools import SuperDict, JsonEncoder
-from ..util.tools import cached_property, clear_cached_property, json_dump
+from ..util.tools import SuperDict, JsonEncoder, json_dump
 
 
 
@@ -88,8 +87,6 @@ class Infer(object):
         
         self._EXTRACT = object()
         
-        clear_cached_property(self)
-        
         self.nparis = len(self.pairs)
         
         self.Data = [pair[0] for pair in self.pairs]
@@ -102,19 +99,19 @@ class Infer(object):
         self._you_free()
 
 
-    @cached_property()
+    @property
     def pdicts(self):
         
         return OrderedDict([(md.expr, md.pdicts) for md in (self.Model + self.Data)])
 
 
-    @cached_property()
+    @property
     def cdicts(self):
         
-        return OrderedDict([(mo.expr, mo.pdicts) for mo in self.Model])
+        return OrderedDict([(mo.expr, mo.cdicts) for mo in self.Model])
 
 
-    @cached_property()
+    @property
     def cfg(self):
 
         cid = 0
@@ -129,7 +126,7 @@ class Infer(object):
         return cfg
 
 
-    @cached_property()
+    @property
     def par(self):
         
         pid = 0
@@ -156,7 +153,7 @@ class Infer(object):
         return ctypes.cast(id, ctypes.py_object).value
 
 
-    @cached_property()
+    @property
     def idpid(self):
         
         pid = 0

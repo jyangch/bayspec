@@ -5,16 +5,16 @@ from collections import OrderedDict
 from ..model import Additive
 from ...util.prior import unif
 from ...util.param import Par, Cfg
+from ...util.tools import cached_property
 
 
 
 class pl(Additive):
 
     def __init__(self):
-        super().__init__()
         
         self.expr = 'pl'
-        self.comment = 'power law model'
+        self.comment = 'power-law model'
         
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
@@ -31,8 +31,8 @@ class pl(Additive):
         epiv = self.config['pivot_energy'].value
         
         alpha = self.params[r'$\alpha$'].value
-        logA = self.params[r'log$A$'].value
         
+        logA = self.params[r'log$A$'].value
         Amp = 10 ** logA
         
         zi = 1 + redshift
@@ -47,123 +47,111 @@ class pl(Additive):
 class cpl(Additive):
 
     def __init__(self):
-        super().__init__()
         
         self.expr = 'cpl'
-        self.comment = 'cutoff power law model'
+        self.comment = 'power-law model with high-energy cutoff'
         
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
-
-        self.params = OrderedDict()
-        self.params[r'$\alpha$'] = Par(-1, unif(-8, 4))
-        self.params[r'log$E_c$'] = Par(2, unif(0, 4))
-        self.params[r'log$A$'] = Par(0, unif(-10, 10))
-
-
-    def func(self, E, T=None, O=None):
+        self.config['vFv_peak'] = Cfg(True)
         
-        redshift = self.config['redshift'].value
-        epiv = self.config['pivot_energy'].value
         
-        alpha = self.params[r'$\alpha$'].value
-        logEc = self.params[r'log$E_c$'].value
-        logA = self.params[r'log$A$'].value
-
-        Ec = 10 ** logEc
-        Amp = 10 ** logA
-
-        zi = 1 + redshift
-        E = E * zi
-
-        phtspec = Amp * (E / epiv) ** alpha * np.exp(-E / Ec)
+    @cached_property(lambda self: self.config['vFv_peak'].value)
+    def params(self):
         
-        return phtspec
+        params = OrderedDict()
+        
+        if self.config['vFv_peak'].value:
+            params[r'$\alpha$'] = Par(-1, unif(-2, 2))
+            params[r'log$E_p$'] = Par(2, unif(0, 4))
+            params[r'log$A$'] = Par(0, unif(-10, 10))
 
-
-    @property
-    def peak_energy(self):
-        
-        alpha = self.params[r'$\alpha$'].value
-        logEc = self.params[r'log$E_c$'].value
-        
-        Ec = 10 ** logEc
-        
-        if alpha > -2:
-            return Ec * (2 + alpha)
+        elif not self.config['vFv_peak'].value:
+            params[r'$\alpha$'] = Par(-1, unif(-8, 4))
+            params[r'log$E_c$'] = Par(2, unif(0, 4))
+            params[r'log$A$'] = Par(0, unif(-10, 10))
+            
         else:
-            return np.nan
+            raise ValueError('Invalid value for vFv_peak config.')
 
-
-
-class ppl(Additive):
-
-    def __init__(self):
-        super().__init__()
-        
-        self.expr = 'ppl'
-        self.comment = 'cutoff power law model with peak energy'
-        
-        self.config = OrderedDict()
-        self.config['redshift'] = Cfg(0.0)
-        self.config['pivot_energy'] = Cfg(1.0)
-
-        self.params = OrderedDict()
-        self.params[r'$\alpha$'] = Par(-1, unif(-2, 2))
-        self.params[r'log$E_p$'] = Par(2, unif(0, 4))
-        self.params[r'log$A$'] = Par(0, unif(-10, 10))
+        return params
 
 
     def func(self, E, T=None, O=None):
         
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
+        peak = self.config['vFv_peak'].value
         
         alpha = self.params[r'$\alpha$'].value
-        logEp = self.params[r'log$E_p$'].value
-        logA = self.params[r'log$A$'].value
+        
+        if peak:
+            logEp = self.params[r'log$E_p$'].value
+            Ep = 10 ** logEp
+            
+            if not alpha > -2:
+                return np.ones_like(E) * np.nan
 
-        Ep = 10 ** logEp
+            Ec = Ep / (2 + alpha)
+            
+        else:
+            logEc = self.params[r'log$E_c$'].value
+            Ec = 10 ** logEc
+
+        logA = self.params[r'log$A$'].value
         Amp = 10 ** logA
 
         zi = 1 + redshift
         E = E * zi
 
-        Ec = Ep / (2 + alpha)
         phtspec = Amp * (E / epiv) ** alpha * np.exp(-E / Ec)
         
         return phtspec
 
 
 
-class sb2pl(Additive):
+class sbpl(Additive):
     # 10.1086/505911
     
     def __init__(self):
-        super().__init__()
         
-        self.expr = 'sb2pl'
-        self.comment = '2-segment smoothly broken power law'
+        self.expr = 'sbpl'
+        self.comment = 'smoothly broken power-law model'
         
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
+        self.config['vFv_peak'] = Cfg(True)
         self.config['smoothness'] = Cfg(0.3)
+        
+        
+    @cached_property(lambda self: self.config['vFv_peak'].value)
+    def params(self):
+        
+        params = OrderedDict()
+        
+        if self.config['vFv_peak'].value:
+            params[r'$\alpha$'] = Par(-1, unif(-2, 2))
+            params[r'$\beta$'] = Par(-3, unif(-6, -2))
+            params[r'log$E_p$'] = Par(2, unif(0, 4))
+            params[r'log$A$'] = Par(0, unif(-10, 10))
+        
+        elif not self.config['vFv_peak'].value:
+            params[r'$\alpha_1$'] = Par(-1, unif(-6, 4))
+            params[r'$\alpha_2$'] = Par(-3, unif(-6, 4))
+            params[r'log$E_b$'] = Par(2, unif(0, 4))
+            params[r'log$A$'] = Par(0, unif(-10, 10))
+            
+        else:
+            raise ValueError('Invalid value for vFv_peak config.')
 
-        self.params = OrderedDict()
-        self.params[r'$\alpha_1$'] = Par(-1, unif(-6, 4))
-        self.params[r'$\alpha_2$'] = Par(-3, unif(-6, 4))
-        self.params[r'log$E_b$'] = Par(2, unif(0, 4))
-        self.params[r'log$A$'] = Par(0, unif(-10, 10))
-        
-        
+        return params
+
+
     @staticmethod
     def _log_cosh(q):
-        """
-        Stable computation of ln(cosh(q)) using logaddexp
-        ln(cosh x) = log( (e^x + e^-x) / 2 )
-        """
+
         return np.logaddexp(q, -q) - np.log(2.0)
 
 
@@ -171,22 +159,37 @@ class sb2pl(Additive):
         
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
+        peak = self.config['vFv_peak'].value
         delta = self.config['smoothness'].value
         
-        alpha1 = self.params[r'$\alpha_1$'].value
-        alpha2 = self.params[r'$\alpha_2$'].value
-        logEb = self.params[r'log$E_b$'].value
-        logA = self.params[r'log$A$'].value
-
-        Eb = 10 ** logEb
-        Amp = 10 ** logA
-
-        zi = 1 + redshift
-        E = E * zi
+        if peak:
+            alpha1 = self.params[r'$\alpha$'].value
+            alpha2 = self.params[r'$\beta$'].value
+            
+            logEp = self.params[r'log$E_p$'].value
+            Ep = 10 ** logEp
+            
+            if not (alpha1 > -2 and alpha2 < -2):
+                return np.ones_like(E) * np.nan
+            
+            Eb = Ep / (10 ** (delta * np.arctanh((alpha1 + alpha2 + 4) / (alpha1 - alpha2))))
+        
+        else:
+            alpha1 = self.params[r'$\alpha_1$'].value
+            alpha2 = self.params[r'$\alpha_2$'].value
+            
+            logEb = self.params[r'log$E_b$'].value
+            Eb = 10 ** logEb
 
         b = (alpha1 + alpha2) / 2
         m = (alpha2 - alpha1) / 2
+            
+        logA = self.params[r'log$A$'].value
+        Amp = 10 ** logA
         
+        zi = 1 + redshift
+        E = E * zi
+            
         q = np.log10(E / Eb) / delta
         qpiv = np.log10(epiv / Eb) / delta
         
@@ -201,70 +204,82 @@ class sb2pl(Additive):
     def slope_func(self, E, T=None, O=None):
         
         redshift = self.config['redshift'].value
+        peak = self.config['vFv_peak'].value
         delta = self.config['smoothness'].value
         
-        alpha1 = self.params[r'$\alpha_1$'].value
-        alpha2 = self.params[r'$\alpha_2$'].value
-        logEb = self.params[r'log$E_b$'].value
-
-        Eb = 10 ** logEb
-
-        zi = 1 + redshift
-        E = E * zi
+        if peak:
+            alpha1 = self.params[r'$\alpha$'].value
+            alpha2 = self.params[r'$\beta$'].value
+            
+            logEp = self.params[r'log$E_p$'].value
+            Ep = 10 ** logEp
+            
+            if not (alpha1 > -2 and alpha2 < -2):
+                return np.ones_like(E) * np.nan
+            
+            Eb = Ep / (10 ** (delta * np.arctanh((alpha1 + alpha2 + 4) / (alpha1 - alpha2))))
+            
+        else:
+            alpha1 = self.params[r'$\alpha_1$'].value
+            alpha2 = self.params[r'$\alpha_2$'].value
+            
+            logEb = self.params[r'log$E_b$'].value
+            Eb = 10 ** logEb
 
         b = (alpha1 + alpha2) / 2
         m = (alpha2 - alpha1) / 2
+
+        zi = 1 + redshift
+        E = E * zi
         
         q = np.log10(E / Eb) / delta
         
         return b + m * np.tanh(q)
 
 
-    @property
-    def peak_energy(self):
-        
-        delta = self.config['smoothness'].value
-        
-        alpha1 = self.params[r'$\alpha_1$'].value
-        alpha2 = self.params[r'$\alpha_2$'].value
-        logEb = self.params[r'log$E_b$'].value
-        
-        Eb = 10 ** logEb
-        
-        if alpha1 > -2 and alpha2 < -2:
-            return Eb * 10 ** (delta * np.arctanh((alpha1 + alpha2 + 4) / (alpha1 - alpha2)))
-        else:
-            return np.nan
 
-
-
-class csb2pl(Additive):
+class csbpl(Additive):
     
     def __init__(self):
-        super().__init__()
         
-        self.expr = 'csb2pl'
-        self.comment = '2-segment smoothly broken power law with high-energy cutoff'
+        self.expr = 'csbpl'
+        self.comment = 'smoothly broken power-law model with high-energy cutoff'
         
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
+        self.config['vFv_peak'] = Cfg(True)
         self.config['smoothness'] = Cfg(0.3)
         
-        self.params = OrderedDict()
-        self.params[r'$\alpha_1$'] = Par(1, unif(-2, 2))
-        self.params[r'$\alpha_2$'] = Par(-1, unif(-2, 2))
-        self.params[r'log$E_b$'] = Par(1, unif(-1, 3))
-        self.params[r'log$E_p$'] = Par(2, unif(0, 4))
-        self.params[r'log$A$'] = Par(0, unif(-10, 10))
         
+    @cached_property(lambda self: self.config['vFv_peak'].value)
+    def params(self):
         
+        params = OrderedDict()
+        
+        if self.config['vFv_peak'].value:
+            params[r'$\alpha_1$'] = Par(1, unif(-2, 2))
+            params[r'$\alpha_2$'] = Par(-1, unif(-2, 2))
+            params[r'log$E_b$'] = Par(1, unif(-1, 3))
+            params[r'log$E_p$'] = Par(2, unif(0, 4))
+            params[r'log$A$'] = Par(0, unif(-10, 10))
+        
+        elif not self.config['vFv_peak'].value:
+            params[r'$\alpha_1$'] = Par(1, unif(-6, 4))
+            params[r'$\alpha_2$'] = Par(-1, unif(-6, 4))
+            params[r'log$E_b$'] = Par(1, unif(-1, 3))
+            params[r'log$E_c$'] = Par(2, unif(0, 4))
+            params[r'log$A$'] = Par(0, unif(-10, 10))
+            
+        else:
+            raise ValueError('Invalid value for vFv_peak config.')
+
+        return params
+
+
     @staticmethod
     def _log_cosh(q):
-        """
-        Stable computation of ln(cosh(q)) using logaddexp
-        ln(cosh x) = log( (e^x + e^-x) / 2 )
-        """
+
         return np.logaddexp(q, -q) - np.log(2.0)
 
 
@@ -272,16 +287,29 @@ class csb2pl(Additive):
         
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
+        peak = self.config['vFv_peak'].value
         delta = self.config['smoothness'].value
         
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
+        
         logEb = self.params[r'log$E_b$'].value
-        logEp = self.params[r'log$E_p$'].value
-        logA = self.params[r'log$A$'].value
-
         Eb = 10 ** logEb
-        Ep = 10 ** logEp
+        
+        if peak:
+            logEp = self.params[r'log$E_p$'].value
+            Ep = 10 ** logEp
+            
+            if not alpha2 > -2:
+                return np.ones_like(E) * np.nan
+            
+            Ec = Ep / (2 + alpha2)
+            
+        else:
+            logEc = self.params[r'log$E_c$'].value
+            Ec = 10 ** logEc
+
+        logA = self.params[r'log$A$'].value
         Amp = 10 ** logA
 
         zi = 1 + redshift
@@ -296,21 +324,18 @@ class csb2pl(Additive):
         a = m * delta * self._log_cosh(q)
         apiv = m * delta * self._log_cosh(qpiv)
         
-        Ec = Ep / (2 + alpha2)
-        
         phtspec = Amp * (E / epiv) ** b * 10 ** (a - apiv) * np.exp(-E / Ec)
         
         return phtspec
 
 
 
-class sb3pl(Additive):
+class dsbpl(Additive):
 
     def __init__(self):
-        super().__init__()
 
-        self.expr = 'sb3pl'
-        self.comment = '3-segment smoothly broken power law'
+        self.expr = 'dsbpl'
+        self.comment = 'double smoothly broken power-law model'
 
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
@@ -329,10 +354,7 @@ class sb3pl(Additive):
 
     @staticmethod
     def _log_cosh(q):
-        """
-        Stable computation of ln(cosh(q)) using logaddexp
-        ln(cosh x) = log( (e^x + e^-x) / 2 )
-        """
+
         return np.logaddexp(q, -q) - np.log(2.0)
 
 
@@ -407,13 +429,12 @@ class sb3pl(Additive):
 
 
 
-class sb4pl(Additive):
+class tsbpl(Additive):
     
     def __init__(self):
-        super().__init__()
         
-        self.expr = 'sb4pl'
-        self.comment = '4-segment smoothly broken power law'
+        self.expr = 'tsbpl'
+        self.comment = 'triple smoothly broken power-law model'
         
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
@@ -435,10 +456,7 @@ class sb4pl(Additive):
 
     @staticmethod
     def _log_cosh(q):
-        """
-        Stable computation of ln(cosh(q)) using logaddexp
-        ln(cosh x) = log( (e^x + e^-x) / 2 )
-        """
+
         return np.logaddexp(q, -q) - np.log(2.0)
 
 
@@ -529,101 +547,161 @@ class sb4pl(Additive):
 
 
 
-class ssbpl(Additive):
+class sb2pl(Additive):
     # 10.1051/0004-6361/201732245
     
     def __init__(self):
-        super().__init__()
         
-        self.expr = 'ssbpl'
-        self.comment = 'single smoothly broken power law'
+        self.expr = 'sb2pl'
+        self.comment = '2-segment smoothly broken power-law model (always convex)'
         
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
+        self.config['vFv_peak'] = Cfg(True)
         self.config['smoothness'] = Cfg(2.0)
+        
+        
+    @cached_property(lambda self: self.config['vFv_peak'].value)
+    def params(self):
+        
+        params = OrderedDict()
+        
+        if self.config['vFv_peak'].value:
+            params[r'$\alpha$'] = Par(-1, unif(-2, 2))
+            params[r'$\beta$'] = Par(-3, unif(-6, -2))
+            params[r'log$E_p$'] = Par(2, unif(0, 4))
+            params[r'log$A$'] = Par(0, unif(-10, 10))
+        
+        elif not self.config['vFv_peak'].value:
+            params[r'$\alpha_1$'] = Par(-1, unif(-6, 4))
+            params[r'$\alpha_2$'] = Par(-3, unif(-6, 4))
+            params[r'log$E_b$'] = Par(2, unif(0, 4))
+            params[r'log$A$'] = Par(0, unif(-10, 10))
+            
+        else:
+            raise ValueError('Invalid value for vFv_peak config.')
 
-        self.params = OrderedDict()
-        self.params[r'$\alpha$'] = Par(-1, unif(-2, 2))
-        self.params[r'$\beta$'] = Par(-3, unif(-6, -2))
-        self.params[r'log$E_p$'] = Par(2, unif(0, 4))
-        self.params[r'log$A$'] = Par(0, unif(-10, 10))
+        return params
 
 
     def func(self, E, T=None, O=None):
         
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
+        peak = self.config['vFv_peak'].value
         omega = self.config['smoothness'].value
         
-        alpha = self.params[r'$\alpha$'].value
-        beta = self.params[r'$\beta$'].value
-        logEp = self.params[r'log$E_p$'].value
+        if peak:
+            alpha1 = self.params[r'$\alpha$'].value
+            alpha2 = self.params[r'$\beta$'].value
+            
+            logEp = self.params[r'log$E_p$'].value
+            Ep = 10 ** logEp
+            
+            if not (alpha1 > -2 and alpha2 < -2):
+                return np.ones_like(E) * np.nan
+            
+            Eb = Ep * (-(alpha1 + 2) / (alpha2 + 2)) ** (1 / ((alpha2 - alpha1) * omega))
+
+        else:
+            alpha1 = self.params[r'$\alpha_1$'].value
+            alpha2 = self.params[r'$\alpha_2$'].value
+            
+            logEb = self.params[r'log$E_b$'].value
+            Eb = 10 ** logEb
+            
+            if not alpha1 > alpha2:
+                return np.ones_like(E) * np.nan
+            
         logA = self.params[r'log$A$'].value
-
-        Ep = 10 ** logEp
         Amp = 10 ** logA
-
+        
         zi = 1 + redshift
         E = E * zi
-        
-        if not alpha > beta:
-            return np.ones_like(E) * np.nan
-        
-        Eb = Ep * (-(alpha + 2) / (beta + 2)) ** (1 / ((beta - alpha) * omega))
-        
-        f = ((E / Eb) ** (-alpha * omega) + (E / Eb) ** (-beta * omega)) ** (-1 / omega)
-        fpiv = ((epiv / Eb) ** (-alpha * omega) + (epiv / Eb) ** (-beta * omega)) ** (-1 / omega)
+            
+        f = ((E / Eb) ** (-alpha1 * omega) + (E / Eb) ** (-alpha2 * omega)) ** (-1 / omega)
+        fpiv = ((epiv / Eb) ** (-alpha1 * omega) + (epiv / Eb) ** (-alpha2 * omega)) ** (-1 / omega)
+            
         phtspec = Amp * (f / fpiv)
 
         return phtspec
 
 
 
-class csbpl(Additive):
+class csb2pl(Additive):
 
     def __init__(self):
-        super().__init__()
         
-        self.expr = 'csbpl'
-        self.comment = 'smoothly broken power law with high-energy cutoff'
+        self.expr = 'csb2pl'
+        self.comment = '2-segment smoothly broken power-law model (always convex) with high-energy cutoff'
         
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
+        self.config['vFv_peak'] = Cfg(True)
         self.config['smoothness'] = Cfg(2.0)
+        
+        
+    @cached_property(lambda self: self.config['vFv_peak'].value)
+    def params(self):
+        
+        params = OrderedDict()
+        
+        if self.config['vFv_peak'].value:
+            params[r'$\alpha_1$'] = Par(1, unif(-2, 2))
+            params[r'$\alpha_2$'] = Par(-1, unif(-2, 2))
+            params[r'log$E_b$'] = Par(1, unif(-1, 3))
+            params[r'log$E_p$'] = Par(2, unif(0, 4))
+            params[r'log$A$'] = Par(0, unif(-10, 10))
+        
+        elif not self.config['vFv_peak'].value:
+            params[r'$\alpha_1$'] = Par(1, unif(-6, 4))
+            params[r'$\alpha_2$'] = Par(-1, unif(-6, 4))
+            params[r'log$E_b$'] = Par(1, unif(-1, 3))
+            params[r'log$E_c$'] = Par(2, unif(0, 4))
+            params[r'log$A$'] = Par(0, unif(-10, 10))
+            
+        else:
+            raise ValueError('Invalid value for vFv_peak config.')
 
-        self.params = OrderedDict()
-        self.params[r'$\alpha_1$'] = Par(1, unif(-2, 2))
-        self.params[r'$\alpha_2$'] = Par(-1, unif(-2, 2))
-        self.params[r'log$E_b$'] = Par(1, unif(-1, 3))
-        self.params[r'log$E_p$'] = Par(2, unif(0, 4))
-        self.params[r'log$A$'] = Par(0, unif(-10, 10))
+        return params
 
 
     def func(self, E, T=None, O=None):
         
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
+        peak = self.config['vFv_peak'].value
         omega = self.config['smoothness'].value
         
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
+        
         logEb = self.params[r'log$E_b$'].value
-        logEp = self.params[r'log$E_p$'].value
-        logA = self.params[r'log$A$'].value
-
         Eb = 10 ** logEb
-        Ep = 10 ** logEp
+        
+        if not alpha1 > alpha2:
+            return np.ones_like(E) * np.nan
+        
+        if peak:
+            logEp = self.params[r'log$E_p$'].value
+            Ep = 10 ** logEp
+            
+            if not alpha2 > -2:
+                return np.ones_like(E) * np.nan
+            
+            Ec = Ep / (2 + alpha2)
+            
+        else:
+            logEc = self.params[r'log$E_c$'].value
+            Ec = 10 ** logEc
+
+        logA = self.params[r'log$A$'].value
         Amp = 10 ** logA
 
         zi = 1 + redshift
         E = E * zi
-        
-        if not alpha1 > alpha2:
-            return np.ones_like(E) * np.nan
-
-        Ec = Ep / (2 + alpha2)
         
         f = ((E / Eb) ** (-alpha1 * omega) + (E / Eb) ** (-alpha2 * omega)) \
             ** (-1 / omega) * np.exp(-E / Ec)
@@ -635,26 +713,25 @@ class csbpl(Additive):
 
 
 
-class dsbpl(Additive):
+class sb3pl(Additive):
     
     def __init__(self):
-        super().__init__()
         
-        self.expr = 'dsbpl'
-        self.comment = 'double smoothly broken power laws'
+        self.expr = 'sb3pl'
+        self.comment = '3-segment smoothly broken power-law model (always convex)'
         
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
         self.config['smoothness1'] = Cfg(2.0)
         self.config['smoothness2'] = Cfg(2.0)
-
+        
         self.params = OrderedDict()
-        self.params[r'$\alpha_1$'] = Par(1, unif(-2, 2))
-        self.params[r'$\alpha_2$'] = Par(-1, unif(-2, 2))
-        self.params[r'$\beta$'] = Par(-3, unif(-6, -2))
-        self.params[r'log$E_b$'] = Par(1, unif(-1, 3))
-        self.params[r'log$E_p$'] = Par(2, unif(0, 4))
+        self.params[r'$\alpha_1$'] = Par(1, unif(-6, 4))
+        self.params[r'$\alpha_2$'] = Par(-1, unif(-6, 4))
+        self.params[r'$\alpha_3$'] = Par(-3, unif(-6, 4))
+        self.params[r'log$E_{b1}$'] = Par(1, unif(-1, 3))
+        self.params[r'log$E_{b2}$'] = Par(2, unif(0, 4))
         self.params[r'log$A$'] = Par(0, unif(-10, 10))
 
 
@@ -667,26 +744,24 @@ class dsbpl(Additive):
         
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
-        beta = self.params[r'$\beta$'].value
-        logEb = self.params[r'log$E_b$'].value
-        logEp = self.params[r'log$E_p$'].value
+        alpha3 = self.params[r'$\alpha_3$'].value
+        logEb1 = self.params[r'log$E_{b1}$'].value
+        logEb2 = self.params[r'log$E_{b2}$'].value
         logA = self.params[r'log$A$'].value
 
-        Eb = 10 ** logEb
-        Ep = 10 ** logEp
+        Eb1 = 10 ** logEb1
+        Eb2 = 10 ** logEb2
         Amp = 10 ** logA
         
-        if not alpha1 > alpha2 > beta:
+        if not alpha1 > alpha2 > alpha3:
             return np.ones_like(E) * np.nan
 
         zi = 1 + redshift
         E = E * zi
         
-        Eb1 = Eb
-        Eb2 = Ep * (-(alpha2 + 2) / (beta + 2)) ** (1 / ((beta - alpha2) * omega2))
+        f = self._sb3pl(E, [alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2])
+        fpiv = self._sb3pl(epiv, [alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2])
         
-        f = self._sb3pl(E, [alpha1, alpha2, beta, Eb1, Eb2, omega1, omega2])
-        fpiv = self._sb3pl(epiv, [alpha1, alpha2, beta, Eb1, Eb2, omega1, omega2])
         phtspec = Amp * (f / fpiv)
 
         return phtspec
@@ -732,13 +807,12 @@ class dsbpl(Additive):
 
 
 
-class tsbpl(Additive):
+class sb4pl(Additive):
 
     def __init__(self):
-        super().__init__()
         
-        self.expr = 'tsbpl'
-        self.comment = 'triple smoothly broken power laws'
+        self.expr = 'sb4pl'
+        self.comment = '4-segment smoothly broken power-law model (always convex)'
         
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
@@ -748,13 +822,13 @@ class tsbpl(Additive):
         self.config['smoothness3'] = Cfg(2.0)
         
         self.params = OrderedDict()
-        self.params[r'$\alpha_1$'] = Par(2, unif(0, 4))
-        self.params[r'$\alpha_2$'] = Par(1, unif(-2, 2))
-        self.params[r'$\alpha_3$'] = Par(-1, unif(-2, 2))
-        self.params[r'$\beta$'] = Par(-3, unif(-6, -2))
+        self.params[r'$\alpha_1$'] = Par(2, unif(-6, 4))
+        self.params[r'$\alpha_2$'] = Par(1, unif(-6, 4))
+        self.params[r'$\alpha_3$'] = Par(-1, unif(-6, 4))
+        self.params[r'$\alpha_4$'] = Par(-3, unif(-6, 4))
         self.params[r'log$E_{b1}$'] = Par(1, unif(-1, 3))
         self.params[r'log$E_{b2}$'] = Par(2, unif(0, 4))
-        self.params[r'log$E_p$'] = Par(3, unif(1, 5))
+        self.params[r'log$E_{b3}$'] = Par(3, unif(1, 5))
         self.params[r'log$A$'] = Par(0, unif(-10, 10))
         
         
@@ -769,27 +843,25 @@ class tsbpl(Additive):
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
         alpha3 = self.params[r'$\alpha_3$'].value
-        beta = self.params[r'$\beta$'].value
+        alpha4 = self.params[r'$\alpha_4$'].value
         logEb1 = self.params[r'log$E_{b1}$'].value
         logEb2 = self.params[r'log$E_{b2}$'].value
-        logEp = self.params[r'log$E_p$'].value
+        logEb3 = self.params[r'log$E_{b3}$'].value
         logA = self.params[r'log$A$'].value
         
         Eb1 = 10 ** logEb1
         Eb2 = 10 ** logEb2
-        Ep = 10 ** logEp
+        Eb3 = 10 ** logEb3
         Amp = 10 ** logA
 
         zi = 1 + redshift
         E = E * zi
         
-        if not alpha1 > alpha2 > alpha3 > beta:
+        if not alpha1 > alpha2 > alpha3 > alpha4:
             return np.ones_like(E) * np.nan
         
-        Eb3 = Ep * (-(alpha3 + 2) / (beta + 2)) ** (1 / ((beta - alpha3) * omega3))
-        
-        f = self._sb4pl(E, [alpha1, alpha2, alpha3, beta, Eb1, Eb2, Eb3, omega1, omega2, omega3])
-        fpiv = self._sb4pl(epiv, [alpha1, alpha2, alpha3, beta, Eb1, Eb2, Eb3, omega1, omega2, omega3])
+        f = self._sb4pl(E, [alpha1, alpha2, alpha3, alpha4, Eb1, Eb2, Eb3, omega1, omega2, omega3])
+        fpiv = self._sb4pl(epiv, [alpha1, alpha2, alpha3, alpha4, Eb1, Eb2, Eb3, omega1, omega2, omega3])
         phtspec = Amp * (f / fpiv)
 
         return phtspec
@@ -859,7 +931,6 @@ class band(Additive):
     # 10.1086/172995
 
     def __init__(self):
-        super().__init__()
         
         self.expr = 'band'
         self.comment = 'band function'
@@ -908,10 +979,9 @@ class cband(Additive):
     # 10.1088/0004-637X/751/2/90
     
     def __init__(self):
-        super().__init__()
         
         self.expr = 'cband'
-        self.comment = 'band function with high-energy cut-off'
+        self.comment = 'band function with high-energy cutoff'
         
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
@@ -960,7 +1030,6 @@ class dband(Additive):
     # 10.1088/0004-637X/751/2/90
     
     def __init__(self):
-        super().__init__()
         
         self.expr = 'dband'
         self.comment = 'double band functions'
@@ -1017,7 +1086,6 @@ class dband(Additive):
 class bb(Additive):
 
     def __init__(self):
-        super().__init__()
         
         self.expr = 'bb'
         self.comment = 'black-body model'
@@ -1053,7 +1121,6 @@ class mbb(Additive):
     # 10.3847/1538-4357/aadc07
 
     def __init__(self):
-        super().__init__()
         
         self.expr = 'mbb'
         self.comment = 'multi-color black-body model'

@@ -5,11 +5,11 @@
         "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
         "Component": "cpl",
         "Parameter": "$\\alpha$",
-        "Mean": "-1.306",
-        "Median": "-1.300",
-        "Best": "-1.290",
-        "1sigma Best": "-1.295",
-        "1sigma CI": "[-1.345, -1.265]"
+        "Mean": "-1.583",
+        "Median": "-1.556",
+        "Best": "-1.544",
+        "1sigma Best": "-1.544",
+        "1sigma CI": "[-1.713, -1.454]"
     },
     {
         "par#": "5",
@@ -17,11 +17,11 @@
         "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
         "Component": "cpl",
         "Parameter": "log$A$",
-        "Mean": "1.646",
-        "Median": "1.647",
-        "Best": "1.666",
-        "1sigma Best": "1.651",
-        "1sigma CI": "[1.619, 1.673]"
+        "Mean": "1.678",
+        "Median": "1.679",
+        "Best": "1.685",
+        "1sigma Best": "1.685",
+        "1sigma CI": "[1.646, 1.709]"
     },
     {
         "par#": "7",
@@ -29,11 +29,11 @@
         "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
         "Component": "csbpl",
         "Parameter": "$\\alpha_2$",
-        "Mean": "-1.430",
-        "Median": "-1.428",
-        "Best": "-1.410",
-        "1sigma Best": "-1.417",
-        "1sigma CI": "[-1.446, -1.414]"
+        "Mean": "-1.555",
+        "Median": "-1.553",
+        "Best": "-1.552",
+        "1sigma Best": "-1.552",
+        "1sigma CI": "[-1.583, -1.527]"
     },
     {
         "par#": "9",
@@ -41,11 +41,11 @@
         "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
         "Component": "csbpl",
         "Parameter": "log$E_p$",
-        "Mean": "2.424",
-        "Median": "2.426",
-        "Best": "2.429",
-        "1sigma Best": "2.424",
-        "1sigma CI": "[2.407, 2.440]"
+        "Mean": "2.371",
+        "Median": "2.371",
+        "Best": "2.374",
+        "1sigma Best": "2.374",
+        "1sigma CI": "[2.352, 2.391]"
     },
     {
         "par#": "10",
@@ -53,10 +53,10 @@
         "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
         "Component": "csbpl",
         "Parameter": "log$A$",
-        "Mean": "-0.520",
-        "Median": "-0.523",
-        "Best": "-0.547",
-        "1sigma Best": "-0.534",
-        "1sigma CI": "[-0.545, -0.493]"
+        "Mean": "-0.353",
+        "Median": "-0.354",
+        "Best": "-0.358",
+        "1sigma Best": "-0.358",
+        "1sigma CI": "[-0.391, -0.314]"
     }
 ]

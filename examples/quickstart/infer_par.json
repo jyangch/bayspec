@@ -5,16 +5,16 @@
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "$\\alpha$",
-        "Value": -1.0,
-        "Prior": "unif(-8, 4)"
+        "Value": -1,
+        "Prior": "unif(-2, 2)"
     },
     {
         "par#": "2*",
         "Class": "model",
         "Expression": "cpl",
         "Component": "cpl",
-        "Parameter": "log$E_c$",
-        "Value": 2.0,
+        "Parameter": "log$E_p$",
+        "Value": 2,
         "Prior": "unif(0, 4)"
     },
     {
@@ -23,7 +23,7 @@
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "log$A$",
-        "Value": 0.0,
+        "Value": 0,
         "Prior": "unif(-10, 10)"
     },
     {
@@ -32,7 +32,7 @@
         "Expression": "data",
         "Component": "nai",
         "Parameter": "sf",
-        "Value": 1.0,
+        "Value": 1,
         "Prior": "frozen"
     },
     {
@@ -41,7 +41,7 @@
         "Expression": "data",
         "Component": "nai",
         "Parameter": "bf",
-        "Value": 1.0,
+        "Value": 1,
         "Prior": "frozen"
     },
     {
@@ -50,7 +50,7 @@
         "Expression": "data",
         "Component": "nai",
         "Parameter": "rf",
-        "Value": 1.0,
+        "Value": 1,
         "Prior": "frozen"
     },
     {
@@ -59,7 +59,7 @@
         "Expression": "data",
         "Component": "nai",
         "Parameter": "ra",
-        "Value": 0.0,
+        "Value": 0,
         "Prior": "frozen"
     },
     {
@@ -68,7 +68,7 @@
         "Expression": "data",
         "Component": "nai",
         "Parameter": "dec",
-        "Value": 0.0,
+        "Value": 0,
         "Prior": "frozen"
     },
     {
@@ -77,7 +77,7 @@
         "Expression": "data",
         "Component": "bgo",
         "Parameter": "sf",
-        "Value": 1.0,
+        "Value": 1,
         "Prior": "frozen"
     },
     {
@@ -86,7 +86,7 @@
         "Expression": "data",
         "Component": "bgo",
         "Parameter": "bf",
-        "Value": 1.0,
+        "Value": 1,
         "Prior": "frozen"
     },
     {
@@ -95,7 +95,7 @@
         "Expression": "data",
         "Component": "bgo",
         "Parameter": "rf",
-        "Value": 1.0,
+        "Value": 1,
         "Prior": "frozen"
     },
     {
@@ -104,7 +104,7 @@
         "Expression": "data",
         "Component": "bgo",
         "Parameter": "ra",
-        "Value": 0.0,
+        "Value": 0,
         "Prior": "frozen"
     },
     {
@@ -113,7 +113,7 @@
         "Expression": "data",
         "Component": "bgo",
         "Parameter": "dec",
-        "Value": 0.0,
+        "Value": 0,
         "Prior": "frozen"
     }
 ]

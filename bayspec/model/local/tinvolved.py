@@ -18,7 +18,6 @@ class hlecpl(Tinvolved):
     # 10.1088/0004-637X/690/1/L10
     
     def __init__(self):
-        super().__init__()
         
         self.expr = 'hlecpl'
         self.comment = 'curvature effect model for cpl function'
@@ -66,7 +65,6 @@ class hlecpl(Tinvolved):
 class hleband(Tinvolved):
     
     def __init__(self):
-        super().__init__()
         
         self.expr = 'hleband'
         self.comment = 'curvature effect model for band function'
@@ -122,7 +120,6 @@ class hleband(Tinvolved):
 class zxhsync(Tinvolved):
 
     def __init__(self):
-        super().__init__()
         
         self.expr = 'zxhsync'
         self.comment = "zxh's synchrotron model"
@@ -335,7 +332,6 @@ class zxhsync(Tinvolved):
 class katu(Tinvolved):
 
     def __init__(self):
-        super().__init__()
         
         self.expr = 'katu'
         self.comment = 'katu model'

@@ -3,18 +3,24 @@
         "cfg#": "1",
         "Component": "AS_TbAbs",
         "Parameter": "redshift",
-        "Value": 0.0
+        "Value": "0.0"
     },
     {
         "cfg#": "2",
         "Component": "cpl",
         "Parameter": "redshift",
-        "Value": 0.0
+        "Value": "0.0"
     },
     {
         "cfg#": "3",
         "Component": "cpl",
         "Parameter": "pivot_energy",
-        "Value": 1.0
+        "Value": "1.0"
+    },
+    {
+        "cfg#": "4",
+        "Component": "cpl",
+        "Parameter": "vFv_peak",
+        "Value": "True"
     }
 ]
