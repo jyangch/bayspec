@@ -1,16 +1,13 @@
 # Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
+import os
+import sys
 
+# -- Project information ---------------------------------------------------
 
 _info_ = {}
 with open("../../bayspec/__info__.py", "r") as f:
     exec(f.read(), _info_)
-
 
 project = 'bayspec'
 copyright = '2024, Jun Yang'
@@ -18,7 +15,6 @@ author = 'Jun Yang'
 release = _info_['__version__']
 
 # -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -27,8 +23,11 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.autosummary',
     'sphinxcontrib.rawfiles',
-    'nbsphinx',
     'myst_nb',
+]
+
+autodoc_mock_imports = [
+    'xspec_models_cxc'
 ]
 
 source_suffix = {
@@ -40,7 +39,6 @@ templates_path = ['_templates']
 exclude_patterns = []
 
 # -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'alabaster'
 html_static_path = ['_static']

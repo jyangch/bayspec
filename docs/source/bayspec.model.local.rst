@@ -20,14 +20,6 @@ bayspec.model.local.mathematic module
    :undoc-members:
    :show-inheritance:
 
-bayspec.model.local.tinvolved module
-------------------------------------
-
-.. automodule:: bayspec.model.local.tinvolved
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Module contents
 ---------------
 
