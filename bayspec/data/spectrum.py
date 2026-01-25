@@ -154,9 +154,26 @@ class Spectrum(object):
     
     def __str__(self):
         
-        print(self.info.table)
+        return (
+            f'*** Spectrum ***\n'
+            f'{self.info.text_table}'
+            )
         
-        return ''
+        
+    def __repr__(self):
+        
+        return self.__str__()
+    
+    
+    def _repr_html_(self):
+        
+        return (
+            f'{self.info.html_style}'
+            f'<details open>'
+            f'<summary style="margin-bottom: 10px;"><b>Spectrum</b></summary>'
+            f'{self.info.html_table}'
+            f'</details>'
+            )
 
 
 

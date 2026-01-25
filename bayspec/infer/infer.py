@@ -23,6 +23,8 @@ class Infer(object):
         self.loglike_func = None
         self.logprior_func = None
         self.prior_transform_func = None
+        
+        self.inference_type = 'Inference'
 
 
     @property
@@ -299,6 +301,13 @@ class Infer(object):
     
     
     @property
+    def clean_free_plabels(self):
+        
+        return [pl.replace('$', '').replace('{', '').replace('}', '').replace('\\', '') 
+                for pl in self._free_plabels]
+    
+    
+    @property
     def free_pvalues(self):
         
         return self._free_pvalues
@@ -319,9 +328,9 @@ class Infer(object):
     @property
     def cfg_info(self):
         
-        cfg_info = Info.list_dict_to_dict(self.all_config)
+        all_config = self.all_config.copy()
 
-        return Info.from_dict(cfg_info)
+        return Info.from_list_dict(all_config)
 
 
     @property
@@ -340,13 +349,13 @@ class Infer(object):
                 else:
                     par['Prior'] = '=par#{%s}'%(','.join(par['Mates']))
         
-        par_info = Info.list_dict_to_dict(all_params)
+        all_params = Info.list_dict_to_dict(all_params)
         
-        del par_info['Posterior']
-        del par_info['Mates']
-        del par_info['Frozen']
+        del all_params['Posterior']
+        del all_params['Mates']
+        del all_params['Frozen']
         
-        return Info.from_dict(par_info)
+        return Info.from_dict(all_params)
 
 
     @property
@@ -369,13 +378,13 @@ class Infer(object):
                     par['Prior'] = '=par#{%s}'%(','.join(par['Mates']))
             notable_params.append(par)
         
-        par_info = Info.list_dict_to_dict(notable_params)
+        notable_params = Info.list_dict_to_dict(notable_params)
         
-        del par_info['Posterior']
-        del par_info['Mates']
-        del par_info['Frozen']
+        del notable_params['Posterior']
+        del notable_params['Mates']
+        del notable_params['Frozen']
         
-        return Info.from_dict(par_info)
+        return Info.from_dict(notable_params)
         
         
     @property
@@ -383,13 +392,15 @@ class Infer(object):
         
         self._you_free()
         
-        free_par_info = Info.list_dict_to_dict(self.free_params)
+        free_params = self.free_params.copy()
         
-        del free_par_info['Posterior']
-        del free_par_info['Mates']
-        del free_par_info['Frozen']
+        free_params = Info.list_dict_to_dict(free_params)
         
-        return Info.from_dict(free_par_info)
+        del free_params['Posterior']
+        del free_params['Mates']
+        del free_params['Frozen']
+        
+        return Info.from_dict(free_params)
     
     
     def save(self, savepath):
@@ -651,6 +662,12 @@ class Infer(object):
     
     
     @property
+    def pseudo_residual_list(self):
+        
+        return [rd for pair in self.Pair for rd in pair.pseudo_residual_list]
+    
+    
+    @property
     def weight_list(self):
         
         return np.hstack([pair.weight_list for pair in self.Pair])
@@ -659,7 +676,13 @@ class Infer(object):
     @property
     def stat(self):
         
-        return np.sum([[pair.stat for pair in self.Pair]])
+        return np.sum([pair.stat for pair in self.Pair])
+    
+    
+    @property
+    def pseudo_residual(self):
+        
+        return np.hstack([pair.pseudo_residual for pair in self.Pair])
     
     
     @property
@@ -695,11 +718,12 @@ class Infer(object):
     @property
     def all_stat(self):
         
-        all_stat = OrderedDict([('Data', ['Total']), 
-                                ('Model', ['Total']), 
-                                ('Statistic', ['stat/dof']), 
-                                ('Value', ['{:.2f}/{:d}'.format(self.stat, self.dof)]), 
-                                ('Bins', ['{:d}'.format(self.npoint)])])
+        all_stat = OrderedDict()
+        all_stat['Data'] = ['Total']
+        all_stat['Model'] = ['Total']
+        all_stat['Statistic'] = ['stat/dof']
+        all_stat['Value'] = ['{:.3f}/{:d}'.format(self.stat, self.dof)]
+        all_stat['Bins'] = [self.npoint]
 
         for dt, mo in zip(self.Data, self.Model):
             mex = mo.expr
@@ -708,8 +732,8 @@ class Infer(object):
                 all_stat['Model'].insert(-1, mex)
                 all_stat['Statistic'].insert(-1, stat)
                 
-        all_stat['Value'] = ['%.2f' % stat for stat in self.stat_list] + all_stat['Value']
-        all_stat['Bins'] = ['%d' % point for point in self.npoint_list] + all_stat['Bins']
+        all_stat['Value'] = [stat for stat in self.stat_list] + all_stat['Value']
+        all_stat['Bins'] = [point for point in self.npoint_list] + all_stat['Bins']
 
         return all_stat
 
@@ -717,15 +741,43 @@ class Infer(object):
     @property
     def stat_info(self):
         
-        return Info.from_dict(self.all_stat)
+        all_stat = self.all_stat.copy()
+        
+        return Info.from_dict(all_stat)
 
 
     def __str__(self):
         
-        print(self.cfg_info.table)
-        print(self.notable_par_info.table)
+        return (
+            f'*** {self.inference_type} ***\n'
+            f'*** Configurations ***\n'
+            f'{self.cfg_info.text_table}\n'
+            f'*** Parameters ***\n'
+            f'{self.notable_par_info.text_table}'
+            )
         
-        return ''
+        
+    def __repr__(self):
+        
+        return self.__str__()
+    
+    
+    def _repr_html_(self):
+        
+        return (
+            f'{self.cfg_info.html_style}'
+            f'<details open>'
+            f'<summary style="margin-bottom: 10px;"><b>{self.inference_type}</b></summary>'
+            f'<details open style="margin-top: 10px;">'
+            f'<summary style="margin-bottom: 10px;"><b>Configurations</b></summary>'
+            f'{self.cfg_info.html_table}'
+            f'</details>'
+            f'<details open style="margin-top: 10px;">'
+            f'<summary style="margin-bottom: 10px;"><b>Parameters</b></summary>'
+            f'{self.notable_par_info.html_table}'
+            f'</details>'
+            f'</details>'
+            )
 
 
     def at_par(self, theta):
@@ -802,6 +854,13 @@ class Infer(object):
             return self.logprior
         else:
             return self.logprior_func(self, theta)
+        
+        
+    def calc_pseudo_residual(self, theta):
+        
+        self.at_par(theta)
+        
+        return self.pseudo_residual
             
 
     def calc_loglike(self, theta):
@@ -834,6 +893,15 @@ class Infer(object):
         prior_sample = np.prod(prior_list_sample, axis=1)
         
         return np.where(prior_sample == 0, -np.inf, np.log(prior_sample))
+
+
+
+class BayesInfer(Infer):
+    
+    def __init__(self, pairs=None):
+        super().__init__(pairs=pairs)
+        
+        self.inference_type = 'Bayesian Inference'
     
     
     def multinest_prior_transform(self, cube):
@@ -972,19 +1040,35 @@ class Infer(object):
         json.dump(self.discard, open(self.prefix + 'discard.json', 'w'), indent=4, cls=JsonEncoder)
         
         return Posterior(self)
+
+
+
+class MaxLikeFit(Infer):
     
-    
-    def minimize(self, method='Nelder-Mead'):
+    def __init__(self, pairs=None):
+        super().__init__(pairs=pairs)
         
-        """
-        method: 'Nelder-Mead', 'TNC', 'SLSQP', 'Powell', 'trust-constr', 'L-BFGS-B'
-        """
+        self.inference_type = 'Maximum Likelihood Estimation'
+        
+        
+    def lmfit_residual(self, params):
+        
+        theta = [params[pl] for pl in self.clean_free_plabels]
+        
+        return self.calc_pseudo_residual(theta)
+        
+        
+    def lmfit(self):
+        
+        import lmfit
         
         self._you_free()
         
-        np.random.seed(42)
-        nll = lambda *args: -2 * self.calc_loglike(*args)
-        pos = self.free_pvalues + 1e-4 * np.random.randn(self.free_nparams)
-        soln = minimize(nll, pos, method=method, bounds=self.free_pranges)
+        self.lmfit_params = lmfit.Parameters()
         
-        return soln.x
+        for pl, pv, pr in zip(self.clean_free_plabels, self.free_pvalues, self.free_pranges):
+            self.lmfit_params.add(pl, value=pv, min=pr[0], max=pr[1], vary=True)
+            
+        res = lmfit.minimize(self.lmfit_residual, self.lmfit_params)
+        
+        print(lmfit.fit_report(res))

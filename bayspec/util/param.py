@@ -159,12 +159,14 @@ class Par(object):
     
     
     @property
-    def range(self, q=0.95):
+    def range(self):
         
         if self.frozen:
             return (self.val, ) * 2
+        elif self.prior.expr == 'unif':
+            return self.prior.interval(1.0)
         else:
-            return self.prior.interval(q)
+            return self.prior.interval(0.95)
 
 
     def todict(self):

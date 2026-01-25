@@ -8,8 +8,8 @@
             ]
         ],
         "Statistic": "pgstat",
-        "Grouping": "None",
-        "Time": "None"
+        "Grouping": null,
+        "Time": null
     },
     {
         "Name": "n7",
@@ -20,8 +20,8 @@
             ]
         ],
         "Statistic": "pgstat",
-        "Grouping": "None",
-        "Time": "None"
+        "Grouping": null,
+        "Time": null
     },
     {
         "Name": "n8",
@@ -32,8 +32,8 @@
             ]
         ],
         "Statistic": "pgstat",
-        "Grouping": "None",
-        "Time": "None"
+        "Grouping": null,
+        "Time": null
     },
     {
         "Name": "n9",
@@ -44,8 +44,8 @@
             ]
         ],
         "Statistic": "pgstat",
-        "Grouping": "None",
-        "Time": "None"
+        "Grouping": null,
+        "Time": null
     },
     {
         "Name": "na",
@@ -56,8 +56,8 @@
             ]
         ],
         "Statistic": "pgstat",
-        "Grouping": "None",
-        "Time": "None"
+        "Grouping": null,
+        "Time": null
     },
     {
         "Name": "nb",
@@ -68,8 +68,8 @@
             ]
         ],
         "Statistic": "pgstat",
-        "Grouping": "None",
-        "Time": "None"
+        "Grouping": null,
+        "Time": null
     },
     {
         "Name": "b1",
@@ -80,7 +80,7 @@
             ]
         ],
         "Statistic": "pgstat",
-        "Grouping": "None",
-        "Time": "None"
+        "Grouping": null,
+        "Time": null
     }
 ]

@@ -13,7 +13,7 @@ from ..util.tools import cached_property, json_dump
 
 class Model(object):
     
-    _allowed_types = ('add', 'mul', 'conv', 'tinv', 'math')
+    _allowed_types = ('add', 'mul', 'conv', 'math')
 
     def __init__(self):
         
@@ -105,7 +105,7 @@ class Model(object):
                     {'cfg#': str(cid), 
                      'Component': expr, 
                      'Parameter': cl, 
-                     'Value': f'{cg.val}'})
+                     'Value': cg.val})
 
         return all_config
     
@@ -134,18 +134,27 @@ class Model(object):
 
     @property
     def cfg_info(self):
-            
-        return Info.from_list_dict(self.all_config)
+        
+        all_config = self.all_config.copy()
 
-  
+        return Info.from_list_dict(all_config)
+
+
     @property
     def par_info(self):
         
-        par_info = Info.list_dict_to_dict(self.all_params)
+        all_params = self.all_params.copy()
         
-        del par_info['Posterior']
+        for par in all_params:
+            if par['Frozen']:
+                par['Prior'] = 'frozen'
         
-        return Info.from_dict(par_info)
+        all_params = Info.list_dict_to_dict(all_params)
+        
+        del all_params['Posterior']
+        del all_params['Frozen']
+        
+        return Info.from_dict(all_params)
     
     
     def save(self, savepath):
@@ -185,25 +194,22 @@ class Model(object):
                 self._fit_to.fit_with = self
 
 
-    def integ(self, ebin, tarr=None, ngrid=5):
+    def integ(self, ebin, tarr, ngrid=5):
         
         scale = np.linspace(0, 1, ngrid)
-        egrid = ebin[:, [0]] + (ebin[:, [1]] - ebin[:, [0]]) * scale
         
+        egrid = ebin[:, [0]] + (ebin[:, [1]] - ebin[:, [0]]) * scale
         egrid = np.maximum(egrid, 1e-10)
         
+        tgrid = np.repeat(tarr[:, None], ngrid, axis=1)
+        
         if self.type == 'add':
-            fgrid = self.func(egrid.ravel()).reshape(-1, ngrid)
-            return np.trapz(fgrid, egrid, axis=1)
-            
-        elif self.type == 'tinv':
-            tgrid = np.repeat(tarr[:, None], ngrid, axis=1)
             fgrid = self.func(egrid.ravel(), tgrid.ravel()).reshape(-1, ngrid)
             return np.trapz(fgrid, egrid, axis=1)
             
         elif self.type == 'mul':
             ewidt = ebin[:, 1] - ebin[:, 0]
-            fgrid = self.func(egrid.ravel()).reshape(-1, ngrid)
+            fgrid = self.func(egrid.ravel(), tgrid.ravel()).reshape(-1, ngrid)
             return np.trapz(fgrid, egrid, axis=1) / ewidt
             
         else:
@@ -381,8 +387,8 @@ class Model(object):
     def rate_to_flux(self):
         
         ctsrate = [np.sum(cr) for cr in self.fit_to.net_ctsrate]
-        ergflux = [np.sum([self.ergflux(emin, emax, 1000) for emin, emax in notc])
-                   for notc in self.fit_to.notcs]
+        ergflux = [np.sum([self.ergflux(emin, emax, 1000, time) for emin, emax in notc])
+                   for notc, time in zip(self.fit_to.notcs, self.fit_to.times)]
         
         return [flux / rate for (flux, rate) in zip(ergflux, ctsrate)]
     
@@ -391,36 +397,36 @@ class Model(object):
     def conv_rate_to_flux(self):
         
         ctsrate = [np.sum(cr) for cr in self.conv_ctsrate]
-        ergflux = [np.sum([self.ergflux(emin, emax, 1000) for emin, emax in notc])
-                   for notc in self.fit_to.notcs]
+        ergflux = [np.sum([self.ergflux(emin, emax, 1000, time) for emin, emax in notc])
+                   for notc, time in zip(self.fit_to.notcs, self.fit_to.times)]
         
         return [flux / rate for (flux, rate) in zip(ergflux, ctsrate)]
     
     
-    def rate_to_fluxdensity(self, at=1, unit='Fv'):
+    def rate_to_fluxdensity(self, E=1, T=None, unit='Fv'):
         
         ctsrate = [np.sum(cr) for cr in self.fit_to.net_ctsrate]
         if unit == 'NE':    # photons cm-2 s-1 keV-1
-            fluxdensity = self.phtspec(at)
+            fluxdensity = self.phtspec(E, T)
         elif unit == 'Fv':  # erg cm-2 s-1 keV-1
-            fluxdensity = self.flxspec(at)
+            fluxdensity = self.flxspec(E, T)
         elif unit == 'Jy':  # Jansky
-            fluxdensity = self.flxspec(at) * 1e6 / 2.416
+            fluxdensity = self.flxspec(E, T) * 1e6 / 2.416
         else:
             raise ValueError(f'unsupported value of unit: {unit}')
             
         return [fluxdensity / rate for rate in ctsrate]
     
     
-    def conv_rate_to_fluxdensity(self, at=1, unit='fv'):
+    def conv_rate_to_fluxdensity(self, E=1, T=None, unit='Fv'):
         
         ctsrate = [np.sum(cr) for cr in self.conv_ctsrate]
         if unit == 'NE':    # photons cm-2 s-1 keV-1
-            fluxdensity = self.phtspec(at)
+            fluxdensity = self.phtspec(E, T)
         elif unit == 'Fv':  # erg cm-2 s-1 keV-1
-            fluxdensity = self.flxspec(at)
+            fluxdensity = self.flxspec(E, T)
         elif unit == 'Jy':  # Jansky
-            fluxdensity = self.flxspec(at) * 1e6 / 2.416
+            fluxdensity = self.flxspec(E, T) * 1e6 / 2.416
         else:
             raise ValueError(f'unsupported value of unit: {unit}')
             
@@ -430,28 +436,28 @@ class Model(object):
     def phtspec(self, E, T=None):
         # NE in units of photons cm-2 s-1 keV-1
         
-        if self.type not in ['add', 'tinv']:
-            msg = f'ne is invalid for {self.type} type model'
+        if self.type not in ['add']:
+            msg = f'phtspec is invalid for {self.type} type model'
             raise TypeError(msg)
         else:
             return self.func(E, T)
         
         
-    def nouspec(self, E):
+    def nouspec(self, E, T=None):
         # dimensionless
         
         if self.type not in ['mul', 'math']:
-            msg = f'fracspec is invalid for {self.type} type model'
+            msg = f'nouspec is invalid for {self.type} type model'
             raise TypeError(msg)
         else:
-            return self.func(E)
+            return self.func(E, T)
 
 
     def flxspec(self, E, T=None):
         # Fv in units of erg cm-2 s-1 keV-1
         
-        if self.type not in ['add', 'tinv']:
-            msg = f'ene is invalid for {self.type} type model'
+        if self.type not in ['add']:
+            msg = f'flxspec is invalid for {self.type} type model'
             raise TypeError(msg)
         else:
             return 1.60218e-9 * E * self.phtspec(E, T)
@@ -460,42 +466,34 @@ class Model(object):
     def ergspec(self, E, T=None):
         # vFv in units of erg cm-2 s-1
         
-        if self.type not in ['add', 'tinv']:
-            msg = f'eene is invalid for {self.type} type model'
+        if self.type not in ['add']:
+            msg = f'ergspec is invalid for {self.type} type model'
             raise TypeError(msg)
         else:
             return 1.60218e-9 * E * E * self.phtspec(E, T)
 
 
-    def phtflux(self, emin, emax, ngrid, epoch=None):
+    def phtflux(self, emin, emax, ngrid, time=None):
         # integ(NE, E) in units of photons cm-2 s-1
         
-        if self.type not in ['add', 'tinv']:
+        if self.type not in ['add']:
             msg = f'phtflux is invalid for {self.type} type model'
             raise TypeError(msg)
-        elif self.type == 'add':
+        else:
             egrid = np.logspace(np.log10(emin), np.log10(emax), ngrid)
-            return np.trapz(self.phtspec(egrid), egrid)
-        elif self.type == 'tinv':
-            assert epoch is not None
-            egrid = np.logspace(np.log10(emin), np.log10(emax), ngrid)
-            tgrid = np.ones_like(egrid) * epoch
+            tgrid = np.repeat(time, ngrid)
             return np.trapz(self.phtspec(egrid, tgrid), egrid)
             
         
-    def ergflux(self, emin, emax, ngrid, epoch=None):
+    def ergflux(self, emin, emax, ngrid, time=None):
         # integ(Fv, E) in units of erg cm-2 s-1
         
-        if self.type not in ['add', 'tinv']:
+        if self.type not in ['add']:
             msg = f'ergflux is invalid for {self.type} type model'
             raise TypeError(msg)
-        elif self.type == 'add':
+        else:
             egrid = np.logspace(np.log10(emin), np.log10(emax), ngrid)
-            return np.trapz(self.flxspec(egrid), egrid)
-        elif self.type == 'tinv':
-            assert epoch is not None
-            egrid = np.logspace(np.log10(emin), np.log10(emax), ngrid)
-            tgrid = np.ones_like(egrid) * epoch
+            tgrid = np.repeat(time, ngrid)
             return np.trapz(self.flxspec(egrid, tgrid), egrid)
         
         
@@ -557,32 +555,32 @@ class Model(object):
         return self.phtspec(E, T)
     
     
-    def best_nouspec(self, E):
+    def best_nouspec(self, E, T=None):
         
         self.at_par(self.par_best)
         
-        return self.nouspec(E)
+        return self.nouspec(E, T)
     
     
-    def best_ci_nouspec(self, E):
+    def best_ci_nouspec(self, E, T=None):
         
         self.at_par(self.par_best_ci)
         
-        return self.nouspec(E)
+        return self.nouspec(E, T)
     
     
-    def median_nouspec(self, E):
+    def median_nouspec(self, E, T=None):
         
         self.at_par(self.par_median)
         
-        return self.nouspec(E)
+        return self.nouspec(E, T)
     
     
-    def mean_nouspec(self, E):
+    def mean_nouspec(self, E, T=None):
         
         self.at_par(self.par_mean)
         
-        return self.nouspec(E)
+        return self.nouspec(E, T)
     
     
     def best_flxspec(self, E, T=None):
@@ -641,63 +639,63 @@ class Model(object):
         return self.ergspec(E, T)
     
     
-    def best_phtflux(self, emin, emax, ngrid, epoch=None):
+    def best_phtflux(self, emin, emax, ngrid, time=None):
         
         self.at_par(self.par_best)
         
-        return self.phtflux(emin, emax, ngrid, epoch)
+        return self.phtflux(emin, emax, ngrid, time)
     
     
-    def best_ci_phtflux(self, emin, emax, ngrid, epoch=None):
+    def best_ci_phtflux(self, emin, emax, ngrid, time=None):
         
         self.at_par(self.par_best_ci)
         
-        return self.phtflux(emin, emax, ngrid, epoch)
+        return self.phtflux(emin, emax, ngrid, time)
     
     
-    def median_phtflux(self, emin, emax, ngrid, epoch=None):
+    def median_phtflux(self, emin, emax, ngrid, time=None):
         
         self.at_par(self.par_median)
         
-        return self.phtflux(emin, emax, ngrid, epoch)
+        return self.phtflux(emin, emax, ngrid, time)
     
     
-    def mean_phtflux(self, emin, emax, ngrid, epoch=None):
+    def mean_phtflux(self, emin, emax, ngrid, time=None):
         
         self.at_par(self.par_mean)
         
-        return self.phtflux(emin, emax, ngrid, epoch)
+        return self.phtflux(emin, emax, ngrid, time)
     
     
-    def best_ergflux(self, emin, emax, ngrid, epoch=None):
+    def best_ergflux(self, emin, emax, ngrid, time=None):
         
         self.at_par(self.par_best)
         
-        return self.ergflux(emin, emax, ngrid, epoch)
+        return self.ergflux(emin, emax, ngrid, time)
     
     
-    def best_ci_ergflux(self, emin, emax, ngrid, epoch=None):
+    def best_ci_ergflux(self, emin, emax, ngrid, time=None):
         
         self.at_par(self.par_best_ci)
         
-        return self.ergflux(emin, emax, ngrid, epoch)
+        return self.ergflux(emin, emax, ngrid, time)
     
     
-    def median_ergflux(self, emin, emax, ngrid, epoch=None):
+    def median_ergflux(self, emin, emax, ngrid, time=None):
         
         self.at_par(self.par_median)
         
-        return self.ergflux(emin, emax, ngrid, epoch)
+        return self.ergflux(emin, emax, ngrid, time)
     
     
-    def mean_ergflux(self, emin, emax, ngrid, epoch=None):
+    def mean_ergflux(self, emin, emax, ngrid, time=None):
         
         self.at_par(self.par_mean)
         
-        return self.ergflux(emin, emax, ngrid, epoch)
+        return self.ergflux(emin, emax, ngrid, time)
     
 
-    def best_ergflux_ratio(self, erange1, erange2, ngrid, epoch=None):
+    def best_ergflux_ratio(self, erange1, erange2, ngrid, time=None):
         
         self.at_par(self.par_best)
 
@@ -705,10 +703,10 @@ class Model(object):
 
         emin2, emax2 = erange2
         
-        return self.ergflux(emin1, emax1, ngrid, epoch) / self.ergflux(emin2, emax2, ngrid, epoch)
+        return self.ergflux(emin1, emax1, ngrid, time) / self.ergflux(emin2, emax2, ngrid, time)
     
     
-    def best_ci_ergflux_ratio(self, erange1, erange2, ngrid, epoch=None):
+    def best_ci_ergflux_ratio(self, erange1, erange2, ngrid, time=None):
         
         self.at_par(self.par_best_ci)
 
@@ -716,10 +714,10 @@ class Model(object):
 
         emin2, emax2 = erange2
         
-        return self.ergflux(emin1, emax1, ngrid, epoch) / self.ergflux(emin2, emax2, ngrid, epoch)
+        return self.ergflux(emin1, emax1, ngrid, time) / self.ergflux(emin2, emax2, ngrid, time)
     
     
-    def median_ergflux_ratio(self, erange1, erange2, ngrid, epoch=None):
+    def median_ergflux_ratio(self, erange1, erange2, ngrid, time=None):
         
         self.at_par(self.par_median)
 
@@ -727,10 +725,10 @@ class Model(object):
 
         emin2, emax2 = erange2
         
-        return self.ergflux(emin1, emax1, ngrid, epoch) / self.ergflux(emin2, emax2, ngrid, epoch)
+        return self.ergflux(emin1, emax1, ngrid, time) / self.ergflux(emin2, emax2, ngrid, time)
     
     
-    def mean_ergflux_ratio(self, erange1, erange2, ngrid, epoch=None):
+    def mean_ergflux_ratio(self, erange1, erange2, ngrid, time=None):
         
         self.at_par(self.par_mean)
 
@@ -738,7 +736,7 @@ class Model(object):
 
         emin2, emax2 = erange2
         
-        return self.ergflux(emin1, emax1, ngrid, epoch) / self.ergflux(emin2, emax2, ngrid, epoch)
+        return self.ergflux(emin1, emax1, ngrid, time) / self.ergflux(emin2, emax2, ngrid, time)
 
 
     @property
@@ -798,13 +796,13 @@ class Model(object):
         return self.sample_statistic(sample)
     
     
-    def nouspec_sample(self, E):
+    def nouspec_sample(self, E, T=None):
         
         sample = np.zeros([self.posterior_nsample, len(E)], dtype=float)
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
-            sample[i] = self.nouspec(E)
+            sample[i] = self.nouspec(E, T)
             
         return self.sample_statistic(sample)
     
@@ -831,29 +829,29 @@ class Model(object):
         return self.sample_statistic(sample)
     
     
-    def phtflux_sample(self, emin, emax, ngrid, epoch=None):
+    def phtflux_sample(self, emin, emax, ngrid, time=None):
         
         sample = np.zeros(self.posterior_nsample, dtype=float)
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
-            sample[i] = self.phtflux(emin, emax, ngrid, epoch)
+            sample[i] = self.phtflux(emin, emax, ngrid, time)
             
         return self.sample_statistic(sample)
     
     
-    def ergflux_sample(self, emin, emax, ngrid, epoch=None):
+    def ergflux_sample(self, emin, emax, ngrid, time=None):
         
         sample = np.zeros(self.posterior_nsample, dtype=float)
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
-            sample[i] = self.ergflux(emin, emax, ngrid, epoch)
+            sample[i] = self.ergflux(emin, emax, ngrid, time)
             
         return self.sample_statistic(sample)
 
 
-    def ergflux_ratio_sample(self, erange1, erange2, ngrid, epoch=None):
+    def ergflux_ratio_sample(self, erange1, erange2, ngrid, time=None):
         
         sample = np.zeros(self.posterior_nsample, dtype=float)
 
@@ -863,7 +861,7 @@ class Model(object):
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
-            sample[i] = self.ergflux(emin1, emax1, ngrid, epoch) / self.ergflux(emin2, emax2, ngrid, epoch)
+            sample[i] = self.ergflux(emin1, emax1, ngrid, time) / self.ergflux(emin2, emax2, ngrid, time)
             
         return self.sample_statistic(sample)
 
@@ -915,13 +913,40 @@ class Model(object):
 
     def __str__(self):
         
-        print(f'{self.expr} [{self.type}]')
-        print(self.comment)
+        return (
+            f'*** Model ***\n'
+            f'{self.expr} [{self.type}]\n'
+            f'{self.comment}\n'
+            f'*** Model Configurations ***\n'
+            f'{self.cfg_info.text_table}\n'
+            f'*** Model Parameters ***\n'
+            f'{self.par_info.text_table}'
+            )
         
-        print(self.cfg_info.table)
-        print(self.par_info.table)
+    
+    def __repr__(self):
         
-        return ''
+        return self.__str__()
+    
+    
+    def _repr_html_(self):
+        
+        return (
+            f'{self.cfg_info.html_style}'
+            f'<details open>'
+            f'<summary style="margin-bottom: 10px;"><b>Model</b></summary>'
+            f'<p><b>{self.expr} [{self.type}]</b></p>'
+            f'<p style="white-space: pre-wrap;">{self.comment}</p>'
+            f'<details open style="margin-top: 10px;">'
+            f'<summary style="margin-bottom: 10px;"><b>Model Configurations</b></summary>'
+            f'{self.cfg_info.html_table}'
+            f'</details>'
+            f'<details open style="margin-top: 10px;">'
+            f'<summary style="margin-bottom: 10px;"><b>Model Parameters</b></summary>'
+            f'{self.par_info.html_table}'
+            f'</details>'
+            f'</details>'
+            )
 
 
 
@@ -931,21 +956,6 @@ class Additive(Model):
     def type(self):
         
         return 'add'
-
-
-    @type.setter
-    def type(self, new_type):
-        
-        pass
-
-
-
-class Tinvolved(Model):
-        
-    @property
-    def type(self):
-        
-        return 'tinv'
 
 
     @type.setter
@@ -998,7 +1008,7 @@ class FrozenConst(Mathematic):
         self.params['$C$'] = Par(value, frozen=True)
         
     
-    def func(self, E, T=None, O=None):
+    def func(self, E=None, T=None, O=None):
         
         C = self.params['$C$'].value
         
@@ -1120,10 +1130,8 @@ class CompositeModel(Model):
             assert self.m1.type == 'conv', msg
             return self.m2.type
         elif self.op == '+' or self.op == '-':
-            if set(types) < set(('add', 'tinv', 'math')):
-                if 'tinv' in types:
-                    return 'tinv'
-                elif 'add' in types:
+            if set(types) < set(('add', 'math')):
+                if 'add' in types:
                     return 'add'
                 else:
                     return 'math'
@@ -1138,8 +1146,6 @@ class CompositeModel(Model):
             assert 'mul' in types or 'math' in types, msg
             if 'conv' in types:
                 raise ValueError(msg)
-            elif 'tinv' in types:
-                return 'tinv'
             elif 'add' in types:
                 return 'add'
             elif 'mul' in types:
@@ -1150,8 +1156,6 @@ class CompositeModel(Model):
             assert self.m2.type in ('mul', 'math'), msg
             if 'conv' in types:
                 raise ValueError(msg)
-            elif 'tinv' in types:
-                return 'tinv'
             elif 'add' in types:
                 return 'add'
             elif 'mul' in types:
@@ -1166,125 +1170,80 @@ class CompositeModel(Model):
         return {'add(add)': False,
                 'add(mul)': False,
                 'add(conv)': False,
-                'add(tinv)': False,
                 'add(math)': False,
                 'mul(add)': False,
                 'mul(mul)': False,
                 'mul(conv)': False,
-                'mul(tinv)': False,
                 'mul(math)': False,
                 'conv(add)': 'add',
                 'conv(mul)': 'mul',
                 'conv(conv)': 'conv',
-                'conv(tinv)': 'tinv',
                 'conv(math)': 'math',
-                'tinv(add)': False,
-                'tinv(mul)': False,
-                'tinv(conv)': False,
-                'tinv(tinv)': False,
-                'tinv(math)': False,
                 'math(add)': False,
                 'math(mul)': False,
                 'math(conv)': False,
-                'math(tinv)': False,
                 'math(math)': False,
                 'add+add': 'add',
                 'add+mul': False,
                 'add+conv': False,
-                'add+tinv': 'tinv',
                 'add+math': 'add',
                 'mul+add': False,
                 'mul+mul': 'mul',
                 'mul+conv': False,
-                'mul+tinv': False,
                 'mul+math': 'mul',
                 'conv+add': False,
                 'conv+mul': False,
                 'conv+conv': False,
-                'conv+tinv': False,
                 'conv+math': False,
-                'tinv+add': 'tinv',
-                'tinv+mul': False,
-                'tinv+conv': False,
-                'tinv+tinv': 'tinv',
-                'tinv+math': 'tinv',
                 'math+add': 'add',
                 'math+mul': 'mul',
                 'math+conv': False,
-                'math+tinv': 'tinv',
                 'math+math': 'math',
                 'add-add': 'add',
                 'add-mul': False,
                 'add-conv': False,
-                'add-tinv': 'tinv',
                 'add-math': 'add',
                 'mul-add': False,
                 'mul-mul': 'mul',
                 'mul-conv': False,
-                'mul-tinv': False,
                 'mul-math': 'mul',
                 'conv-add': False,
                 'conv-mul': False,
                 'conv-conv': False,
-                'conv-tinv': False,
                 'conv-math': False,
-                'tinv-add': 'tinv',
-                'tinv-mul': False,
-                'tinv-conv': False,
-                'tinv-tinv': 'tinv',
-                'tinv-math': 'tinv',
                 'math-add': 'add',
                 'math-mul': 'mul',
                 'math-conv': False,
-                'math-tinv': 'tinv',
                 'math-math': 'math',
                 'add*add': False,
                 'add*mul': 'add',
                 'add*conv': False,
-                'add*tinv': False,
                 'add*math': 'add',
                 'mul*add': 'add',
                 'mul*mul': 'mul',
                 'mul*conv': False,
-                'mul*tinv': 'tinv',
                 'mul*math': 'mul',
                 'conv*add': False,
                 'conv*mul': False,
                 'conv*conv': False,
-                'conv*tinv': False,
                 'conv*math': False,
-                'tinv*add': False,
-                'tinv*mul': 'tinv',
-                'tinv*conv': False,
-                'tinv*tinv': False,
-                'tinv*math': 'tinv',
                 'math*add': 'add',
                 'math*mul': 'mul',
                 'math*conv': False,
-                'math*tinv': 'tinv',
                 'math*math': 'math',
                 'add/add': False,
                 'add/mul': 'add',
                 'add/conv': False,
-                'add/tinv': False,
                 'add/math': 'add',
                 'mul/add': False,
                 'mul/mul': 'mul',
                 'mul/conv': False,
-                'mul/tinv': False,
                 'mul/math': 'mul',
                 'conv/add': False,
                 'conv/mul': False,
                 'conv/conv': False,
-                'conv/tinv': False,
                 'conv/math': False,
-                'tinv/add': False,
-                'tinv/mul': 'tinv',
-                'tinv/conv': False,
-                'tinv/tinv': False,
-                'tinv/math': 'tinv',
                 'math/add': False,
                 'math/mul': 'mul',
                 'math/conv': False,
-                'math/tinv': False,
                 'math/math': 'math'}

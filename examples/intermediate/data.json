@@ -11,7 +11,7 @@
         "Grouping": {
             "min_nevt": 5
         },
-        "Time": "None"
+        "Time": null
     },
     {
         "Name": "ME",
@@ -22,7 +22,7 @@
             ]
         ],
         "Statistic": "pgstat",
-        "Grouping": "None",
-        "Time": "None"
+        "Grouping": null,
+        "Time": null
     }
 ]

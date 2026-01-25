@@ -1,6 +1,6 @@
 import numpy as np
 from bayspec.model.local import *
-from bayspec import DataUnit, Data, Infer, Plot
+from bayspec import DataUnit, Data, BayesInfer, Plot
 
 
 savepath = './quickstart'
@@ -23,22 +23,18 @@ bgo = DataUnit(
 
 data = Data([('nai', nai), ('bgo', bgo)])
 data.save(savepath)
-print('<data information>')
 print(data)
 
 model = cpl()
 model.save(savepath)
-print('<model information>')
 print(model)
 
-infer = Infer([(data, model)])
+infer = BayesInfer([(data, model)])
 infer.save(savepath)
-print('<infer information>')
 print(infer)
 
 post = infer.multinest(nlive=400, resume=True, savepath=savepath)
 post.save(savepath)
-print('<post information>')
 print(post)
 
 fig = Plot.infer(post, style='CE', ploter='plotly')

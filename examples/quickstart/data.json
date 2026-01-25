@@ -8,8 +8,8 @@
             ]
         ],
         "Statistic": "pgstat",
-        "Grouping": "None",
-        "Time": "None"
+        "Grouping": null,
+        "Time": null
     },
     {
         "Name": "bgo",
@@ -20,7 +20,7 @@
             ]
         ],
         "Statistic": "pgstat",
-        "Grouping": "None",
-        "Time": "None"
+        "Grouping": null,
+        "Time": null
     }
 ]

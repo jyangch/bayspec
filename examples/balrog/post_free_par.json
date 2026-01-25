@@ -38,7 +38,7 @@
     {
         "par#": "7",
         "Class": "data",
-        "Expression": "data",
+        "Expression": "_4",
         "Component": "n6",
         "Parameter": "ra",
         "Mean": "115.034",
@@ -50,7 +50,7 @@
     {
         "par#": "8",
         "Class": "data",
-        "Expression": "data",
+        "Expression": "_4",
         "Component": "n6",
         "Parameter": "dec",
         "Mean": "52.288",

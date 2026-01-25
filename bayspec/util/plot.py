@@ -73,25 +73,21 @@ class Plot(object):
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
 
-            fig = plt.figure(figsize=(8, 6))
+            fig = plt.figure(figsize=(7, 6))
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
 
-            ax.errorbar(x, y, yerr=y_e, fmt='-', lw=1.0, elinewidth=1.0, capsize=0)
+            ax.errorbar(x, y, yerr=y_e, fmt='-', lw=1.0, color=Plot.colors[0], elinewidth=1.0, capsize=0)
             ax.set_yscale('log')
             ax.set_xlabel('Channel')
             ax.set_ylabel('Counts')
-            ax.autoscale(axis='x', tight=True)
-            ax.autoscale(axis='y', tight=True)
             ax.minorticks_on()
+            ax.xaxis.set_ticks_position('both')
+            ax.yaxis.set_ticks_position('both')
             ax.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
             ax.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
-            ax.tick_params(which='major', width=0.5, length=3)
-            ax.tick_params(which='minor', width=0.5, length=2)
-            ax.spines['bottom'].set_linewidth(0.5)
-            ax.spines['left'].set_linewidth(0.5)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
+            ax.tick_params(axis='x', which='both', labeltop=False, labelbottom=True)
+            ax.tick_params(axis='y', which='both', labelleft=True, labelright=False)
             
         fig_data = {'spec': {'x': x, 'y': y, 'y_e': y_e}}
             
@@ -145,7 +141,7 @@ class Plot(object):
 
             X, Y = np.meshgrid(x, y)
             
-            fig = plt.figure(figsize=(8, 6))
+            fig = plt.figure(figsize=(7, 6))
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
 
@@ -155,6 +151,13 @@ class Plot(object):
             ax.set_xlabel('Channel energy (keV)')
             ax.set_ylabel('Photon energy (keV)')
             fig.colorbar(c, orientation='vertical')
+            ax.minorticks_on()
+            ax.xaxis.set_ticks_position('both')
+            ax.yaxis.set_ticks_position('both')
+            ax.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
+            ax.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
+            ax.tick_params(axis='x', which='both', labeltop=False, labelbottom=True)
+            ax.tick_params(axis='y', which='both', labelleft=True, labelright=False)
             
         fig_data = {'resp': {'x': x, 'y': y, 'z': z}}
             
@@ -200,25 +203,21 @@ class Plot(object):
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
 
-            fig = plt.figure(figsize=(8, 6))
+            fig = plt.figure(figsize=(7, 6))
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
 
-            ax.plot(x, y, lw=1.0)
+            ax.plot(x, y, lw=1.0, color=Plot.colors[0])
             ax.set_xscale('log')
             ax.set_yscale('log')
             ax.set_xlabel('Photon energy (keV)')
-            ax.autoscale(axis='x', tight=True)
-            ax.autoscale(axis='y', tight=True)
             ax.minorticks_on()
+            ax.xaxis.set_ticks_position('both')
+            ax.yaxis.set_ticks_position('both')
             ax.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
             ax.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
-            ax.tick_params(which='major', width=0.5, length=3)
-            ax.tick_params(which='minor', width=0.5, length=2)
-            ax.spines['bottom'].set_linewidth(0.5)
-            ax.spines['left'].set_linewidth(0.5)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
+            ax.tick_params(axis='x', which='both', labeltop=False, labelbottom=True)
+            ax.tick_params(axis='y', which='both', labelleft=True, labelright=False)
 
         fig_data = {'resp': {'x': x, 'y': y}}
             
@@ -263,25 +262,21 @@ class Plot(object):
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
 
-            fig = plt.figure(figsize=(8, 6))
+            fig = plt.figure(figsize=(7, 6))
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
 
-            ax.plot(x, y, lw=1.0)
+            ax.plot(x, y, lw=1.0, color=Plot.colors[0])
             ax.set_xscale('log')
             ax.set_yscale('log')
             ax.set_xlabel('Channel energy (keV)')
-            ax.autoscale(axis='x', tight=True)
-            ax.autoscale(axis='y', tight=True)
             ax.minorticks_on()
+            ax.xaxis.set_ticks_position('both')
+            ax.yaxis.set_ticks_position('both')
             ax.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
             ax.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
-            ax.tick_params(which='major', width=0.5, length=3)
-            ax.tick_params(which='minor', width=0.5, length=2)
-            ax.spines['bottom'].set_linewidth(0.5)
-            ax.spines['left'].set_linewidth(0.5)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
+            ax.tick_params(axis='x', which='both', labeltop=False, labelbottom=True)
+            ax.tick_params(axis='y', which='both', labelleft=True, labelright=False)
             
         fig_data = {'resp': {'x': x, 'y': y}}
             
@@ -334,7 +329,7 @@ class Plot(object):
                 x=x, 
                 y=src_y, 
                 mode='markers', 
-                name='src', 
+                name='Source', 
                 showlegend=True, 
                 error_x=dict(
                     type='data',
@@ -354,7 +349,7 @@ class Plot(object):
                 x=x, 
                 y=bkg_y, 
                 mode='markers', 
-                name='bkg', 
+                name='Background', 
                 showlegend=True, 
                 error_x=dict(
                     type='data',
@@ -374,7 +369,7 @@ class Plot(object):
                 x=x, 
                 y=net_y, 
                 mode='markers', 
-                name='net', 
+                name='Net', 
                 showlegend=True, 
                 error_x=dict(
                     type='data',
@@ -404,31 +399,27 @@ class Plot(object):
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
 
-            fig = plt.figure(figsize=(8, 6))
+            fig = plt.figure(figsize=(7, 6))
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
             
             ax.errorbar(x, src_y, xerr = [x_le, x_he], yerr=src_y_e, fmt='none', 
-                        ecolor='m', elinewidth=1.0, capsize=0, label='src')
+                        ecolor=Plot.colors[0], elinewidth=1.0, capsize=0, label='Source')
             ax.errorbar(x, bkg_y, xerr = [x_le, x_he], yerr=bkg_y_e, fmt='none', 
-                        ecolor='b', elinewidth=1.0, capsize=0, label='bkg')
+                        ecolor=Plot.colors[1], elinewidth=1.0, capsize=0, label='Background')
             ax.errorbar(x, net_y, xerr = [x_le, x_he], yerr=net_y_e, fmt='none', 
-                        ecolor='c', elinewidth=1.0, capsize=0, label='net')
+                        ecolor=Plot.colors[2], elinewidth=1.0, capsize=0, label='Net')
             ax.set_xscale('log')
             ax.set_yscale('log')
             ax.set_xlabel('Energy (keV)')
             ax.set_ylabel(ylabel)
-            ax.autoscale(axis='x', tight=True)
-            ax.autoscale(axis='y', tight=True)
             ax.minorticks_on()
+            ax.xaxis.set_ticks_position('both')
+            ax.yaxis.set_ticks_position('both')
             ax.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
             ax.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
-            ax.tick_params(which='major', width=0.5, length=3)
-            ax.tick_params(which='minor', width=0.5, length=2)
-            ax.spines['bottom'].set_linewidth(0.5)
-            ax.spines['left'].set_linewidth(0.5)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
+            ax.tick_params(axis='x', which='both', labeltop=False, labelbottom=True)
+            ax.tick_params(axis='y', which='both', labelleft=True, labelright=False)
             ax.legend()
             
         fig_data = {
@@ -452,7 +443,7 @@ class Plot(object):
             rcParams['font.family'] = 'sans-serif'
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
-            fig = plt.figure(figsize=(8, 6))
+            fig = plt.figure(figsize=(7, 6))
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
             
@@ -484,7 +475,7 @@ class Plot(object):
                     x=x[i].astype(float), 
                     y=y[i].astype(float), 
                     mode='markers', 
-                    name=f'obs of {name}', 
+                    name=f'{name}', 
                     showlegend=True, 
                     error_x=dict(
                         type='data',
@@ -521,17 +512,13 @@ class Plot(object):
             ax.set_yscale('log')
             ax.set_xlabel('Energy (keV)')
             ax.set_ylabel(ylabel)
-            ax.autoscale(axis='x', tight=True)
-            ax.autoscale(axis='y', tight=True)
             ax.minorticks_on()
+            ax.xaxis.set_ticks_position('both')
+            ax.yaxis.set_ticks_position('both')
             ax.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
             ax.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
-            ax.tick_params(which='major', width=0.5, length=3)
-            ax.tick_params(which='minor', width=0.5, length=2)
-            ax.spines['bottom'].set_linewidth(0.5)
-            ax.spines['left'].set_linewidth(0.5)
-            ax.spines['right'].set_visible(False)
-            ax.spines['top'].set_visible(False)
+            ax.tick_params(axis='x', which='both', labeltop=False, labelbottom=True)
+            ax.tick_params(axis='y', which='both', labelleft=True, labelright=False)
             ax.legend()
             
         return Figure(fig, fig_data, ploter)
@@ -628,7 +615,7 @@ class Plot(object):
                     x=obs_x[i].astype(float), 
                     y=obs_y[i].astype(float), 
                     mode='markers', 
-                    name=f'obs of {name}', 
+                    name=name, 
                     showlegend=False, 
                     error_x=dict(
                         type='data',
@@ -655,7 +642,7 @@ class Plot(object):
                 res = go.Scatter(
                     x=obs_x[i].astype(float), 
                     y=res_y[i].astype(float), 
-                    name=f'res of {name}', 
+                    name=name, 
                     showlegend=False, 
                     mode='markers', 
                     marker=dict(symbol='cross-thin', size=10, color=Plot.colors[i], 
@@ -691,32 +678,24 @@ class Plot(object):
             ax1.set_ylabel(ylabel)
             ax1.set_ylim([ymin, ymax])
             ax1.minorticks_on()
-            ax1.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
-            ax1.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
-            ax1.tick_params(which='major', width=1.0, length=5)
-            ax1.tick_params(which='minor', width=1.0, length=3)
             ax1.xaxis.set_ticks_position('both')
             ax1.yaxis.set_ticks_position('both')
-            plt.setp(ax1.get_xticklabels(), visible=False)
-            ax1.spines['bottom'].set_linewidth(1.0)
-            ax1.spines['top'].set_linewidth(1.0)
-            ax1.spines['left'].set_linewidth(1.0)
-            ax1.spines['right'].set_linewidth(1.0)
-            ax1.legend(frameon=True)
+            ax1.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
+            ax1.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
+            ax1.tick_params(axis='x', which='both', labeltop=False, labelbottom=False)
+            ax1.tick_params(axis='y', which='both', labelleft=True, labelright=False)
+            ax1.legend()
             ax2.axhline(0, c='grey', lw=1, ls='--')
             ax2.set_xlabel('Energy (keV)')
             ax2.set_ylabel('Sigma')
-            ax2.set_ylim([-3.5, 3.5])
+            ax2.set_ylim([-3.49, 3.49])
             ax2.minorticks_on()
+            ax2.xaxis.set_ticks_position('both')
+            ax2.yaxis.set_ticks_position('both')
             ax2.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
             ax2.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
-            ax2.tick_params(which='major', width=1.0, length=5)
-            ax2.tick_params(which='minor', width=1.0, length=3)
-            ax2.yaxis.set_ticks_position('both')
-            ax2.spines['bottom'].set_linewidth(1.0)
-            ax2.spines['top'].set_linewidth(1.0)
-            ax2.spines['left'].set_linewidth(1.0)
-            ax2.spines['right'].set_linewidth(1.0)
+            ax2.tick_params(axis='x', which='both', labeltop=False, labelbottom=True)
+            ax2.tick_params(axis='y', which='both', labelleft=True, labelright=False)
             
         return Figure(fig, fig_data, ploter)
             
@@ -734,6 +713,13 @@ class Plot(object):
             ax.set_xlim(0, len(cls.params_samples))
             ax.set_ylabel(cls.free_plabels[i])
             ax.yaxis.set_label_coords(-0.1, 0.5)
+            ax.minorticks_on()
+            ax.xaxis.set_ticks_position('both')
+            ax.yaxis.set_ticks_position('both')
+            ax.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
+            ax.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
+            ax.tick_params(axis='x', which='both', labeltop=False, labelbottom=True)
+            ax.tick_params(axis='y', which='both', labelleft=True, labelright=False)
         axes[-1].set_xlabel("step number")
         
         fig_data = None
@@ -858,7 +844,7 @@ class Plot(object):
                     x=obs_x[i].astype(float), 
                     y=obs_y[i].astype(float), 
                     mode='markers', 
-                    name=f'obs of {name}', 
+                    name=name, 
                     showlegend=False, 
                     error_x=dict(
                         type='data',
@@ -885,7 +871,7 @@ class Plot(object):
                 res = go.Scatter(
                     x=obs_x[i].astype(float), 
                     y=res_y[i].astype(float), 
-                    name=f'res of {name}', 
+                    name=name, 
                     showlegend=False, 
                     mode='markers', 
                     marker=dict(symbol='cross-thin', size=10, color=Plot.colors[i], 
@@ -921,32 +907,26 @@ class Plot(object):
             ax1.set_ylabel(f'$\\rm {ylabel}$')
             ax1.set_ylim([ymin, ymax])
             ax1.minorticks_on()
-            ax1.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
-            ax1.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
-            ax1.tick_params(which='major', width=1.0, length=5)
-            ax1.tick_params(which='minor', width=1.0, length=3)
+            ax1.minorticks_on()
             ax1.xaxis.set_ticks_position('both')
             ax1.yaxis.set_ticks_position('both')
-            plt.setp(ax1.get_xticklabels(), visible=False)
-            ax1.spines['bottom'].set_linewidth(1.0)
-            ax1.spines['top'].set_linewidth(1.0)
-            ax1.spines['left'].set_linewidth(1.0)
-            ax1.spines['right'].set_linewidth(1.0)
-            ax1.legend(frameon=True)
+            ax1.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
+            ax1.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
+            ax1.tick_params(axis='x', which='both', labeltop=False, labelbottom=False)
+            ax1.tick_params(axis='y', which='both', labelleft=True, labelright=False)
+            ax1.legend()
             ax2.axhline(0, c='grey', lw=1, ls='--')
             ax2.set_xlabel('Energy (keV)')
             ax2.set_ylabel('Sigma')
-            ax2.set_ylim([-3.5, 3.5])
+            ax2.set_ylim([-3.49, 3.49])
             ax2.minorticks_on()
+            ax2.minorticks_on()
+            ax2.xaxis.set_ticks_position('both')
+            ax2.yaxis.set_ticks_position('both')
             ax2.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
             ax2.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
-            ax2.tick_params(which='major', width=1.0, length=5)
-            ax2.tick_params(which='minor', width=1.0, length=3)
-            ax2.yaxis.set_ticks_position('both')
-            ax2.spines['bottom'].set_linewidth(1.0)
-            ax2.spines['top'].set_linewidth(1.0)
-            ax2.spines['left'].set_linewidth(1.0)
-            ax2.spines['right'].set_linewidth(1.0)
+            ax2.tick_params(axis='x', which='both', labeltop=False, labelbottom=True)
+            ax2.tick_params(axis='y', which='both', labelleft=True, labelright=False)
             
         return Figure(fig, fig_data, ploter)
             
@@ -1115,7 +1095,7 @@ class ModelPlot(object):
         elif self.style == 'vFv' or self.style == 'EENE':
             ylabel = 'erg/cm2/s'
         elif self.style == 'NoU':
-            ylabel = 'dimensionless'
+            ylabel = 'Dimensionless'
         else:
             raise ValueError(f'unsupported style argument: {self.style}')
         
@@ -1133,7 +1113,7 @@ class ModelPlot(object):
             rcParams['font.size'] = 12
             rcParams['pdf.fonttype'] = 42
 
-            self.fig = plt.figure(figsize=(8, 6))
+            self.fig = plt.figure(figsize=(7, 6))
             gs = self.fig.add_gridspec(1, 1, wspace=0, hspace=0)
             self.ax = self.fig.add_subplot(gs[0, 0])
             
@@ -1143,14 +1123,12 @@ class ModelPlot(object):
             self.ax.set_ylabel(ylabel)
             if yrange is not None: self.ax.set_ylim(yrange)
             self.ax.minorticks_on()
+            self.ax.xaxis.set_ticks_position('both')
+            self.ax.yaxis.set_ticks_position('both')
             self.ax.tick_params(axis='x', which='both', direction='in', labelcolor='k', colors='k')
             self.ax.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
-            self.ax.tick_params(which='major', width=0.5, length=3)
-            self.ax.tick_params(which='minor', width=0.5, length=2)
-            self.ax.spines['bottom'].set_linewidth(0.5)
-            self.ax.spines['left'].set_linewidth(0.5)
-            self.ax.spines['right'].set_visible(False)
-            self.ax.spines['top'].set_visible(False)
+            self.ax.tick_params(axis='x', which='both', labeltop=False, labelbottom=True)
+            self.ax.tick_params(axis='y', which='both', labelleft=True, labelright=False)
             
         self.fig_data = {}
             
@@ -1179,7 +1157,7 @@ class ModelPlot(object):
         x = np.array(E).astype(float)
         
         if self.style == 'NE':
-            if model.type not in ['add', 'tinv']:
+            if model.type not in ['add']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
             if post:
@@ -1194,7 +1172,7 @@ class ModelPlot(object):
                 y = model.phtspec(E, T).astype(float)
                 
         elif self.style == 'Fv' or self.style == 'ENE':
-            if model.type not in ['add', 'tinv']:
+            if model.type not in ['add']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
             if post:
@@ -1209,7 +1187,7 @@ class ModelPlot(object):
                 y = model.flxspec(E, T).astype(float)
                 
         elif self.style == 'vFv' or self.style == 'EENE':
-            if model.type not in ['add', 'tinv', 'math']:
+            if model.type not in ['add']:
                 raise AttributeError(f'{self.style} is invalid for {model.type} type model')
             
             if post:
@@ -1278,7 +1256,7 @@ class ModelPlot(object):
             if post: 
                 self.ax.fill_between(x, y_ci[0], y_ci[1], fc=ModelPlot.colors[self.model_index], 
                                      alpha=0.5, label=f'{model.expr} CI')
-            self.ax.legend(frameon=True)
+            self.ax.legend()
 
         if post:
             self.fig_data[model.expr] = {'x': x, 'y': y, 'y_ci': y_ci}

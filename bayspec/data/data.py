@@ -166,36 +166,35 @@ class Data(object):
     
     @property
     def cfg_info(self):
-            
-        return Info.from_list_dict(self.all_config)
+        
+        all_config = self.all_config.copy()
+
+        return Info.from_list_dict(all_config)
     
     
     @property
     def par_info(self):
         
-        par_info = Info.list_dict_to_dict(self.all_params)
+        all_params = self.all_params.copy()
         
-        del par_info['Posterior']
+        all_params = Info.list_dict_to_dict(all_params)
         
-        return Info.from_dict(par_info)
+        del all_params['Posterior']
+        
+        return Info.from_dict(all_params)
 
 
     @property
     def info(self):
         
-        info_dict = OrderedDict()
-        info_dict['Name'] = [key for key in self.data.keys()]
-        info_dict['Noticing'] = [unit.notc for unit in self.data.values()]
-        info_dict['Statistic'] = [unit.stat for unit in self.data.values()]
-        info_dict['Grouping'] = [unit.grpg for unit in self.data.values()]
-        info_dict['Time'] = [unit.time for unit in self.data.values()]
-        
-        for key, values in info_dict.items():
-            for i, value in enumerate(values):
-                if value is None:
-                    info_dict[key][i] = 'None'
+        info = OrderedDict()
+        info['Name'] = [key for key in self.data.keys()]
+        info['Noticing'] = [unit.notc for unit in self.data.values()]
+        info['Statistic'] = [unit.stat for unit in self.data.values()]
+        info['Grouping'] = [unit.grpg for unit in self.data.values()]
+        info['Time'] = [unit.time for unit in self.data.values()]
 
-        return Info.from_dict(info_dict)
+        return Info.from_dict(info)
 
 
     def save(self, savepath):
@@ -727,14 +726,36 @@ class Data(object):
     def __contains__(self, key):
         
         return key in self._data
-
-
+    
+    
     def __str__(self):
         
-        print(self.info.table)
-        print(self.par_info.table)
+        return (
+            f'*** Data ***\n'
+            f'{self.info.text_table}\n'
+            f'*** Data Parameters ***\n'
+            f'{self.par_info.text_table}'
+            )
         
-        return ''
+        
+    def __repr__(self):
+        
+        return self.__str__()
+    
+    
+    def _repr_html_(self):
+        
+        return (
+            f'{self.info.html_style}'
+            f'<details open>'
+            f'<summary style="margin-bottom: 10px;"><b>Data</b></summary>'
+            f'{self.info.html_table}'
+            f'<details open style="margin-top: 10px;">'
+            f'<summary style="margin-bottom: 10px;"><b>Data Parameters</b></summary>'
+            f'{self.par_info.html_table}'
+            f'</details>'
+            f'</details>'
+            )
 
 
 
@@ -1301,13 +1322,9 @@ class DataUnit(object):
         info_dict['grpg'] = self.grpg
         info_dict['time'] = self.time
         info_dict['weight'] = self.weight
-        
-        for key, value in info_dict.items():
-            if value is None:
-                info_dict[key] = 'None'
 
-        info_dict = OrderedDict([('property', info_dict.keys()), 
-                                 (self.name, info_dict.values())])
+        info_dict = OrderedDict([('Property', list(info_dict.keys())), 
+                                 (self.name, list(info_dict.values()))])
         
         return Info.from_dict(info_dict)
     
@@ -1726,9 +1743,26 @@ class DataUnit(object):
 
     def __str__(self):
         
-        print(self.info.table)
+        return (
+            f'*** DataUnit ***\n'
+            f'{self.info.text_table}'
+            )
         
-        return ''
+        
+    def __repr__(self):
+        
+        return self.__str__()
+    
+    
+    def _repr_html_(self):
+        
+        return (
+            f'{self.info.html_style}'
+            f'<details open>'
+            f'<summary style="margin-bottom: 10px;"><b>DataUnit</b></summary>'
+            f'{self.info.html_table}'
+            f'</details>'
+            )
     
     
     @staticmethod

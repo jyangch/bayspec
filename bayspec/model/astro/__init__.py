@@ -135,13 +135,18 @@ for name, cls in model_classes.items():
                 if pl == 'piv': pl = 'pivot_energy'
                 pr.value = self.config[pl].value
                 
+        E = np.asarray(E)
+        scalar = E.ndim == 0
+        if scalar: E = E[np.newaxis]
+                
         if 'redshift' not in self.asmodel.parameters:
             redshift = self.config['redshift'].value
             zi = 1 + redshift
             E = E * zi
             
         asres = self.asmodel(np.array(E, dtype=float))
-        return asres
+        
+        return asres[0] if scalar else asres
 
     new_class = type(f'AS_{name}', (Model,), {'__init__': make_init(name, cls), 'func': func})
     

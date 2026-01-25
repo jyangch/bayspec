@@ -1,3 +1,4 @@
+import pandas as pd
 from tabulate import tabulate
 
 
@@ -20,8 +21,15 @@ class Info(object):
         
         if not isinstance(new_data_dict, dict):
             raise TypeError('expected an instance of dict')
+
+        normalized_dict = {}
+        for key, value in new_data_dict.items():
+            if isinstance(value, list):
+                normalized_dict[key] = value
+            else:
+                normalized_dict[key] = [value]
         
-        self._data_dict = new_data_dict
+        self._data_dict = normalized_dict
         
         
     @property
@@ -34,6 +42,37 @@ class Info(object):
     def data_list_dict(self):
         
         return Info.dict_to_list_dict(self.data_dict)
+    
+    
+    @property
+    def data_frame(self):
+        
+        return pd.DataFrame(self.data_dict)
+    
+    
+    @property
+    def sanitized_data_dict(self):
+
+        sanitized_data_dict = {}
+        
+        for key, values in self.data_dict.items():
+            new_col = []
+            for v in values:
+                if isinstance(v, bool):
+                    new_col.append(str(v))
+
+                elif isinstance(v, float):
+                    new_col.append(f'{v:.3f}')
+
+                elif v is None:
+                    new_col.append('None')
+
+                else:
+                    new_col.append(str(v))
+            
+            sanitized_data_dict[key] = new_col
+            
+        return sanitized_data_dict
         
         
     @classmethod
@@ -119,20 +158,66 @@ class Info(object):
         values = [list(item.values()) for item in list_dict]
         
         return [keys] + values
-    
-    
+
+
     @property
-    def table(self):
+    def text_table(self):
         
-        return tabulate(self.data_dict, 
+        return tabulate(self.sanitized_data_dict, 
                         headers='keys', 
                         tablefmt='fancy_grid', 
+                        missingval='None', 
                         numalign='center', 
                         stralign='center', 
                         disable_numparse=True)
 
+
+    @property
+    def html_style(self):
+        
+        return """
+            <style>
+            .my-table {
+                border-collapse: collapse;
+                font-family: sans-serif;
+            }
+            .my-table th, .my-table td {
+                padding-left: 12px;
+                padding-right: 12px;
+
+                padding-top: 8px;
+                padding-bottom: 8px;
+                
+                text-align: center
+                border: none;
+            }
+            </style>
+            """
+
+
+    @property
+    def html_table(self):
+        
+        return tabulate(self.sanitized_data_dict, 
+                        headers='keys', 
+                        tablefmt='html', 
+                        missingval='None', 
+                        numalign='center', 
+                        stralign='center', 
+                        disable_numparse=True
+                        ).replace('<table>', '<table class="my-table">')
+        
+        
     def __str__(self):
         
-        print(self.table)
-
-        return ''
+        return f'{self.text_table}'
+    
+    
+    def __repr__(self):
+        
+        return self.__str__()
+    
+    
+    def _repr_html_(self):
+        
+        return f'{self.html_table}'

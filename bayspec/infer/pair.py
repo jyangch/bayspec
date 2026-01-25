@@ -15,9 +15,6 @@ class Pair(object):
                       'ppstat': Statistic.PPstat, 
                       'cstat': Statistic.PPstat, 
                       'pgstat': Statistic.PGstat, 
-                      'Xppstat': Statistic.PPstat_Xspec, 
-                      'Xcstat': Statistic.PPstat_Xspec, 
-                      'Xpgstat': Statistic.PGstat_Xspec, 
                       'ULppstat': Statistic.PPstat_UL, 
                       'ULpgstat': Statistic.PGstat_UL}
 
@@ -81,6 +78,15 @@ class Pair(object):
         return ctsrate
     
     
+    def _convolve_f64(self):
+        
+        flat_phtflux = self.model.integ(self.data.ebin, self.data.tarr)
+        phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.data.bin_start, self.data.bin_stop)]
+        ctsrate = [np.dot(pf, drm).astype(np.float64) for (pf, drm) in zip(phtflux, self.data.corr_rsp_drm)]
+        
+        return ctsrate
+    
+    
     def _re_convolve(self):
         
         flat_phtflux = self.model.integ(self.data.ebin, self.data.tarr)
@@ -94,6 +100,12 @@ class Pair(object):
     def conv_ctsrate(self):
         
         return self._convolve()
+    
+    
+    @property
+    def conv_ctsrate_f64(self):
+        
+        return self._convolve_f64()
     
     
     @property
@@ -196,8 +208,8 @@ class Pair(object):
     def rate_to_flux(self):
         
         ctsrate = [np.sum(cr) for cr in self.data.net_ctsrate]
-        ergflux = [np.sum([self.model.ergflux(emin, emax, 1000) for emin, emax in notc])
-                   for notc in self.data.notcs]
+        ergflux = [np.sum([self.model.ergflux(emin, emax, 1000, time) for emin, emax in notc])
+                   for notc, time in zip(self.data.notcs, self.data.times)]
         
         return [flux / rate for (flux, rate) in zip(ergflux, ctsrate)]
     
@@ -206,36 +218,36 @@ class Pair(object):
     def conv_rate_to_flux(self):
         
         ctsrate = [np.sum(cr) for cr in self.conv_ctsrate]
-        ergflux = [np.sum([self.model.ergflux(emin, emax, 1000) for emin, emax in notc])
-                   for notc in self.data.notcs]
+        ergflux = [np.sum([self.model.ergflux(emin, emax, 1000, time) for emin, emax in notc])
+                   for notc, time in zip(self.data.notcs, self.data.times)]
         
         return [flux / rate for (flux, rate) in zip(ergflux, ctsrate)]
     
     
-    def rate_to_fluxdensity(self, at=1, unit='fv'):
+    def rate_to_fluxdensity(self, E=1, T=None, unit='fv'):
         
         ctsrate = [np.sum(cr) for cr in self.data.net_ctsrate]
         if unit == 'NE':    # photons cm-2 s-1 keV-1
-            fluxdensity = self.model.phtspec(at)
+            fluxdensity = self.model.phtspec(E, T)
         elif unit == 'Fv':  # erg cm-2 s-1 keV-1
-            fluxdensity = self.model.flxspec(at)
+            fluxdensity = self.model.flxspec(E, T)
         elif unit == 'Jy':  # Jansky
-            fluxdensity = self.model.flxspec(at) * 1e6 / 2.416
+            fluxdensity = self.model.flxspec(E, T) * 1e6 / 2.416
         else:
             raise ValueError(f'unsupported value of unit: {unit}')
             
         return [fluxdensity / rate for rate in ctsrate]
     
     
-    def conv_rate_to_fluxdensity(self, at=1, unit='fv'):
+    def conv_rate_to_fluxdensity(self, E=1, T=None, unit='fv'):
         
         ctsrate = [np.sum(cr) for cr in self.conv_ctsrate]
         if unit == 'NE':    # photons cm-2 s-1 keV-1
-            fluxdensity = self.model.phtspec(at)
+            fluxdensity = self.model.phtspec(E, T)
         elif unit == 'Fv':  # erg cm-2 s-1 keV-1
-            fluxdensity = self.model.flxspec(at)
+            fluxdensity = self.model.flxspec(E, T)
         elif unit == 'Jy':  # Jansky
-            fluxdensity = self.model.flxspec(at) * 1e6 / 2.416
+            fluxdensity = self.model.flxspec(E, T) * 1e6 / 2.416
         else:
             raise ValueError(f'unsupported value of unit: {unit}')
             
@@ -338,26 +350,54 @@ class Pair(object):
         return lambda S, B, m, ts, tb, sigma_S, sigma_B, stat: \
             np.inf if np.isnan(m).any() or np.isinf(m).any() else \
                 self._allowed_stats[stat](S=S, B=B, m=m, ts=ts, tb=tb, \
-                    sigma_S=sigma_S, sigma_B=sigma_B)
+                    sigma_S=sigma_S, sigma_B=sigma_B)[0]
+                
+                
+    @cached_property()
+    def pseudo_residual_func(self):
+        
+        return lambda S, B, m, ts, tb, sigma_S, sigma_B, stat: \
+            np.ones_like(m) * np.inf if np.isnan(m).any() or np.isinf(m).any() else \
+                self._allowed_stats[stat](S=S, B=B, m=m, ts=ts, tb=tb, \
+                    sigma_S=sigma_S, sigma_B=sigma_B)[1]
 
 
     def _stat_calculate(self):
         
-        return np.array(list(map(self.stat_func, 
-                                 self.data.src_counts_f64, 
-                                 self.data.bkg_counts_f64, 
-                                 self.model.conv_ctsrate_f64, 
-                                 self.data.corr_src_efficiency_f64, 
-                                 self.data.corr_bkg_efficiency_f64, 
-                                 self.data.src_errors_f64, 
-                                 self.data.bkg_errors_f64, 
-                                 self.data.stats))).astype(float)
+        return list(map(self.stat_func, 
+                        self.data.src_counts_f64, 
+                        self.data.bkg_counts_f64, 
+                        self.model.conv_ctsrate_f64, 
+                        self.data.corr_src_efficiency_f64, 
+                        self.data.corr_bkg_efficiency_f64, 
+                        self.data.src_errors_f64, 
+                        self.data.bkg_errors_f64, 
+                        self.data.stats))
+        
+        
+    def _pseudo_residual_calculate(self):
+        
+        return list(map(self.pseudo_residual_func, 
+                        self.data.src_counts_f64, 
+                        self.data.bkg_counts_f64, 
+                        self.model.conv_ctsrate_f64, 
+                        self.data.corr_src_efficiency_f64, 
+                        self.data.corr_bkg_efficiency_f64, 
+                        self.data.src_errors_f64, 
+                        self.data.bkg_errors_f64, 
+                        self.data.stats))
 
 
     @property
     def stat_list(self):
         
-        return self._stat_calculate()
+        return np.array(self._stat_calculate())
+    
+    
+    @property
+    def pseudo_residual_list(self):
+        
+        return self._pseudo_residual_calculate()
     
     
     @property
@@ -370,6 +410,13 @@ class Pair(object):
     def stat(self):
         
         return np.sum(self.stat_list * self.weight_list)
+    
+    
+    @property
+    def pseudo_residual(self):
+        
+        return np.concatenate([rd * np.sqrt(wt) for rd, wt in 
+                               zip(self.pseudo_residual_list, self.weight_list)])
     
     
     @property

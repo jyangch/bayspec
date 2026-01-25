@@ -29,7 +29,7 @@
     {
         "par#": "4",
         "Class": "data",
-        "Expression": "data",
+        "Expression": "_3",
         "Component": "nai",
         "Parameter": "sf",
         "Value": 1,
@@ -38,7 +38,7 @@
     {
         "par#": "5",
         "Class": "data",
-        "Expression": "data",
+        "Expression": "_3",
         "Component": "nai",
         "Parameter": "bf",
         "Value": 1,
@@ -47,7 +47,7 @@
     {
         "par#": "6",
         "Class": "data",
-        "Expression": "data",
+        "Expression": "_3",
         "Component": "nai",
         "Parameter": "rf",
         "Value": 1,
@@ -56,7 +56,7 @@
     {
         "par#": "7",
         "Class": "data",
-        "Expression": "data",
+        "Expression": "_3",
         "Component": "nai",
         "Parameter": "ra",
         "Value": 0,
@@ -65,7 +65,7 @@
     {
         "par#": "8",
         "Class": "data",
-        "Expression": "data",
+        "Expression": "_3",
         "Component": "nai",
         "Parameter": "dec",
         "Value": 0,
@@ -74,7 +74,7 @@
     {
         "par#": "9",
         "Class": "data",
-        "Expression": "data",
+        "Expression": "_3",
         "Component": "bgo",
         "Parameter": "sf",
         "Value": 1,
@@ -83,7 +83,7 @@
     {
         "par#": "10",
         "Class": "data",
-        "Expression": "data",
+        "Expression": "_3",
         "Component": "bgo",
         "Parameter": "bf",
         "Value": 1,
@@ -92,7 +92,7 @@
     {
         "par#": "11",
         "Class": "data",
-        "Expression": "data",
+        "Expression": "_3",
         "Component": "bgo",
         "Parameter": "rf",
         "Value": 1,
@@ -101,7 +101,7 @@
     {
         "par#": "12",
         "Class": "data",
-        "Expression": "data",
+        "Expression": "_3",
         "Component": "bgo",
         "Parameter": "ra",
         "Value": 0,
@@ -110,7 +110,7 @@
     {
         "par#": "13",
         "Class": "data",
-        "Expression": "data",
+        "Expression": "_3",
         "Component": "bgo",
         "Parameter": "dec",
         "Value": 0,

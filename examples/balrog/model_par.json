@@ -4,23 +4,20 @@
         "Component": "cpl",
         "Parameter": "$\\alpha$",
         "Value": -1,
-        "Prior": "unif(-8, 4)",
-        "Frozen": false
+        "Prior": "unif(-8, 4)"
     },
     {
         "par#": "2",
         "Component": "cpl",
         "Parameter": "log$E_c$",
         "Value": 2,
-        "Prior": "unif(0, 4)",
-        "Frozen": false
+        "Prior": "unif(0, 4)"
     },
     {
         "par#": "3",
         "Component": "cpl",
         "Parameter": "log$A$",
         "Value": 0,
-        "Prior": "unif(-10, 10)",
-        "Frozen": false
+        "Prior": "unif(-10, 10)"
     }
 ]

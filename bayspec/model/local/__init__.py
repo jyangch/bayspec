@@ -1,5 +1,4 @@
 from .additive import *
-from .tinvolved import *
 from .mathematic import *
 from .multiplicative import *
 from ..model import Model
@@ -8,7 +7,7 @@ from ..model import Model
 local_models = {name: cls for name, cls in globals().items() 
                 if isinstance(cls, type) 
                 and issubclass(cls, Model)
-                and name not in ['Model', 'Additive', 'Tinvolved', 'Multiplicative', 'Mathematic']}
+                and name not in ['Model', 'Additive', 'Multiplicative', 'Mathematic']}
 
 
 def list_local_models():

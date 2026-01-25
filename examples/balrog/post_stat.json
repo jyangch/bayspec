@@ -3,56 +3,56 @@
         "Data": "n6",
         "Model": "cpl",
         "Statistic": "pgstat",
-        "Value": "157.03",
-        "Bins": "121"
+        "Value": 157.02831541661584,
+        "Bins": 121
     },
     {
         "Data": "n7",
         "Model": "cpl",
         "Statistic": "pgstat",
-        "Value": "126.23",
-        "Bins": "119"
+        "Value": 126.22886936081484,
+        "Bins": 119
     },
     {
         "Data": "n8",
         "Model": "cpl",
         "Statistic": "pgstat",
-        "Value": "159.99",
-        "Bins": "120"
+        "Value": 159.9914796865827,
+        "Bins": 120
     },
     {
         "Data": "n9",
         "Model": "cpl",
         "Statistic": "pgstat",
-        "Value": "143.45",
-        "Bins": "119"
+        "Value": 143.44802494423075,
+        "Bins": 119
     },
     {
         "Data": "na",
         "Model": "cpl",
         "Statistic": "pgstat",
-        "Value": "138.87",
-        "Bins": "119"
+        "Value": 138.86918371984825,
+        "Bins": 119
     },
     {
         "Data": "nb",
         "Model": "cpl",
         "Statistic": "pgstat",
-        "Value": "166.65",
-        "Bins": "119"
+        "Value": 166.65214966914246,
+        "Bins": 119
     },
     {
         "Data": "b1",
         "Model": "cpl",
         "Statistic": "pgstat",
-        "Value": "150.93",
-        "Bins": "117"
+        "Value": 150.9273770118557,
+        "Bins": 117
     },
     {
         "Data": "Total",
         "Model": "Total",
         "Statistic": "stat/dof",
-        "Value": "1043.15/829",
-        "Bins": "834"
+        "Value": "1043.145/829",
+        "Bins": 834
     }
 ]

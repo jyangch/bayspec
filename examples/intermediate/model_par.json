@@ -4,31 +4,27 @@
         "Component": "AS_TbAbs",
         "Parameter": "NH",
         "Value": 1.0,
-        "Prior": "unif(0.0001, 20)",
-        "Frozen": false
+        "Prior": "unif(0.0001, 20)"
     },
     {
         "par#": "2",
         "Component": "cpl",
         "Parameter": "$\\alpha$",
         "Value": -1,
-        "Prior": "unif(-2, 2)",
-        "Frozen": false
+        "Prior": "unif(-2, 2)"
     },
     {
         "par#": "3",
         "Component": "cpl",
         "Parameter": "log$E_p$",
         "Value": 2,
-        "Prior": "unif(0, 4)",
-        "Frozen": false
+        "Prior": "unif(0, 4)"
     },
     {
         "par#": "4",
         "Component": "cpl",
         "Parameter": "log$A$",
         "Value": 0,
-        "Prior": "unif(-10, 10)",
-        "Frozen": false
+        "Prior": "unif(-10, 10)"
     }
 ]

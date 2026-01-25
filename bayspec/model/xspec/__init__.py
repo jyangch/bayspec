@@ -126,6 +126,10 @@ for name, cls in model_classes.items():
             norm = 10 ** self.params['logNorm'].value
         else:
             norm = 1.0
+            
+        E = np.asarray(E)
+        scalar = E.ndim == 0
+        if scalar: E = E[np.newaxis]
                 
         if 'Redshift' not in self.xsmodel_plabels:
             redshift = self.config['redshift'].value
@@ -137,11 +141,11 @@ for name, cls in model_classes.items():
         integ = lambda egrid: np.mean(self.xsmodel(pars=pars, energies=egrid))
         
         if self.type == 'add':
-            xsres = np.array(list(map(integ, ediff))) / (E / scale)
+            xsres = norm * np.array(list(map(integ, ediff))) / (E / scale)
         elif self.type == 'mul':
-            xsres = np.array(list(map(integ, ediff)))
+            xsres = norm * np.array(list(map(integ, ediff)))
 
-        return norm * xsres
+        return xsres[0] if scalar else xsres
 
     new_class = type(f'XS_{name}', (Model,), {'__init__': make_init(name, cls), 'func': func})
     

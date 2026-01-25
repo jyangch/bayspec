@@ -2,14 +2,14 @@ import os
 import numpy as np
 from collections import OrderedDict
 
-from .infer import Infer
+from .infer import BayesInfer
 from ..util.info import Info
 from ..util.post import Post
 from ..util.tools import json_dump
 
 
 
-class Posterior(Infer):
+class Posterior(BayesInfer):
     
     def __init__(self, infer):
         
@@ -25,8 +25,8 @@ class Posterior(Infer):
     @infer.setter
     def infer(self, new_infer):
         
-        if not isinstance(new_infer, Infer):
-            raise TypeError('expected an instance of Infer')
+        if not isinstance(new_infer, BayesInfer):
+            raise TypeError('expected an instance of BayesInfer')
         
         self._infer = new_infer
         self.__dict__.update(new_infer.__dict__)
@@ -184,21 +184,23 @@ class Posterior(Infer):
         
         self._you_free()
         
-        free_par_info = Info.list_dict_to_dict(self.free_params)
+        free_params = self.free_params.copy()
         
-        del free_par_info['Posterior']
-        del free_par_info['Mates']
-        del free_par_info['Frozen']
-        del free_par_info['Prior']
-        del free_par_info['Value']
+        free_params = Info.list_dict_to_dict(free_params)
         
-        free_par_info['Mean'] = ['%.3f'%par for par in self.par_mean]
-        free_par_info['Median'] = ['%.3f'%par for par in self.par_median]
-        free_par_info['Best'] = ['%.3f'%par for par in self.par_best]
-        free_par_info['1sigma Best'] = ['%.3f'%par for par in self.par_best_ci]
-        free_par_info['1sigma CI'] = ['[%.3f, %.3f]'%tuple(ci) for ci in self.par_Isigma]
+        del free_params['Posterior']
+        del free_params['Mates']
+        del free_params['Frozen']
+        del free_params['Prior']
+        del free_params['Value']
         
-        return Info.from_dict(free_par_info)
+        free_params['Mean'] = ['%.3f' % par for par in self.par_mean]
+        free_params['Median'] = ['%.3f' % par for par in self.par_median]
+        free_params['Best'] = ['%.3f' % par for par in self.par_best]
+        free_params['1sigma Best'] = ['%.3f' % par for par in self.par_best_ci]
+        free_params['1sigma CI'] = ['[%.3f, %.3f]' % tuple(ci) for ci in self.par_Isigma]
+        
+        return Info.from_dict(free_params)
     
     
     @property
@@ -206,19 +208,29 @@ class Posterior(Infer):
         
         self.at_par(self.par_best)
         
-        return Info.from_dict(self.all_stat)
+        all_stat = self.all_stat.copy()
+        
+        return Info.from_dict(all_stat)
+    
+    
+    @property
+    def all_IC(self):
+        
+        all_IC = OrderedDict()
+        all_IC['AIC'] = self.aic
+        all_IC['AICc'] = self.aicc
+        all_IC['BIC'] = self.bic
+        all_IC['lnZ'] = self.lnZ
+        
+        return all_IC
 
 
     @property
     def IC_info(self):
         
-        IC_info = OrderedDict()
-        IC_info['AIC'] = ['%.2f'%self.aic]
-        IC_info['AICc'] = ['%.2f'%self.aicc]
-        IC_info['BIC'] = ['%.2f'%self.bic]
-        IC_info['lnZ'] = [f'{self.lnZ}' if self.lnZ is None else '%.2f'%self.lnZ]
+        all_IC = self.all_IC.copy()
         
-        return Info.from_dict(IC_info)
+        return Info.from_dict(all_IC)
     
     
     def save(self, savepath):
@@ -233,8 +245,38 @@ class Posterior(Infer):
 
     def __str__(self):
         
-        print(self.free_par_info.table)
-        print(self.stat_info.table)
-        print(self.IC_info.table)
+        return (
+            f'*** Posterior Results ***\n'
+            f'*** Parameters ***\n'
+            f'{self.free_par_info.text_table}\n'
+            f'*** Statistics ***\n'
+            f'{self.stat_info.text_table}\n'
+            f'*** Information Criterias ***\n'
+            f'{self.IC_info.text_table}'
+            )
+
+
+    def __repr__(self):
         
-        return ''
+        return self.__str__()
+    
+    
+    def _repr_html_(self):
+        
+        return (
+            f'{self.free_par_info.html_style}'
+            f'<details open>'
+            f'<summary style="margin-bottom: 10px;"><b>Posterior Results</b></summary>'
+            f'<details open style="margin-top: 10px;">'
+            f'<summary style="margin-bottom: 10px;"><b>Parameters</b></summary>'
+            f'{self.free_par_info.html_table}'
+            f'</details>'
+            f'<details open style="margin-top: 10px;">'
+            f'<summary style="margin-bottom: 10px;"><b>Statistics</b></summary>'
+            f'{self.stat_info.html_table}'
+            f'</details>'
+            f'<details open style="margin-top: 10px;">'
+            f'<summary style="margin-bottom: 10px;"><b>Information Criterias</b></summary>'
+            f'{self.IC_info.html_table}'
+            f'</details>'
+            )
