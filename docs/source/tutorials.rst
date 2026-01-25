@@ -4,5 +4,5 @@ Tutorials
 .. toctree::
    :maxdepth: 4
 
-   tutorials.quickstart.ipynb
+   tutorials.quickstart.rst
    tutorials.videodemo.rst
