@@ -190,7 +190,7 @@ class Source(Spectrum):
             raise ValueError(f'unsupported src_file type')
             
         src_hdu = fits.open(src_file, ignore_missing_simple=True)
-        specExt = src_hdu["SPECTRUM"]
+        specExt = src_hdu['SPECTRUM']
 
         specData = specExt.data
 
@@ -258,7 +258,7 @@ class Source(Spectrum):
             raise ValueError(f'unsupported src_file type')
             
         src_hdu = fits.open(src_file, ignore_missing_simple=True)
-        specExt = src_hdu["SPECTRUM"]
+        specExt = src_hdu['SPECTRUM']
 
         specData = specExt.data
 
@@ -335,7 +335,7 @@ class Background(Spectrum):
             raise ValueError(f'unsupported bkg_file type')
             
         bkg_hdu = fits.open(bkg_file, ignore_missing_simple=True)
-        specExt = bkg_hdu["SPECTRUM"]
+        specExt = bkg_hdu['SPECTRUM']
 
         specData = specExt.data
 
@@ -393,7 +393,7 @@ class Background(Spectrum):
             raise ValueError(f'unsupported bkg_file type')
             
         bkg_hdu = fits.open(bkg_file, ignore_missing_simple=True)
-        specExt = bkg_hdu["SPECTRUM"]
+        specExt = bkg_hdu['SPECTRUM']
 
         specData = specExt.data
 

@@ -1072,3 +1072,5 @@ class MaxLikeFit(Infer):
         res = lmfit.minimize(self.lmfit_residual, self.lmfit_params)
         
         print(lmfit.fit_report(res))
+
+        return res

@@ -54,9 +54,9 @@ class Response(object):
         rsp_hdu = fits.open(rsp_file, ignore_missing_simple=True)
 
         try:
-            matExt = rsp_hdu["SPECRESP MATRIX"]
+            matExt = rsp_hdu['SPECRESP MATRIX']
         except KeyError:
-            matExt = rsp_hdu["MATRIX"]
+            matExt = rsp_hdu['MATRIX']
         ebouExt = rsp_hdu['EBOUNDS']
 
         matHeader = matExt.header
@@ -115,9 +115,80 @@ class Response(object):
     @classmethod
     def from_rsp2(cls, rsp_file, ii=None):
         
-        print('from_rsp2 is unfinished method')
+        if isinstance(rsp_file, BytesIO):
+            rsp_file = deepcopy(rsp_file)
+            assert isinstance(ii, int), 'ii should be int type'
+        elif isinstance(rsp_file, str):
+            if ':' in rsp_file:
+                rsp_file, ii = rsp_file.split(':')
+                rsp_file = rsp_file.strip()
+                ii = int(ii.strip())
+            else:
+                assert isinstance(ii, int), 'ii should be int type'
+        else:
+            raise ValueError(f'unsupported rsp_file type')
         
+        rsp_hdu = fits.open(rsp_file, ignore_missing_simple=True)
+
+        try:
+            matExt = rsp_hdu['SPECRESP MATRIX', ii]
+        except KeyError:
+            matExt = rsp_hdu['MATRIX', ii]
+        ebouExt = rsp_hdu['EBOUNDS']
+
+        matHeader = matExt.header
+        ebouHeader = ebouExt.header
+
+        numEnerBins = matHeader['NAXIS2']
+        numDetChans = ebouHeader['NAXIS2']
+
+        matData = matExt.data
+        ebouData = ebouExt.data
+
+        rsp_hdu.close()
         
+        ChanIndex = ebouData.field(0).astype(int)
+        ChanBins = np.array(list(zip(ebouData.field(1), ebouData.field(2))))
+        EnerBins = np.array(list(zip(matData.field(0), matData.field(1))))
+
+        if matHeader['TFORM4'][0] == 'P':
+            fchan = [fc for fc in matData.field(3)]
+        else:
+            fchan = [[fc] for fc in matData.field(3)]
+        
+        if matHeader['TFORM5'][0] == 'P':
+            nchan = [nc for nc in matData.field(4)]
+        else:
+            nchan = [[nc] for nc in matData.field(4)]
+            
+        try:
+            mchan = int(matHeader['TLMIN4'])
+        except KeyError:
+            mchan = 1
+            
+        matrix = matData.field(5)
+        
+        if matrix[0].ndim == 0:
+            matrix = matrix.reshape(-1, 1)
+        
+        drm = np.zeros([numEnerBins, numDetChans])
+        
+        for fc, nc, i in zip(fchan, nchan, range(numEnerBins)):
+            idx = []
+            for fc_i, nc_i in zip(fc, nc):
+                fc_i = int(fc_i)
+                nc_i = int(nc_i)
+                tc_i = fc_i + nc_i
+                
+                idx_i = np.arange(fc_i - mchan, tc_i - mchan).tolist()
+                idx = idx + idx_i
+
+            drm[i, idx] = matrix[i][:]
+        drm = np.array(drm).astype(float)
+        
+        return cls(ChanBins, EnerBins, drm)
+
+
     @classmethod
     def from_plain(cls, rsp_file, ii=None):
         
@@ -435,7 +506,7 @@ class Redistribution(Response, metaclass=DisableMethodsMeta):
     @classmethod
     def from_rmf2(cls, rmf_file, ii=None):
         
-        print('from_rmf2 is unfinished method')
+        return cls.from_rsp2(rmf_file, ii)
 
 
     @classmethod
@@ -534,7 +605,35 @@ class Auxiliary(Response, metaclass=DisableMethodsMeta):
     @classmethod
     def from_arf2(cls, arf_file, ii=None):
         
-        print('from_arf2 is unfinished method')
+        if isinstance(arf_file, BytesIO):
+            arf_file = deepcopy(arf_file)
+            assert isinstance(ii, int), 'ii should be int type'
+        elif isinstance(arf_file, str):
+            if ':' in arf_file:
+                arf_file, ii = arf_file.split(':')
+                arf_file = arf_file.strip()
+                ii = int(ii.strip())
+            else:
+                assert isinstance(ii, int), 'ii should be int type'
+        else:
+            raise ValueError(f'unsupported arf_file type')
+        
+        arf_hdu = fits.open(arf_file, ignore_missing_simple=True)
+        
+        srpExt = arf_hdu['SPECRESP', ii]
+        
+        srpData = srpExt.data
+        
+        arf_hdu.close()
+        
+        EnerBins = np.array(list(zip(srpData.field(0), srpData.field(1))))
+        
+        try:
+            specresp = np.array(srpData['SPECRESP']).astype(float)
+        except KeyError:
+            specresp = np.array(srpData.field(2)).astype(float)
+            
+        return cls(EnerBins, specresp)
 
 
     @classmethod

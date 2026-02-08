@@ -194,10 +194,10 @@ class Posterior(BayesInfer):
         del free_params['Prior']
         del free_params['Value']
         
-        free_params['Mean'] = ['%.3f' % par for par in self.par_mean]
-        free_params['Median'] = ['%.3f' % par for par in self.par_median]
-        free_params['Best'] = ['%.3f' % par for par in self.par_best]
-        free_params['1sigma Best'] = ['%.3f' % par for par in self.par_best_ci]
+        free_params['Mean'] = [par for par in self.par_mean]
+        free_params['Median'] = [par for par in self.par_median]
+        free_params['Best'] = [par for par in self.par_best]
+        free_params['1sigma Best'] = [par for par in self.par_best_ci]
         free_params['1sigma CI'] = ['[%.3f, %.3f]' % tuple(ci) for ci in self.par_Isigma]
         
         return Info.from_dict(free_params)
