@@ -694,6 +694,50 @@ class Model(object):
         
         return self.ergflux(emin, emax, ngrid, time)
     
+    
+    def best_phtflux_ratio(self, erange1, erange2, ngrid, time=None):
+        
+        self.at_par(self.par_best)
+
+        emin1, emax1 = erange1
+
+        emin2, emax2 = erange2
+        
+        return self.phtflux(emin1, emax1, ngrid, time) / self.phtflux(emin2, emax2, ngrid, time)
+    
+    
+    def best_ci_phtflux_ratio(self, erange1, erange2, ngrid, time=None):
+        
+        self.at_par(self.par_best_ci)
+
+        emin1, emax1 = erange1
+
+        emin2, emax2 = erange2
+        
+        return self.phtflux(emin1, emax1, ngrid, time) / self.phtflux(emin2, emax2, ngrid, time)
+    
+
+    def median_phtflux_ratio(self, erange1, erange2, ngrid, time=None):
+        
+        self.at_par(self.par_median)
+
+        emin1, emax1 = erange1
+
+        emin2, emax2 = erange2
+        
+        return self.phtflux(emin1, emax1, ngrid, time) / self.phtflux(emin2, emax2, ngrid, time)
+    
+    
+    def mean_phtflux_ratio(self, erange1, erange2, ngrid, time=None):
+        
+        self.at_par(self.par_mean)
+
+        emin1, emax1 = erange1
+
+        emin2, emax2 = erange2
+        
+        return self.phtflux(emin1, emax1, ngrid, time) / self.phtflux(emin2, emax2, ngrid, time)
+    
 
     def best_ergflux_ratio(self, erange1, erange2, ngrid, time=None):
         
@@ -786,8 +830,11 @@ class Model(object):
 
 
     def phtspec_sample(self, E, T=None):
+
+        scalar = np.asarray(E).ndim == 0
         
-        sample = np.zeros([self.posterior_nsample, len(E)], dtype=float)
+        if scalar: sample = np.zeros(self.posterior_nsample, dtype=float)
+        else: sample = np.zeros([self.posterior_nsample, len(E)], dtype=float)
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
@@ -798,7 +845,10 @@ class Model(object):
     
     def nouspec_sample(self, E, T=None):
         
-        sample = np.zeros([self.posterior_nsample, len(E)], dtype=float)
+        scalar = np.asarray(E).ndim == 0
+        
+        if scalar: sample = np.zeros(self.posterior_nsample, dtype=float)
+        else: sample = np.zeros([self.posterior_nsample, len(E)], dtype=float)
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
@@ -809,7 +859,10 @@ class Model(object):
     
     def flxspec_sample(self, E, T=None):
         
-        sample = np.zeros([self.posterior_nsample, len(E)], dtype=float)
+        scalar = np.asarray(E).ndim == 0
+        
+        if scalar: sample = np.zeros(self.posterior_nsample, dtype=float)
+        else: sample = np.zeros([self.posterior_nsample, len(E)], dtype=float)
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
@@ -820,7 +873,10 @@ class Model(object):
     
     def ergspec_sample(self, E, T=None):
         
-        sample = np.zeros([self.posterior_nsample, len(E)], dtype=float)
+        scalar = np.asarray(E).ndim == 0
+        
+        if scalar: sample = np.zeros(self.posterior_nsample, dtype=float)
+        else: sample = np.zeros([self.posterior_nsample, len(E)], dtype=float)
         
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
@@ -847,6 +903,21 @@ class Model(object):
         for i in range(self.posterior_nsample):
             self.at_par(self.posterior_sample[i])
             sample[i] = self.ergflux(emin, emax, ngrid, time)
+            
+        return self.sample_statistic(sample)
+    
+    
+    def phtflux_ratio_sample(self, erange1, erange2, ngrid, time=None):
+        
+        sample = np.zeros(self.posterior_nsample, dtype=float)
+
+        emin1, emax1 = erange1
+        
+        emin2, emax2 = erange2
+        
+        for i in range(self.posterior_nsample):
+            self.at_par(self.posterior_sample[i])
+            sample[i] = self.phtflux(emin1, emax1, ngrid, time) / self.phtflux(emin2, emax2, ngrid, time)
             
         return self.sample_statistic(sample)
 
