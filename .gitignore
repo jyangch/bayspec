@@ -58,5 +58,5 @@ bayspec_beta/
 tests/
 
 # private models
-bayspec/docs/Katu/
-bayspec/docs/ZXHSYNC/
+bayspec/docs/katu/
+bayspec/docs/zxhsync/

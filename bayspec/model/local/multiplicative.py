@@ -1,9 +1,13 @@
 import numpy as np
+import numba as nb
 from collections import OrderedDict
+from os.path import dirname, abspath
+docs_path = dirname(dirname(dirname(abspath(__file__)))) + '/docs'
 
 from ..model import Multiplicative
 from ...util.prior import unif
 from ...util.param import Par, Cfg
+from ...util.tools import jit_abs_eval
 
 
 
@@ -45,6 +49,114 @@ class hecut(Multiplicative):
         nouspec[i2] = np.exp((ethr - E[i2]) / Ec)
 
         return nouspec[0] if scalar else nouspec
+
+
+
+class wabs(Multiplicative):
+    
+    def __init__(self):
+        
+        self.expr = 'wabs'
+        self.comment = 'Wisconsin ISM absorption model'
+        
+        self.config = OrderedDict()
+        self.config['redshift'] = Cfg(0.0)
+
+        self.params = OrderedDict()
+        self.params[r'$N_H$'] = Par(1, unif(1e-4, 50))
+        
+        self.xsect_prefix = docs_path + '/xsect'
+        self.xsect_dir = self.xsect_prefix + '/xsect_wabs_angr.npz'
+        self.xsect_data = np.load(self.xsect_dir)
+        self.xsect_energy = self.xsect_data['energy']
+        self.xsect_sigma = self.xsect_data['sigma']
+    
+    
+    def func(self, E, T=None, O=None):
+        
+        redshift = self.config['redshift'].value
+        
+        nh = self.params[r'$N_H$'].value
+        
+        E = np.asarray(E, dtype=np.float64)
+        scalar = E.ndim == 0
+        if scalar: E = E[np.newaxis]
+
+        fracspec = jit_abs_eval(E, nh, redshift, self.xsect_energy, self.xsect_sigma)
+        
+        return fracspec[0] if scalar else fracspec
+
+
+
+class phabs(Multiplicative):
+    
+    def __init__(self):
+        
+        self.expr = 'phabs'
+        self.comment = 'photoelectric absorption model'
+        
+        self.config = OrderedDict()
+        self.config['redshift'] = Cfg(0.0)
+
+        self.params = OrderedDict()
+        self.params[r'$N_H$'] = Par(1, unif(1e-4, 50))
+        
+        self.xsect_prefix = docs_path + '/xsect'
+        self.xsect_dir = self.xsect_prefix + '/xsect_phabs_aspl.npz'
+        self.xsect_data = np.load(self.xsect_dir)
+        self.xsect_energy = self.xsect_data['energy']
+        self.xsect_sigma = self.xsect_data['sigma']
+    
+    
+    def func(self, E, T=None, O=None):
+        
+        redshift = self.config['redshift'].value
+        
+        nh = self.params[r'$N_H$'].value
+        
+        E = np.asarray(E, dtype=np.float64)
+        scalar = E.ndim == 0
+        if scalar: E = E[np.newaxis]
+
+        fracspec = jit_abs_eval(E, nh, redshift, self.xsect_energy, self.xsect_sigma)
+        
+        return fracspec[0] if scalar else fracspec
+
+
+
+class tbabs(Multiplicative):
+    
+    def __init__(self):
+        
+        self.expr = 'tbabs'
+        self.comment = 'Tuebingen-Boulder ISM absorption model'
+        
+        self.config = OrderedDict()
+        self.config['redshift'] = Cfg(0.0)
+
+        self.params = OrderedDict()
+        self.params[r'$N_H$'] = Par(1, unif(1e-4, 50))
+        
+        self.xsect_prefix = docs_path + '/xsect'
+        self.xsect_dir = self.xsect_prefix + '/xsect_tbabs_wilm.npz'
+        self.xsect_data = np.load(self.xsect_dir)
+        self.xsect_energy = self.xsect_data['energy']
+        self.xsect_sigma = self.xsect_data['sigma']
+    
+    
+    def func(self, E, T=None, O=None):
+        
+        redshift = self.config['redshift'].value
+        
+        nh = self.params[r'$N_H$'].value
+        
+        E = np.asarray(E, dtype=np.float64)
+        scalar = E.ndim == 0
+        if scalar: E = E[np.newaxis]
+
+        fracspec = jit_abs_eval(E, nh, redshift, self.xsect_energy, self.xsect_sigma)
+        
+        return fracspec[0] if scalar else fracspec
 
 
 

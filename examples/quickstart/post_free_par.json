@@ -5,10 +5,10 @@
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "$\\alpha$",
-        "Mean": "-1.562",
-        "Median": "-1.562",
-        "Best": "-1.561",
-        "1sigma Best": "-1.561",
+        "Mean": -1.561950027352779,
+        "Median": -1.5621655357235757,
+        "Best": -1.5613971641325466,
+        "1sigma Best": -1.5613971641325466,
         "1sigma CI": "[-1.572, -1.551]"
     },
     {
@@ -17,10 +17,10 @@
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "log$E_p$",
-        "Mean": "2.331",
-        "Median": "2.331",
-        "Best": "2.330",
-        "1sigma Best": "2.330",
+        "Mean": 2.3309804422936593,
+        "Median": 2.330938467271168,
+        "Best": 2.3302588519435155,
+        "1sigma Best": 2.3302588519435155,
         "1sigma CI": "[2.321, 2.341]"
     },
     {
@@ -29,10 +29,10 @@
         "Expression": "cpl",
         "Component": "cpl",
         "Parameter": "log$A$",
-        "Mean": "2.353",
-        "Median": "2.354",
-        "Best": "2.352",
-        "1sigma Best": "2.352",
+        "Mean": 2.3530618868111772,
+        "Median": 2.3536075325598524,
+        "Best": 2.3523347760009994,
+        "1sigma Best": 2.3523347760009994,
         "1sigma CI": "[2.338, 2.368]"
     }
 ]

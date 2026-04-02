@@ -1414,7 +1414,7 @@ class zxhsync(Additive):
         self.expr = 'zxhsync'
         self.comment = "zxh's synchrotron model"
         
-        self.mo_prefix = docs_path + '/ZXHSYNC'
+        self.mo_prefix = docs_path + '/zxhsync'
         self.mo_dir = self.mo_prefix + '/spec_lc_ele_z_dL_gm_gmax_injpl_v2.o'
         
         self.config = OrderedDict()
@@ -1645,7 +1645,7 @@ class katu(Additive):
         self.comment = 'katu model'
         
         self.pwd = os.getcwd()
-        self.mo_prefix = docs_path + '/Katu'
+        self.mo_prefix = docs_path + '/katu'
         self.mo_dir = self.mo_prefix + '/GRB_MZ'
         self.cfg_dir = self.mo_prefix + '/prompt.toml'
         
