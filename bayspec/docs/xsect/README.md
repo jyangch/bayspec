@@ -1,0 +1,1 @@
+The cross-section data is derived from the astromodels package (Copyright (c) 2015--2025, Giacomo Vianello, licensed under the BSD 3-Clause License).
