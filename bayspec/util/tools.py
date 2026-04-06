@@ -1,4 +1,6 @@
 import json
+import functools
+import collections
 import numpy as np
 import numba as nb
 from io import BytesIO
@@ -6,7 +8,6 @@ from pathlib import Path
 from itertools import islice
 from datetime import datetime, date
 from collections import OrderedDict
-
 
 
 class JsonEncoder(json.JSONEncoder):
@@ -36,7 +37,6 @@ class JsonEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-
 def json_dump(data, filepath, indent=4, ensure_ascii=False):
     """
     Dump data to a JSON file with support for numpy data types and datetime objects.
@@ -60,7 +60,6 @@ def json_dump(data, filepath, indent=4, ensure_ascii=False):
         json.dump(data, f, indent=indent, ensure_ascii=ensure_ascii, cls=JsonEncoder)
 
 
-
 class SuperDict(OrderedDict):
     """
     A dictionary that allows access to its elements using both keys and 1-based indices.
@@ -80,6 +79,112 @@ class SuperDict(OrderedDict):
             
         return super().__getitem__(key)
 
+
+_WITH_MEMOIZATION = True 
+_CACHE_SIZE = 10 
+
+def memoized(dep_getter=None, *, verbose=False):
+    """
+    A decorator that memoizes the result of a method based on its dependencies and arguments.
+    
+    Parameters:
+    ----------
+    dep_getter : callable, optional
+        A function that takes the instance as an argument and returns a value representing 
+        the dependencies of the method. If the returned value changes, the cached value will 
+        be recomputed. If not provided, the method will be memoized without any dependency tracking.
+    verbose : bool, optional
+        If True, print messages when the method is recomputed or when a cache hit occurs. 
+        Default is False.
+        
+    Returns:
+    -------
+    callable
+        A memoized version of the method.
+    """
+
+    if dep_getter is None:
+        dep_getter = lambda self: None
+
+    def decorator(func):
+        
+        cache_attr = f"_cache_{func.__name__}"
+
+        @functools.wraps(func)
+        def wrapper(self, *args, **kwargs):
+            
+            if not _WITH_MEMOIZATION:
+                return func(self, *args, **kwargs)
+
+            dep = dep_getter(self)
+            dep_fprint = []
+            if isinstance(dep, (list, tuple)):
+                for d in dep:
+                    if isinstance(d, np.ndarray):
+                        dep_fprint.append((id(d), d.size, d.min(), d.max()))
+                    else:
+                        dep_fprint.append(d)
+            elif isinstance(dep, np.ndarray):
+                dep_fprint.append((id(dep), dep.size, dep.min(), dep.max()))
+            else:
+                dep_fprint.append(dep)
+
+            arg_fprint = []
+            for a in args:
+                if isinstance(a, np.ndarray):
+                    arg_fprint.append((id(a), a.size, a.min(), a.max()))
+                else:
+                    arg_fprint.append(a)
+
+            fingerprint = hash((tuple(dep_fprint), tuple(arg_fprint), tuple(kwargs.items())))
+
+            if not hasattr(self, cache_attr):
+                setattr(self, cache_attr, collections.OrderedDict())
+            cache = getattr(self, cache_attr)
+
+            if fingerprint in cache:
+                if verbose: 
+                    print(f"[{func.__name__}] hit")
+                val = cache.pop(fingerprint)
+                cache[fingerprint] = val
+                return val
+
+            if verbose: 
+                print(f"[{func.__name__}] recompute")
+            result = func(self, *args, **kwargs)
+            
+            cache[fingerprint] = result
+            if len(cache) > _CACHE_SIZE:
+                cache.popitem(last=False)
+
+            return result
+
+        return wrapper
+
+    return decorator
+
+
+def clear_memoized(obj, *names):
+    """
+    Clear memoization caches of an object.
+    
+    Parameters:
+    ----------
+    obj : object
+        The object whose memoization caches are to be cleared.
+    names : str, optional
+        The names of the memoized functions to clear. If not provided, all memoization caches will be cleared.
+    """
+    
+    if names:
+        for name in names:
+            attr = f"_cache_{name}"
+            if hasattr(obj, attr):
+                delattr(obj, attr)
+    else:
+        for attr in list(vars(obj).keys()):
+            if attr.startswith("_cache_"):
+                delattr(obj, attr)
 
 
 _MISSING = object()
@@ -132,7 +237,6 @@ def cached_property(dep_getter=None, *, verbose=False):
         return wrapper
     
     return decorator
-
 
 
 def clear_cached_property(obj, *names):
@@ -215,46 +319,3 @@ def trapz_2d(y, x):
         out[i] = acc
 
     return out
-
-
-@nb.njit(fastmath=True, cache=True)
-def jit_abs_eval(E, nh, redshift, xsect_energy, xsect_sigma):
-    """
-    JIT-compiled function to evaluate the absorption fraction.
-
-    Parameters:
-    ----------
-    E : array_like
-        The energy values.
-    nh : float
-        The column density.
-    redshift : float
-        The redshift value.
-    xsect_energy : array_like
-        The energy values for the cross-section.
-    xsect_sigma : array_like
-        The cross-section values.
-
-    Returns:
-    -------
-    fracspec : ndarray
-        The absorption fraction for each energy value.
-    """
-    
-    n = len(E)
-    fracspec = np.empty(n, dtype=np.float64)
-    
-    zi = 1 + redshift
-    max_xsect_energy = xsect_energy[-1]
-    
-    for i in range(n):
-        e_rest = E[i] * zi
-        
-        if e_rest > max_xsect_energy:
-            sigma = 0.0
-        else:
-            sigma = np.interp(e_rest, xsect_energy, xsect_sigma)
-            
-        fracspec[i] = np.exp(-nh * sigma)
-        
-    return fracspec

@@ -194,12 +194,12 @@ class Model(object):
                 self._fit_to.fit_with = self
 
 
-    def integ(self, egrid, tgrid):
+    def integ(self, egrid, tgrid, ngrid):
 
-        fgrid = self.func(egrid.ravel(), tgrid.ravel()).reshape(-1, egrid.shape[1])
+        fgrid = self.func(egrid, tgrid)
         
         if self.type == 'add':
-            return trapz_2d(fgrid, egrid)
+            return trapz_2d(fgrid.reshape(-1, ngrid), egrid.reshape(-1, ngrid))
             
         else:
             msg = f'integ is invalid for {self.type} type model'
@@ -216,10 +216,11 @@ class Model(object):
         
         egrid = ebin[:, [0]] + (ebin[:, [1]] - ebin[:, [0]]) * scale
         np.maximum(egrid, 1e-10, out=egrid)
+        egrid = egrid.ravel()
         
-        tgrid = np.repeat(tarr[:, None], ngrid, axis=1)
+        tgrid = np.repeat(tarr[:, None], ngrid, axis=1).ravel()
         
-        phtflux = self.integ(egrid, tgrid).reshape(-1, ngrid)
+        phtflux = self.integ(egrid, tgrid, ngrid)
         ctsrate = np.dot(phtflux, response.drm)
         ctsspec = ctsrate / response.chbin_width
         
@@ -228,7 +229,7 @@ class Model(object):
         
     def convolve_dataunit(self, dataunit):
         
-        phtflux = self.integ(dataunit.egrid, dataunit.tgrid)
+        phtflux = self.integ(dataunit.egrid, dataunit.tgrid, dataunit.ngrid)
         ctsrate = np.dot(phtflux, dataunit.corr_rsp_drm)
         ctsspec = ctsrate / dataunit.rsp_chbin_width
         
@@ -237,7 +238,7 @@ class Model(object):
         
     def convolve_data(self, data):
         
-        flat_phtflux = self.integ(data.egrid, data.tgrid)
+        flat_phtflux = self.integ(data.egrid, data.tgrid, data.ngrid)
         phtflux = [flat_phtflux[i:j] for (i, j) in zip(data.bin_start, data.bin_stop)]
         ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, data.corr_rsp_drm)]
         ctsspec = [cr / chw for (cr, chw) in zip(ctsrate, data.rsp_chbin_width)]
@@ -247,7 +248,7 @@ class Model(object):
         
     def _convolve(self):
         
-        flat_phtflux = self.integ(self.fit_to.egrid, self.fit_to.tgrid)
+        flat_phtflux = self.integ(self.fit_to.egrid, self.fit_to.tgrid, self.fit_to.ngrid)
         phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.fit_to.bin_start, self.fit_to.bin_stop)]
         ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, self.fit_to.corr_rsp_drm)]
         
@@ -256,7 +257,7 @@ class Model(object):
     
     def _convolve_f64(self):
         
-        flat_phtflux = self.integ(self.fit_to.egrid, self.fit_to.tgrid)
+        flat_phtflux = self.integ(self.fit_to.egrid, self.fit_to.tgrid, self.fit_to.ngrid)
         phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.fit_to.bin_start, self.fit_to.bin_stop)]
         ctsrate = [np.dot(pf, drm).astype(np.float64) for (pf, drm) in zip(phtflux, self.fit_to.corr_rsp_drm)]
         
@@ -265,7 +266,7 @@ class Model(object):
     
     def _re_convolve(self):
         
-        flat_phtflux = self.integ(self.fit_to.egrid, self.fit_to.tgrid)
+        flat_phtflux = self.integ(self.fit_to.egrid, self.fit_to.tgrid, self.fit_to.ngrid)
         phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.fit_to.bin_start, self.fit_to.bin_stop)]
         re_ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, self.fit_to.corr_rsp_re_drm)]
         

@@ -7,7 +7,7 @@ docs_path = dirname(dirname(dirname(abspath(__file__)))) + '/docs'
 from ..model import Multiplicative
 from ...util.prior import unif
 from ...util.param import Par, Cfg
-from ...util.tools import jit_abs_eval
+from ...util.tools import memoized
 
 
 
@@ -75,16 +75,28 @@ class wabs(Multiplicative):
     def func(self, E, T=None, O=None):
         
         redshift = self.config['redshift'].value
-        
         nh = self.params[r'$N_H$'].value
+        
+        sigma = self._get_cached_sigma(E, redshift)
+        
+        fracspec = np.exp(-nh * sigma)
+        
+        return fracspec
+    
+    
+    @memoized()
+    def _get_cached_sigma(self, E, redshift):
         
         E = np.asarray(E, dtype=np.float64)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
-
-        fracspec = jit_abs_eval(E, nh, redshift, self.xsect_energy, self.xsect_sigma)
         
-        return fracspec[0] if scalar else fracspec
+        zi = 1 + redshift
+        E = E * zi
+        
+        sigma = np.interp(E, self.xsect_energy, self.xsect_sigma, right=0.0)
+
+        return sigma[0] if scalar else sigma
 
 
 
@@ -111,16 +123,28 @@ class phabs(Multiplicative):
     def func(self, E, T=None, O=None):
         
         redshift = self.config['redshift'].value
-        
         nh = self.params[r'$N_H$'].value
+        
+        sigma = self._get_cached_sigma(E, redshift)
+        
+        fracspec = np.exp(-nh * sigma)
+        
+        return fracspec
+    
+    
+    @memoized()
+    def _get_cached_sigma(self, E, redshift):
         
         E = np.asarray(E, dtype=np.float64)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
-
-        fracspec = jit_abs_eval(E, nh, redshift, self.xsect_energy, self.xsect_sigma)
         
-        return fracspec[0] if scalar else fracspec
+        zi = 1 + redshift
+        E = E * zi
+        
+        sigma = np.interp(E, self.xsect_energy, self.xsect_sigma, right=0.0)
+
+        return sigma[0] if scalar else sigma
 
 
 
@@ -147,16 +171,28 @@ class tbabs(Multiplicative):
     def func(self, E, T=None, O=None):
         
         redshift = self.config['redshift'].value
-        
         nh = self.params[r'$N_H$'].value
+        
+        sigma = self._get_cached_sigma(E, redshift)
+        
+        fracspec = np.exp(-nh * sigma)
+        
+        return fracspec
+    
+    
+    @memoized()
+    def _get_cached_sigma(self, E, redshift):
         
         E = np.asarray(E, dtype=np.float64)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
-
-        fracspec = jit_abs_eval(E, nh, redshift, self.xsect_energy, self.xsect_sigma)
         
-        return fracspec[0] if scalar else fracspec
+        zi = 1 + redshift
+        E = E * zi
+        
+        sigma = np.interp(E, self.xsect_energy, self.xsect_sigma, right=0.0)
+
+        return sigma[0] if scalar else sigma
 
 
 

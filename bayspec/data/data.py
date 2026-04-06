@@ -284,25 +284,13 @@ class Data(object):
         
         np.maximum(egrid, 1e-10, out=egrid)
         
-        return egrid
-    
-    
-    @cached_property()
-    def egrid_flat(self):
-        
-        return self.egrid.ravel()
+        return egrid.ravel()
     
     
     @cached_property()
     def tgrid(self):
         
-        return np.repeat(self.tarr[:, None], self.ngrid, axis=1)
-    
-        
-    @cached_property()
-    def tgrid_flat(self):
-        
-        return self.tgrid.ravel()
+        return np.repeat(self.tarr[:, None], self.ngrid, axis=1).ravel()
     
     
     @cached_property()
@@ -1418,25 +1406,13 @@ class DataUnit(object):
         
         np.maximum(egrid, 1e-10, out=egrid)
         
-        return egrid
-    
-    
-    @cached_property()
-    def egrid_flat(self):
-        
-        return self.egrid.ravel()
+        return egrid.ravel()
     
     
     @cached_property()
     def tgrid(self):
         
-        return np.repeat(self.tarr[:, None], self.ngrid, axis=1)
-    
-        
-    @cached_property()
-    def tgrid_flat(self):
-        
-        return self.tgrid.ravel()
+        return np.repeat(self.tarr[:, None], self.ngrid, axis=1).ravel()
 
     
     @cached_property()
