@@ -240,15 +240,15 @@ class Data(object):
     
     
     @cached_property()
-    def nbin(self):
-
-        return [unit.nbin for unit in self.data.values()]
+    def ewidth(self):
+        
+        return self.ebin[:, 1] - self.ebin[:, 0]
     
     
     @cached_property()
-    def tarr(self):
-        
-        return np.hstack([unit.tarr for unit in self.data.values()])
+    def nbin(self):
+
+        return [unit.nbin for unit in self.data.values()]
     
     
     @cached_property()
@@ -261,6 +261,48 @@ class Data(object):
     def bin_stop(self):
         
         return np.cumsum([0] + self.nbin)[1:]
+    
+    
+    @cached_property()
+    def tarr(self):
+        
+        return np.hstack([unit.tarr for unit in self.data.values()])
+    
+    
+    @cached_property()
+    def ngrid(self):
+        
+        return 5
+    
+    
+    @cached_property()
+    def egrid(self):
+        
+        scale = np.linspace(0.0, 1.0, self.ngrid, dtype=float)
+        
+        egrid = self.ebin[:, [0]] + (self.ebin[:, [1]] - self.ebin[:, [0]]) * scale
+        
+        np.maximum(egrid, 1e-10, out=egrid)
+        
+        return egrid
+    
+    
+    @cached_property()
+    def egrid_flat(self):
+        
+        return self.egrid.ravel()
+    
+    
+    @cached_property()
+    def tgrid(self):
+        
+        return np.repeat(self.tarr[:, None], self.ngrid, axis=1)
+    
+        
+    @cached_property()
+    def tgrid_flat(self):
+        
+        return self.tgrid.ravel()
     
     
     @cached_property()
@@ -1341,6 +1383,12 @@ class DataUnit(object):
     def ebin(self):
         
         return np.array(self.rsp_ins.phbin, dtype=float)
+    
+    
+    @cached_property()
+    def ewidth(self):
+        
+        return self.ebin[:, 1] - self.ebin[:, 0]
         
         
     @cached_property()
@@ -1354,6 +1402,42 @@ class DataUnit(object):
 
         return np.repeat(self.time, self.nbin)
     
+    
+    @cached_property()
+    def ngrid(self):
+        
+        return 5
+    
+    
+    @cached_property()
+    def egrid(self):
+        
+        scale = np.linspace(0.0, 1.0, self.ngrid, dtype=float)
+        
+        egrid = self.ebin[:, [0]] + (self.ebin[:, [1]] - self.ebin[:, [0]]) * scale
+        
+        np.maximum(egrid, 1e-10, out=egrid)
+        
+        return egrid
+    
+    
+    @cached_property()
+    def egrid_flat(self):
+        
+        return self.egrid.ravel()
+    
+    
+    @cached_property()
+    def tgrid(self):
+        
+        return np.repeat(self.tarr[:, None], self.ngrid, axis=1)
+    
+        
+    @cached_property()
+    def tgrid_flat(self):
+        
+        return self.tgrid.ravel()
+
     
     @cached_property()
     def src_efficiency(self):
@@ -1768,20 +1852,17 @@ class DataUnit(object):
     @staticmethod
     def _union(bins):
         
-        if len(bins) == 0:
+        if bins is None or len(bins) == 0:
             return []
-
-        bins1 = np.array([bin_[0] for bin_ in bins])
-        bins = np.array(bins)[np.argsort(bins1)]
-        bins = bins.tolist()
-
-        res = [bins[0]]
-        for i in range(1, len(bins)):
-            a1, a2 = res[-1][0], res[-1][1]
-            b1, b2 = bins[i][0], bins[i][1]
-            if b2 >= a1 and a2 >= b1:
-                res[-1] = [min(a1, b1), max(a2, b2)]
-            else: res.append(bins[i])
+        
+        sorted_bins = sorted(bins, key=lambda x: x[0])
+        
+        res = []
+        for current in sorted_bins:
+            if not res or current[0] > res[-1][1]:
+                res.append(list(current[:2]))
+            else:
+                res[-1][1] = max(res[-1][1], current[1])
 
         return res
 

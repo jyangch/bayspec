@@ -1,9 +1,9 @@
 import os
 import toml
+import numba as nb
 import numpy as np
 import subprocess as sp
 import astropy.units as u
-from scipy.integrate import quad
 from collections import OrderedDict
 from os.path import dirname, abspath
 from astropy.cosmology import Planck18
@@ -1201,6 +1201,10 @@ class bb(Additive):
 class mbb(Additive):
     # 10.3847/1538-4357/aadc07
 
+    _MBB_GAUSS_NODES, _MBB_GAUSS_WEIGHTS = np.polynomial.legendre.leggauss(64)
+    _MBB_GAUSS_NODES = _MBB_GAUSS_NODES.astype(np.float64)
+    _MBB_GAUSS_WEIGHTS = _MBB_GAUSS_WEIGHTS.astype(np.float64)
+
     def __init__(self):
         
         self.expr = 'mbb'
@@ -1216,16 +1220,6 @@ class mbb(Additive):
         self.params[r'log$A$'] = Par(0, unif(-10, 10))
 
 
-    @staticmethod
-    def _integrand(x, m):
-        if x > 700: 
-            return 0.0
-        try:
-            return (x**(2.0 - m)) / (np.exp(x) - 1.0)
-        except OverflowError:
-            return 0.0
-
-
     def func(self, E, T=None, O=None):
         
         redshift = self.config['redshift'].value
@@ -1239,36 +1233,69 @@ class mbb(Additive):
         kTmax = 10 ** logkTmax
         Amp = 10 ** logA
         
-        E = np.asarray(E)
+        E = np.asarray(E, dtype=np.float64)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
-        
-        zi = 1 + redshift
-        E = E * zi
-        
-        if not kTmax > kTmin:
-            return np.nan if scalar else np.ones_like(E) * np.nan
 
-        ratio_T = kTmax / kTmin
-
-        term1 = 8.0525 * (m + 1) * Amp
-        term2 = (ratio_T**(m + 1)) - 1
-        term3 = (kTmin) ** (-2)
-        prefactor = (term1 / term2) * term3
-        
-        intspec = []
-        for Ei in E:
-            lower_limit = Ei / kTmax
-            upper_limit = Ei / kTmin
-            integral_val, _ = quad(self._integrand, lower_limit, upper_limit, args=(m,))
-            
-            scaling_factor = (Ei / kTmin) ** (m - 1)
-            intspec.append(scaling_factor * integral_val)
-
-        intspec = np.array(intspec)
-        phtspec = prefactor * intspec
+        phtspec = self._func_nb(
+            E,
+            redshift,
+            kTmin,
+            kTmax,
+            m,
+            Amp,
+            self._MBB_GAUSS_NODES,
+            self._MBB_GAUSS_WEIGHTS)
         
         return phtspec[0] if scalar else phtspec
+
+
+    @staticmethod
+    @nb.njit(cache=True, fastmath=True)
+    def _func_nb(E, redshift, kTmin, kTmax, m, amp, nodes, weights):
+
+        n = E.shape[0]
+        phtspec = np.empty(n, dtype=np.float64)
+
+        if not kTmax > kTmin:
+            for i in range(n):
+                phtspec[i] = np.nan
+            return phtspec
+
+        zi = 1.0 + redshift
+        ratio_T = kTmax / kTmin
+
+        term1 = 8.0525 * (m + 1.0) * amp
+        term2 = ratio_T ** (m + 1.0) - 1.0
+        term3 = kTmin ** (-2.0)
+        prefactor = (term1 / term2) * term3
+
+        for i in range(n):
+            Ei = E[i] * zi
+            lower_limit = Ei / kTmax
+            upper_limit = Ei / kTmin
+
+            if upper_limit <= lower_limit:
+                integral_val = 0.0
+            else:
+                half_width = 0.5 * (upper_limit - lower_limit)
+                center = 0.5 * (upper_limit + lower_limit)
+                acc = 0.0
+
+                for j in range(nodes.shape[0]):
+                    x = half_width * nodes[j] + center
+                    if x > 700.0:
+                        y = 0.0
+                    else:
+                        y = x ** (2.0 - m) / np.expm1(x)
+                    acc += weights[j] * y
+
+                integral_val = half_width * acc
+
+            scaling_factor = (Ei / kTmin) ** (m - 1.0)
+            phtspec[i] = prefactor * scaling_factor * integral_val
+
+        return phtspec
 
 
 

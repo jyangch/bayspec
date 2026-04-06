@@ -2,15 +2,15 @@
     {
         "cfg#": "1",
         "Class": "model",
-        "Expression": "(AS_TbAbs*cpl)",
-        "Component": "AS_TbAbs",
+        "Expression": "(tbabs*cpl)",
+        "Component": "tbabs",
         "Parameter": "redshift",
         "Value": 0.0
     },
     {
         "cfg#": "2",
         "Class": "model",
-        "Expression": "(AS_TbAbs*cpl)",
+        "Expression": "(tbabs*cpl)",
         "Component": "cpl",
         "Parameter": "redshift",
         "Value": 0.0
@@ -18,7 +18,7 @@
     {
         "cfg#": "3",
         "Class": "model",
-        "Expression": "(AS_TbAbs*cpl)",
+        "Expression": "(tbabs*cpl)",
         "Component": "cpl",
         "Parameter": "pivot_energy",
         "Value": 1.0
@@ -26,7 +26,7 @@
     {
         "cfg#": "4",
         "Class": "model",
-        "Expression": "(AS_TbAbs*cpl)",
+        "Expression": "(tbabs*cpl)",
         "Component": "cpl",
         "Parameter": "vfv_peak",
         "Value": true

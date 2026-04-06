@@ -7,7 +7,7 @@ from ..util.info import Info
 from ..util.prior import unif
 from ..util.param import Par, Cfg
 from ..util.tools import SuperDict
-from ..util.tools import cached_property, json_dump
+from ..util.tools import cached_property, json_dump, trapz_1d, trapz_2d
 
 
 
@@ -194,23 +194,12 @@ class Model(object):
                 self._fit_to.fit_with = self
 
 
-    def integ(self, ebin, tarr, ngrid=5):
-        
-        scale = np.linspace(0, 1, ngrid)
-        
-        egrid = ebin[:, [0]] + (ebin[:, [1]] - ebin[:, [0]]) * scale
-        egrid = np.maximum(egrid, 1e-10)
-        
-        tgrid = np.repeat(tarr[:, None], ngrid, axis=1)
+    def integ(self, egrid, tgrid):
+
+        fgrid = self.func(egrid.ravel(), tgrid.ravel()).reshape(-1, egrid.shape[1])
         
         if self.type == 'add':
-            fgrid = self.func(egrid.ravel(), tgrid.ravel()).reshape(-1, ngrid)
-            return np.trapz(fgrid, egrid, axis=1)
-            
-        elif self.type == 'mul':
-            ewidt = ebin[:, 1] - ebin[:, 0]
-            fgrid = self.func(egrid.ravel(), tgrid.ravel()).reshape(-1, ngrid)
-            return np.trapz(fgrid, egrid, axis=1) / ewidt
+            return trapz_2d(fgrid, egrid)
             
         else:
             msg = f'integ is invalid for {self.type} type model'
@@ -219,10 +208,18 @@ class Model(object):
 
     def convolve_response(self, response, time=None):
         
-        nbin = response.phbin.shape[0]
-        tarr = np.repeat(time, nbin)
+        ebin = response.phbin
+        tarr = np.repeat(time, ebin.shape[0])
         
-        phtflux = self.integ(response.phbin, tarr)
+        ngrid = 5
+        scale = np.linspace(0.0, 1.0, ngrid, dtype=float)
+        
+        egrid = ebin[:, [0]] + (ebin[:, [1]] - ebin[:, [0]]) * scale
+        np.maximum(egrid, 1e-10, out=egrid)
+        
+        tgrid = np.repeat(tarr[:, None], ngrid, axis=1)
+        
+        phtflux = self.integ(egrid, tgrid).reshape(-1, ngrid)
         ctsrate = np.dot(phtflux, response.drm)
         ctsspec = ctsrate / response.chbin_width
         
@@ -231,7 +228,7 @@ class Model(object):
         
     def convolve_dataunit(self, dataunit):
         
-        phtflux = self.integ(dataunit.ebin, dataunit.tarr)
+        phtflux = self.integ(dataunit.egrid, dataunit.tgrid)
         ctsrate = np.dot(phtflux, dataunit.corr_rsp_drm)
         ctsspec = ctsrate / dataunit.rsp_chbin_width
         
@@ -240,7 +237,7 @@ class Model(object):
         
     def convolve_data(self, data):
         
-        flat_phtflux = self.integ(data.ebin, data.tarr)
+        flat_phtflux = self.integ(data.egrid, data.tgrid)
         phtflux = [flat_phtflux[i:j] for (i, j) in zip(data.bin_start, data.bin_stop)]
         ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, data.corr_rsp_drm)]
         ctsspec = [cr / chw for (cr, chw) in zip(ctsrate, data.rsp_chbin_width)]
@@ -250,7 +247,7 @@ class Model(object):
         
     def _convolve(self):
         
-        flat_phtflux = self.integ(self.fit_to.ebin, self.fit_to.tarr)
+        flat_phtflux = self.integ(self.fit_to.egrid, self.fit_to.tgrid)
         phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.fit_to.bin_start, self.fit_to.bin_stop)]
         ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, self.fit_to.corr_rsp_drm)]
         
@@ -259,7 +256,7 @@ class Model(object):
     
     def _convolve_f64(self):
         
-        flat_phtflux = self.integ(self.fit_to.ebin, self.fit_to.tarr)
+        flat_phtflux = self.integ(self.fit_to.egrid, self.fit_to.tgrid)
         phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.fit_to.bin_start, self.fit_to.bin_stop)]
         ctsrate = [np.dot(pf, drm).astype(np.float64) for (pf, drm) in zip(phtflux, self.fit_to.corr_rsp_drm)]
         
@@ -268,7 +265,7 @@ class Model(object):
     
     def _re_convolve(self):
         
-        flat_phtflux = self.integ(self.fit_to.ebin, self.fit_to.tarr)
+        flat_phtflux = self.integ(self.fit_to.egrid, self.fit_to.tgrid)
         phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.fit_to.bin_start, self.fit_to.bin_stop)]
         re_ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, self.fit_to.corr_rsp_re_drm)]
         
@@ -482,7 +479,7 @@ class Model(object):
         else:
             egrid = np.logspace(np.log10(emin), np.log10(emax), ngrid)
             tgrid = np.repeat(time, ngrid)
-            return np.trapz(self.phtspec(egrid, tgrid), egrid)
+            return trapz_1d(self.phtspec(egrid, tgrid), egrid)
             
         
     def ergflux(self, emin, emax, ngrid, time=None):
@@ -494,7 +491,7 @@ class Model(object):
         else:
             egrid = np.logspace(np.log10(emin), np.log10(emax), ngrid)
             tgrid = np.repeat(time, ngrid)
-            return np.trapz(self.flxspec(egrid, tgrid), egrid)
+            return trapz_1d(self.flxspec(egrid, tgrid), egrid)
         
         
     def at_par(self, theta):

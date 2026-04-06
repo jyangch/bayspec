@@ -31,6 +31,7 @@ setup(
     python_requires=">=3.8",
     install_requires=[
         "numpy>=1.20.4",
+        "numba>=0.56",
         "pandas>=1.4.2",
         "scipy>=1.8.0",
         "toml>=0.10.2",

@@ -2,16 +2,16 @@
     {
         "par#": "1*",
         "Class": "model",
-        "Expression": "(AS_TbAbs*cpl)",
-        "Component": "AS_TbAbs",
-        "Parameter": "NH",
-        "Value": 1.0,
-        "Prior": "unif(0.0001, 20)"
+        "Expression": "(tbabs*cpl)",
+        "Component": "tbabs",
+        "Parameter": "$N_H$",
+        "Value": 1,
+        "Prior": "unif(0.0001, 50)"
     },
     {
         "par#": "2*",
         "Class": "model",
-        "Expression": "(AS_TbAbs*cpl)",
+        "Expression": "(tbabs*cpl)",
         "Component": "cpl",
         "Parameter": "$\\alpha$",
         "Value": -1,
@@ -20,7 +20,7 @@
     {
         "par#": "3*",
         "Class": "model",
-        "Expression": "(AS_TbAbs*cpl)",
+        "Expression": "(tbabs*cpl)",
         "Component": "cpl",
         "Parameter": "log$E_p$",
         "Value": 2,
@@ -29,7 +29,7 @@
     {
         "par#": "4*",
         "Class": "model",
-        "Expression": "(AS_TbAbs*cpl)",
+        "Expression": "(tbabs*cpl)",
         "Component": "cpl",
         "Parameter": "log$A$",
         "Value": 0,

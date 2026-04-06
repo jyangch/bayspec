@@ -339,48 +339,6 @@ class Response(object):
         return None
 
 
-    @staticmethod
-    def _intersection(A, B):
-
-        A1 = np.array([i[-1] for i in A])
-        B1 = np.array([i[-1] for i in B])
-        A = np.array(A)[np.argsort(A1)]
-        B = np.array(B)[np.argsort(B1)]
-
-        i, j = 0, 0
-        res = []
-        while i < len(A) and j < len(B):
-            a1, a2 = A[i][0], A[i][1]
-            b1, b2 = B[j][0], B[j][1]
-            if b2 > a1 and a2 > b1:
-                res.append([max(a1, b1), min(a2, b2)])
-            if b2 < a2: j += 1
-            else: i += 1
-            
-        return res
-
-
-    @staticmethod
-    def _union(bins):
-        
-        if len(bins) == 0:
-            return []
-
-        bins1 = np.array([bin_[0] for bin_ in bins])
-        bins = np.array(bins)[np.argsort(bins1)]
-        bins = bins.tolist()
-
-        res = [bins[0]]
-        for i in range(1, len(bins)):
-            a1, a2 = res[-1][0], res[-1][1]
-            b1, b2 = bins[i][0], bins[i][1]
-            if b2 >= a1 and a2 >= b1:
-                res[-1] = [min(a1, b1), max(a2, b2)]
-            else: res.append(bins[i])
-
-        return res
-
-
     def __str__(self):
         
         return (

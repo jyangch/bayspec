@@ -2,61 +2,61 @@
     {
         "par#": "3",
         "Class": "model",
-        "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
+        "Expression": "((tbabs*ztbabs)*(cpl+csbpl))",
         "Component": "cpl",
         "Parameter": "$\\alpha$",
-        "Mean": "-1.583",
-        "Median": "-1.556",
-        "Best": "-1.544",
-        "1sigma Best": "-1.544",
-        "1sigma CI": "[-1.713, -1.454]"
+        "Mean": -1.604404317208987,
+        "Median": -1.5735731646057562,
+        "Best": -1.5299593407543215,
+        "1sigma Best": -1.5299593407543215,
+        "1sigma CI": "[-1.732, -1.482]"
     },
     {
         "par#": "5",
         "Class": "model",
-        "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
+        "Expression": "((tbabs*ztbabs)*(cpl+csbpl))",
         "Component": "cpl",
         "Parameter": "log$A$",
-        "Mean": "1.678",
-        "Median": "1.679",
-        "Best": "1.685",
-        "1sigma Best": "1.685",
-        "1sigma CI": "[1.646, 1.709]"
+        "Mean": 1.6846469704017837,
+        "Median": 1.6848956693255426,
+        "Best": 1.6833343682359683,
+        "1sigma Best": 1.6833343682359683,
+        "1sigma CI": "[1.654, 1.716]"
     },
     {
         "par#": "7",
         "Class": "model",
-        "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
+        "Expression": "((tbabs*ztbabs)*(cpl+csbpl))",
         "Component": "csbpl",
         "Parameter": "$\\alpha_2$",
-        "Mean": "-1.555",
-        "Median": "-1.553",
-        "Best": "-1.552",
-        "1sigma Best": "-1.552",
-        "1sigma CI": "[-1.583, -1.527]"
+        "Mean": -1.5578905085538883,
+        "Median": -1.5565834902470117,
+        "Best": -1.5469790553332847,
+        "1sigma Best": -1.5469790553332847,
+        "1sigma CI": "[-1.586, -1.529]"
     },
     {
         "par#": "9",
         "Class": "model",
-        "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
+        "Expression": "((tbabs*ztbabs)*(cpl+csbpl))",
         "Component": "csbpl",
         "Parameter": "log$E_p$",
-        "Mean": "2.371",
-        "Median": "2.371",
-        "Best": "2.374",
-        "1sigma Best": "2.374",
-        "1sigma CI": "[2.352, 2.391]"
+        "Mean": 2.368185615470852,
+        "Median": 2.3685450353028816,
+        "Best": 2.3745137823617557,
+        "1sigma Best": 2.3745137823617557,
+        "1sigma CI": "[2.350, 2.386]"
     },
     {
         "par#": "10",
         "Class": "model",
-        "Expression": "((AS_TbAbs*AS_zTbAbs)*(cpl+csbpl))",
+        "Expression": "((tbabs*ztbabs)*(cpl+csbpl))",
         "Component": "csbpl",
         "Parameter": "log$A$",
-        "Mean": "-0.353",
-        "Median": "-0.354",
-        "Best": "-0.358",
-        "1sigma Best": "-0.358",
-        "1sigma CI": "[-0.391, -0.314]"
+        "Mean": -0.34750159540418857,
+        "Median": -0.34880410344966606,
+        "Best": -0.3627011729091798,
+        "1sigma Best": -0.3627011729091798,
+        "1sigma CI": "[-0.385, -0.310]"
     }
 ]

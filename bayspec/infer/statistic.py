@@ -1,6 +1,290 @@
+import numba as nb
 import numpy as np
 
 from ..util.significance import ppsig, pgsig
+
+
+@nb.njit(cache=True, fastmath=True)
+def _gstat_core(S, B, m, ts, tb, sigma_S, sigma_B):
+    
+    n = S.shape[0]
+    residual = np.empty(n, dtype=np.float64)
+    stat = 0.0
+
+    ratio = 0.0
+    if tb != 0.0:
+        ratio = ts / tb
+
+    for i in range(n):
+        bi = B[i]
+        sigma_bi = sigma_B[i]
+        if tb != 0.0:
+            bi = bi * ratio
+            sigma_bi = sigma_bi * ratio
+
+        sigma = np.sqrt(sigma_S[i] * sigma_S[i] + sigma_bi * sigma_bi)
+        di = S[i] - bi
+        mi = m[i] * ts
+        z = (di - mi) / sigma
+        logli = -0.5 * z * z
+
+        stati = -2.0 * logli
+        stat += stati
+
+        sign = 0.0
+        delta = di - mi
+        if delta > 0.0:
+            sign = 1.0
+        elif delta < 0.0:
+            sign = -1.0
+
+        residual[i] = sign * np.sqrt(stati)
+
+    return stat, residual
+
+
+@nb.njit(cache=True, fastmath=True)
+def _pstat_core(S, m, ts):
+    
+    n = S.shape[0]
+    residual = np.empty(n, dtype=np.float64)
+    stat = 0.0
+
+    for i in range(n):
+        si = S[i]
+        mu = m[i] * ts
+
+        klogmu = 0.0
+        if si != 0.0:
+            klogmu = si * np.log(mu)
+
+        klogk = 0.0
+        if si != 0.0:
+            klogk = si * np.log(si)
+
+        logli = klogmu - mu - klogk + si
+        stati = -2.0 * logli
+        stat += stati
+
+        delta = si - mu
+        sign = 0.0
+        if delta > 0.0:
+            sign = 1.0
+        elif delta < 0.0:
+            sign = -1.0
+
+        residual[i] = sign * np.sqrt(stati)
+
+    return stat, residual
+
+
+@nb.njit(cache=True, fastmath=True)
+def _ppstat_core(S, B, m, ts, tb):
+    
+    n = S.shape[0]
+    residual = np.empty(n, dtype=np.float64)
+    stat = 0.0
+
+    aa = ts + tb
+
+    for i in range(n):
+        si = S[i]
+        bi = B[i]
+        mi = m[i]
+
+        bb = aa * mi - si - bi
+        cc = -bi * mi
+        dd = np.sqrt(bb * bb - 4.0 * aa * cc)
+
+        if bb >= 0.0:
+            b = -2.0 * cc / (bb + dd)
+        else:
+            b = -(bb - dd) / (2.0 * aa)
+
+        mu_s = ts * (b + mi)
+        mu_b = tb * b
+
+        s_klogmu = 0.0
+        if si != 0.0:
+            s_klogmu = si * np.log(mu_s)
+
+        s_klogk = 0.0
+        if si != 0.0:
+            s_klogk = si * np.log(si)
+
+        b_klogmu = 0.0
+        if bi != 0.0:
+            b_klogmu = bi * np.log(mu_b)
+
+        b_klogk = 0.0
+        if bi != 0.0:
+            b_klogk = bi * np.log(bi)
+
+        logli = (s_klogmu - mu_s - s_klogk + si) + (b_klogmu - mu_b - b_klogk + bi)
+        stati = -2.0 * logli
+        stat += stati
+
+        delta = si / ts - bi / tb - mi
+        sign = 0.0
+        if delta > 0.0:
+            sign = 1.0
+        elif delta < 0.0:
+            sign = -1.0
+
+        residual[i] = sign * np.sqrt(stati)
+
+    return stat, residual
+
+
+@nb.njit(cache=True, fastmath=True)
+def _pgstat_core(S, B, m, ts, tb, sigma_B):
+    
+    n = S.shape[0]
+    residual = np.empty(n, dtype=np.float64)
+    stat = 0.0
+
+    aa = tb * tb
+
+    for i in range(n):
+        si = S[i]
+        bi = B[i]
+        mi = m[i]
+        sigma = sigma_B[i]
+
+        bb = ts * sigma * sigma - tb * bi + tb * tb * mi
+        cc = ts * sigma * sigma * mi - si * sigma * sigma - tb * bi * mi
+        dd = np.sqrt(bb * bb - 4.0 * aa * cc)
+
+        sgn = 1.0
+        if bb < 0.0:
+            sgn = -1.0
+
+        qq = -0.5 * (bb + sgn * dd)
+
+        b1 = qq / aa
+        b2 = cc / qq
+        b = b1 if b1 > 0.0 else b2
+
+        mu_s = ts * (b + mi)
+
+        s_klogmu = 0.0
+        if si != 0.0:
+            s_klogmu = si * np.log(mu_s)
+
+        s_klogk = 0.0
+        if si != 0.0:
+            s_klogk = si * np.log(si)
+            
+        pois_logli = s_klogmu - mu_s - s_klogk + si
+
+        z = (bi - tb * b) / sigma
+        gauss_logli = -0.5 * z * z
+
+        logli = pois_logli + gauss_logli
+        stati = -2.0 * logli
+        stat += stati
+
+        delta = si / ts - bi / tb - mi
+        sign = 0.0
+        if delta > 0.0:
+            sign = 1.0
+        elif delta < 0.0:
+            sign = -1.0
+
+        residual[i] = sign * np.sqrt(stati)
+
+    return stat, residual
+
+
+
+class StatisticNB(object):
+
+    @staticmethod
+    def Gstat(**kwargs):
+        return _gstat_core(
+            kwargs['S'],
+            kwargs['B'],
+            kwargs['m'],
+            kwargs['ts'],
+            kwargs['tb'],
+            kwargs['sigma_S'],
+            kwargs['sigma_B'])
+
+
+    @staticmethod
+    def Pstat(**kwargs):
+        return _pstat_core(
+            kwargs['S'],
+            kwargs['m'],
+            kwargs['ts'])
+
+
+    @staticmethod
+    def PPstat(**kwargs):
+        return _ppstat_core(
+            kwargs['S'],
+            kwargs['B'],
+            kwargs['m'],
+            kwargs['ts'],
+            kwargs['tb'])
+
+
+    @staticmethod
+    def PGstat(**kwargs):
+        return _pgstat_core(
+            kwargs['S'],
+            kwargs['B'],
+            kwargs['m'],
+            kwargs['ts'],
+            kwargs['tb'],
+            kwargs['sigma_B'])
+
+
+    @staticmethod
+    def PPstat_UL(**kwargs):
+        
+        B = kwargs['B']
+        m = kwargs['m']
+
+        ts = kwargs['ts']
+        tb = kwargs['tb']
+        alpha = ts / tb
+
+        bkg_cts = np.sum(B)
+        mo_cts = np.sum(m * ts)
+
+        ul_sigma = 3.0
+        sigma = ppsig(mo_cts + bkg_cts * alpha, bkg_cts, alpha)
+
+        stat = sigma - ul_sigma
+        residual = np.array([sigma - ul_sigma], dtype=np.float64)
+
+        return stat, residual
+
+
+    @staticmethod
+    def PGstat_UL(**kwargs):
+        
+        B = kwargs['B']
+        m = kwargs['m']
+
+        ts = kwargs['ts']
+        tb = kwargs['tb']
+        alpha = ts / tb
+
+        sigma_B = kwargs['sigma_B']
+
+        bkg_cts = np.sum(B)
+        mo_cts = np.sum(m * ts)
+        bkg_err = np.sqrt(np.sum(sigma_B * sigma_B))
+
+        ul_sigma = 3.0
+        sigma = pgsig(mo_cts + bkg_cts * alpha, bkg_cts * alpha, bkg_err * alpha)
+
+        stat = sigma - ul_sigma
+        residual = np.array([sigma - ul_sigma], dtype=np.float64)
+
+        return stat, residual
 
 
 
@@ -170,11 +454,11 @@ class Statistic(object):
         bkg_cts = np.sum(B)
         mo_cts = np.sum(m * ts)
         
-        ul_sigma = 3
+        ul_sigma = 3.0
         sigma = ppsig(mo_cts + bkg_cts * alpha, bkg_cts, alpha)
         
         stat = sigma - ul_sigma
-        residual = np.array([sigma - ul_sigma])
+        residual = np.array([sigma - ul_sigma], dtype=np.float64)
 
         return stat, residual
     
@@ -195,113 +479,10 @@ class Statistic(object):
         mo_cts = np.sum(m * ts)
         bkg_err = np.sqrt(np.sum(sigma_B * sigma_B))
         
-        ul_sigma = 3
+        ul_sigma = 3.0
         sigma = pgsig(mo_cts + bkg_cts * alpha, bkg_cts * alpha, bkg_err * alpha)
 
         stat = sigma - ul_sigma
-        residual = np.array([sigma - ul_sigma])
+        residual = np.array([sigma - ul_sigma], dtype=np.float64)
 
         return stat, residual
-    
-    
-    # @staticmethod
-    # def PPstat_Xspec(**kwargs):
-        
-    #     S = kwargs['S']
-    #     B = kwargs['B']
-    #     m = kwargs['m']
-        
-    #     ts = kwargs['ts']
-    #     tb = kwargs['tb']
-        
-    #     FLOOR = 1.0e-5
-    #     stat = 0
-
-    #     for i in range(len(S)):
-    #         si = S[i]
-    #         bi = B[i]
-    #         mi = m[i]
-    #         tt = ts + tb
-    #         mi = max(mi, FLOOR / ts)
-
-    #         if si == 0.0:
-    #             stat += ts * mi - bi * np.log(tb / tt)
-    #         else:
-    #             if bi == 0.0:
-    #                 if mi <= si / tt:
-    #                     stat += -tb * mi - si * np.log(ts / tt)
-    #                 else:
-    #                     stat += ts * mi + si * (np.log(si) - np.log(ts * mi) - 1)
-    #             else:
-    #                 # now the main case where both data and background !=0
-    #                 # Solve quadratic equation for f. Use the positive root to ensure
-    #                 # that f > 0.
-    #                 a = tt
-    #                 b = tt * mi - si - bi
-    #                 c = -bi * mi
-    #                 d = np.sqrt(b * b - 4.0 * a * c)
-    #                 # Avoid round-off error problems if b^2 >> 4ac (see eg Num.Recipes)
-    #                 if b >= 0:
-    #                     fi = -2 * c / (b + d)
-    #                 else:
-    #                     fi = -(b - d) / (2 * a)
-    #                 # note that at this point f must be > 0 so the log
-    #                 # functions below will be valid.
-    #                 stat += ts * mi + tt * fi - si * np.log(ts * mi + ts * fi) - bi * np.log(tb * fi) \
-    #                         - si * (1 - np.log(si)) - bi * (1 - np.log(bi))
-
-    #     return 2.0 * stat
-
-
-    # @staticmethod
-    # def PGstat_Xspec(**kwargs):
-        
-    #     S = kwargs['S']
-    #     B = kwargs['B']
-    #     m = kwargs['m']
-        
-    #     ts = kwargs['ts']
-    #     tb = kwargs['tb']
-        
-    #     sigma = kwargs['sigma_B']
-
-    #     FLOOR = 1.0e-5
-    #     stat = 0
-
-    #     for i in range(len(S)):
-    #         si = S[i]
-    #         bi = B[i]
-    #         mi = m[i]
-    #         sigmai = sigma[i]
-    #         tr = ts / tb
-
-    #         # special case for sigmai = 0
-    #         if sigmai == 0.0:
-    #             mbi = max(mi + bi / tb, FLOOR / ts)
-    #             stat += ts * mbi
-    #             if si > 0.0:
-    #                 stat += si * (np.log(si) - np.log(ts * mbi) - 1)
-    #         else:
-    #             if si == 0.0:
-    #                 stat += ts * mi + bi * tr - 0.5 * (sigmai * tr) ** 2
-    #             else:
-    #                 # Solve quadratic equation for fi, using Numerical Recipes technique
-    #                 # to avoid round-off error that can easily cause problems here
-    #                 # when b^2 >> ac.
-    #                 a = tb ** 2
-    #                 b = ts * sigmai ** 2 - tb * bi + tb ** 2 * mi
-    #                 c = ts * sigmai ** 2 * mi - si * sigmai ** 2 - tb * bi * mi
-    #                 if b >= 0.0:
-    #                     sign = 1.0
-    #                 else:
-    #                     sign = -1.0
-    #                 q = -0.5 * (b + sign * np.sqrt(b ** 2 - 4.0 * a * c))
-    #                 fi = q / a
-    #                 if fi < 0.0:
-    #                     fi = c / q
-    #                 # note that at this point fi must be > 0 so the log
-    #                 # functions below will be valid.
-    #                 stat += ts * (mi + fi) - si * np.log(ts * mi + ts * fi) + \
-    #                         0.5 * (bi - tb * fi) * (bi - tb * fi) / sigmai ** 2 - si * (1 - np.log(si))
-
-    #     return 2.0 * stat

@@ -158,6 +158,64 @@ def clear_cached_property(obj, *names):
                 delattr(obj, attr)
 
 
+@nb.njit(fastmath=True, cache=True)
+def trapz_1d(y, x):
+    """
+    Numba-accelerated 1D trapezoidal integration.
+    
+    Parameters:
+    ----------
+    y : array_like
+        The values to integrate. Should be a 1D array.
+    x : array_like
+        The x-coordinates corresponding to the y values. 
+        Should have the same shape as y.
+        
+    Returns:
+    -------
+    out : float
+        The integrated value over the range of x.
+    """
+
+    acc = 0.0
+    for i in range(len(y) - 1):
+        acc += 0.5 * (y[i] + y[i + 1]) * (x[i + 1] - x[i])
+
+    return acc
+
+
+@nb.njit(fastmath=True, cache=True)
+def trapz_2d(y, x):
+    """
+    Numba-accelerated 2D trapezoidal integration along columns.
+    
+    Parameters:
+    ----------
+    y : 2D array_like
+        The values to integrate. Should be a 2D array 
+        where integration is performed along columns.
+    x : 2D array_like
+        The x-coordinates corresponding to the y values. 
+        Should have the same shape as y.
+        
+    Returns:
+    -------
+    out : 1D ndarray
+        The integrated values along columns, 
+        resulting in a 1D array of length equal to the number of rows in y.
+    """
+
+    nrow, ncol = y.shape
+    out = np.empty(nrow, dtype=np.float64)
+
+    for i in range(nrow):
+        acc = 0.0
+        for j in range(ncol - 1):
+            acc += 0.5 * (y[i, j] + y[i, j + 1]) * (x[i, j + 1] - x[i, j])
+        out[i] = acc
+
+    return out
+
 
 @nb.njit(fastmath=True, cache=True)
 def jit_abs_eval(E, nh, redshift, xsect_energy, xsect_sigma):

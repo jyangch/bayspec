@@ -1,10 +1,10 @@
 [
     {
         "par#": "1",
-        "Component": "AS_TbAbs",
-        "Parameter": "NH",
-        "Value": 1.0,
-        "Prior": "unif(0.0001, 20)"
+        "Component": "tbabs",
+        "Parameter": "$N_H$",
+        "Value": 1,
+        "Prior": "unif(0.0001, 50)"
     },
     {
         "par#": "2",

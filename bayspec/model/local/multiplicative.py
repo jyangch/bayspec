@@ -164,11 +164,9 @@ class tinvabs(Multiplicative):
     
     def __init__(self):
         
-        from astromodels import TbAbs
-        
         self.expr = 'tinvabs'
         self.comment = 'time-involved absorption model'
-        self.tbabs = TbAbs()
+        self.tbabs = tbabs()
         
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
@@ -212,7 +210,7 @@ class tinvabs(Multiplicative):
             if NH < 1e-4:
                 return np.nan if scalar else np.ones_like(E) * np.nan
             
-            self.tbabs.parameters['NH'].value = NH
+            self.tbabs.params[r'$N_H$'].value = NH
             
             res = self.tbabs(np.array(E, dtype=float))
             fracspec[idx] = res

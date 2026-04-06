@@ -2,21 +2,21 @@ import numpy as np
 
 from ..data.data import Data
 from ..model.model import Model
-from .statistic import Statistic
+from .statistic import StatisticNB
 from ..util.tools import cached_property, clear_cached_property
 
 
 
 class Pair(object):
     
-    _allowed_stats = {'gstat': Statistic.Gstat, 
-                      'chi2': Statistic.Gstat, 
-                      'pstat': Statistic.Pstat, 
-                      'ppstat': Statistic.PPstat, 
-                      'cstat': Statistic.PPstat, 
-                      'pgstat': Statistic.PGstat, 
-                      'ULppstat': Statistic.PPstat_UL, 
-                      'ULpgstat': Statistic.PGstat_UL}
+    _allowed_stats = {'gstat': StatisticNB.Gstat, 
+                      'chi2': StatisticNB.Gstat, 
+                      'pstat': StatisticNB.Pstat, 
+                      'ppstat': StatisticNB.PPstat, 
+                      'cstat': StatisticNB.PPstat, 
+                      'pgstat': StatisticNB.PGstat, 
+                      'ULppstat': StatisticNB.PPstat_UL, 
+                      'ULpgstat': StatisticNB.PGstat_UL}
 
     def __init__(self, data, model):
         
@@ -71,7 +71,7 @@ class Pair(object):
         
     def _convolve(self):
         
-        flat_phtflux = self.model.integ(self.data.ebin, self.data.tarr)
+        flat_phtflux = self.model.integ(self.data.egrid, self.data.tgrid)
         phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.data.bin_start, self.data.bin_stop)]
         ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, self.data.corr_rsp_drm)]
         
@@ -80,7 +80,7 @@ class Pair(object):
     
     def _convolve_f64(self):
         
-        flat_phtflux = self.model.integ(self.data.ebin, self.data.tarr)
+        flat_phtflux = self.model.integ(self.data.egrid, self.data.tgrid)
         phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.data.bin_start, self.data.bin_stop)]
         ctsrate = [np.dot(pf, drm).astype(np.float64) for (pf, drm) in zip(phtflux, self.data.corr_rsp_drm)]
         
@@ -89,7 +89,7 @@ class Pair(object):
     
     def _re_convolve(self):
         
-        flat_phtflux = self.model.integ(self.data.ebin, self.data.tarr)
+        flat_phtflux = self.model.integ(self.data.egrid, self.data.tgrid)
         phtflux = [flat_phtflux[i:j] for (i, j) in zip(self.data.bin_start, self.data.bin_stop)]
         re_ctsrate = [np.dot(pf, drm) for (pf, drm) in zip(phtflux, self.data.corr_rsp_re_drm)]
         
