@@ -2,7 +2,6 @@ import os
 import json
 import ctypes
 import numpy as np
-from scipy.optimize import minimize
 from collections import OrderedDict
 from collections.abc import Callable
 
@@ -1070,7 +1069,5 @@ class MaxLikeFit(Infer):
             self.lmfit_params.add(pl, value=pv, min=pr[0], max=pr[1], vary=True)
             
         res = lmfit.minimize(self.lmfit_residual, self.lmfit_params)
-        
-        print(lmfit.fit_report(res))
 
         return res
