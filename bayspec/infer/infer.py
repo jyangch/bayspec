@@ -855,6 +855,13 @@ class Infer(object):
             return self.logprior_func(self, theta)
         
         
+    def calc_stat(self, theta):
+        
+        self.at_par(theta)
+        
+        return self.stat
+        
+        
     def calc_pseudo_residual(self, theta):
         
         self.at_par(theta)
@@ -1071,3 +1078,80 @@ class MaxLikeFit(Infer):
         res = lmfit.minimize(self.lmfit_residual, self.lmfit_params)
 
         return res
+    
+    
+    def iminuit_cost(self, *theta):
+        
+        cost = self.calc_stat(theta)
+        
+        if np.isfinite(cost):
+            return float(cost)
+        else:
+            return 1e100
+    
+    
+    def iminuit(self, run_hesse=True, run_minos=False, tol=None, strategy=None, print_level=0):
+        """
+        Perform maximum-likelihood fitting with `iminuit`.
+
+        This method minimizes the fit statistic returned by `self.stat` using
+        Minuit2's `migrad` optimizer. The current free parameter values are used
+        as starting points, and parameter bounds are taken from `self.free_pranges`.
+
+        Parameters
+        ----------
+        run_hesse : bool, optional
+            If True, run `hesse()` after `migrad()` to estimate the symmetric
+            parameter uncertainties and covariance matrix. Default is True.
+        run_minos : bool or sequence of str, optional
+            If False, do not run `minos()`. If True, run `minos()` for all free
+            parameters. If a list, tuple, or set is provided, run `minos()` only
+            for the specified parameter names. Default is False.
+        tol : float or None, optional
+            Convergence tolerance passed to Minuit. If None, the Minuit default
+            value is used. Default is None.
+        strategy : int or None, optional
+            Minuit strategy level controlling the trade-off between speed and
+            robustness. Typical values are 0, 1, and 2. If None, the default
+            Minuit strategy is used. Default is None.
+        print_level : int, optional
+            Verbosity level of Minuit output. Larger values produce more
+            diagnostic information during optimization. Default is 0.
+
+        Returns
+        -------
+        iminuit.Minuit
+            The configured `Minuit` object after the optimization has been run.
+            The best-fit values, estimated errors, covariance information, and
+            minimization status can be accessed from this object.
+        """
+        
+        import iminuit
+        
+        self._you_free()
+        
+        self.minuit = iminuit.Minuit(self.iminuit_cost, *self.free_pvalues, name=self.clean_free_plabels)
+        self.minuit.errordef = 2 * iminuit.Minuit.LIKELIHOOD
+        self.minuit.print_level = print_level
+        
+        if strategy is not None:
+            self.minuit.strategy = strategy
+        
+        if tol is not None:
+            self.minuit.tol = tol
+        
+        for pl, pr in zip(self.clean_free_plabels, self.free_pranges):
+            self.minuit.limits[pl] = pr
+        
+        self.minuit.migrad()
+        
+        if run_hesse:
+            self.minuit.hesse()
+        
+        if run_minos:
+            if isinstance(run_minos, (list, tuple, set)):
+                self.minuit.minos(*run_minos)
+            else:
+                self.minuit.minos()
+
+        return self.minuit

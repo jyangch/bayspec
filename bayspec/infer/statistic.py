@@ -256,7 +256,7 @@ class StatisticNB(object):
         ul_sigma = 3.0
         sigma = ppsig(mo_cts + bkg_cts * alpha, bkg_cts, alpha)
 
-        stat = sigma - ul_sigma
+        stat = (sigma - ul_sigma) ** 2
         residual = np.array([sigma - ul_sigma], dtype=np.float64)
 
         return stat, residual
@@ -281,7 +281,7 @@ class StatisticNB(object):
         ul_sigma = 3.0
         sigma = pgsig(mo_cts + bkg_cts * alpha, bkg_cts * alpha, bkg_err * alpha)
 
-        stat = sigma - ul_sigma
+        stat = (sigma - ul_sigma) ** 2
         residual = np.array([sigma - ul_sigma], dtype=np.float64)
 
         return stat, residual
@@ -457,7 +457,7 @@ class Statistic(object):
         ul_sigma = 3.0
         sigma = ppsig(mo_cts + bkg_cts * alpha, bkg_cts, alpha)
         
-        stat = sigma - ul_sigma
+        stat = (sigma - ul_sigma) ** 2
         residual = np.array([sigma - ul_sigma], dtype=np.float64)
 
         return stat, residual
@@ -482,7 +482,7 @@ class Statistic(object):
         ul_sigma = 3.0
         sigma = pgsig(mo_cts + bkg_cts * alpha, bkg_cts * alpha, bkg_err * alpha)
 
-        stat = sigma - ul_sigma
+        stat = (sigma - ul_sigma) ** 2
         residual = np.array([sigma - ul_sigma], dtype=np.float64)
 
         return stat, residual

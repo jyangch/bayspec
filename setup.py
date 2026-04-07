@@ -42,7 +42,9 @@ setup(
         "getdist>=1.7.2",
         "astropy>=5.2.2",
         "emcee>=3.1.1",
-        "pymultinest>=2.12"
+        "pymultinest>=2.12",
+        "lmfit>=1.0.3",
+        "iminuit>=2.0.0"
     ],
     packages=find_packages(exclude=["examples*", "docs*"]),
     include_package_data=True,
