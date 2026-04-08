@@ -1,14 +1,15 @@
 import os
 import json
 import ctypes
+import warnings
 import numpy as np
 from collections import OrderedDict
 from collections.abc import Callable
 
 from .pair import Pair
-from ..util.info import Info
 from ..data.data import Data
 from ..model.model import Model
+from ..util.info import Info
 from ..util.tools import SuperDict, JsonEncoder, json_dump
 
 
@@ -304,6 +305,18 @@ class Infer(object):
         
         return [pl.replace('$', '').replace('{', '').replace('}', '').replace('\\', '') 
                 for pl in self._free_plabels]
+        
+        
+    @property
+    def free_indexed_plabels(self):
+        
+        return [f'p{key}_{label}' for label, key in zip(self.free_plabels, self.free_par.keys())]
+    
+    
+    @property
+    def clean_free_indexed_plabels(self):
+        
+        return [f'p{key}_{label}' for label, key in zip(self.clean_free_plabels, self.free_par.keys())]
     
     
     @property
@@ -950,15 +963,13 @@ class BayesInfer(Infer):
     def multinest(self, nlive=500, resume=True, verbose=False, savepath='./'):
         
         import pymultinest
-        from .posterior import Posterior
+        from .analyzer import Posterior
+        
+        self.sampler_type = 'nested'
         
         self._you_free()
         
-        self.sampler = 'nested'
-        self.nlive = nlive
-        self.resume = resume
-        self.verbose = verbose
-        self.prefix = savepath + '/1-'
+        savepath_prefix = savepath + '/1-'
         
         if not os.path.exists(savepath):
             os.makedirs(savepath)
@@ -967,26 +978,25 @@ class BayesInfer(Infer):
                         Prior=self.multinest_safe_prior_transform, 
                         n_dims=self.free_nparams, resume=resume, 
                         verbose=verbose, n_live_points=nlive, 
-                        outputfiles_basename=self.prefix, sampling_efficiency=0.8, 
+                        outputfiles_basename=savepath_prefix, sampling_efficiency=0.8, 
                         importance_nested_sampling=True, multimodal=True)
 
-        self.Analyzer = pymultinest.Analyzer(outputfiles_basename=self.prefix, n_params=self.free_nparams)
+        multinest_analyzer = pymultinest.Analyzer(outputfiles_basename=savepath_prefix, n_params=self.free_nparams)
         
-        self.posterior_stats = self.Analyzer.get_stats()
+        posterior_stats = multinest_analyzer.get_stats()
         
-        if (not self.resume) or (not os.path.exists(self.prefix + 'post_equal_weights.txt')):
-            self.posterior_sample = self.Analyzer.get_equal_weighted_posterior()
+        if (not resume) or (not os.path.exists(savepath_prefix + 'posterior_sample.txt')):
+            self.posterior_sample = multinest_analyzer.get_equal_weighted_posterior()
             self.posterior_sample[:, -1] = self.posterior_sample[:, -1] + \
                 self.calc_logprior_sample(self.posterior_sample[:, 0:-1])
-            np.savetxt(self.prefix + 'post_equal_weights.txt', self.posterior_sample)
+            np.savetxt(savepath_prefix + 'posterior_sample.txt', self.posterior_sample)
         else:
-            self.posterior_sample = np.loadtxt(self.prefix + 'post_equal_weights.txt')
+            self.posterior_sample = np.loadtxt(savepath_prefix + 'posterior_sample.txt')
 
-        self.logevidence = self.posterior_stats['nested importance sampling global log-evidence']
+        self.logevidence = posterior_stats['nested importance sampling global log-evidence']
         
-        json.dump(self.nlive, open(self.prefix + 'nlive.json', 'w'), indent=4, cls=JsonEncoder)
-        json.dump(self.logevidence, open(self.prefix + 'log_evidence.json', 'w'), indent=4, cls=JsonEncoder)
-        json.dump(self.posterior_stats, open(self.prefix + 'posterior_stats.json', 'w'), indent=4, cls=JsonEncoder)
+        json.dump(nlive, open(savepath_prefix + 'nlive.json', 'w'), indent=4, cls=JsonEncoder)
+        json.dump(posterior_stats, open(savepath_prefix + 'posterior_stats.json', 'w'), indent=4, cls=JsonEncoder)
 
         return Posterior(self)
 
@@ -999,51 +1009,50 @@ class BayesInfer(Infer):
     def emcee(self, nstep=1000, discard=100, resume=True, savepath='./'):
 
         import emcee
-        from .posterior import Posterior
+        from .analyzer import Posterior
+        
+        self.sampler_type = 'mcmc'
         
         self._you_free()
         
-        self.sampler = 'mcmc'
-        self.nstep = nstep
-        self.discard = discard
-        self.resume = resume
-        self.prefix = savepath + '/1-'
+        savepath_prefix = savepath + '/1-'
         
         if not os.path.exists(savepath):
             os.makedirs(savepath)
 
-        np.random.seed(42)
+        np.random.seed(450001)
         ndim = self.free_nparams
         nwalkers = 32 if 2 * ndim < 32 else 2 * ndim
         pos = self.free_pvalues + 1e-4 * np.random.randn(nwalkers, ndim)
 
-        if (not self.resume) or (not os.path.exists(self.prefix + '.npz')):
-            sampler = emcee.EnsembleSampler(nwalkers, ndim, self.emcee_calc_logprob)
-            sampler.run_mcmc(pos, self.nstep, progress=True)
+        if (not resume) or (not os.path.exists(savepath_prefix + '.npz')):
+            emcee_sampler = emcee.EnsembleSampler(nwalkers, ndim, self.emcee_calc_logprob)
+            emcee_sampler.run_mcmc(pos, nstep, progress=True)
             
-            self.params_samples = sampler.get_chain()
-            np.savez(self.prefix, samples=self.params_samples)
+            params_sample = emcee_sampler.get_chain()
+            np.savez(savepath_prefix + '.npz', sample=params_sample)
             
-            self.logprob_sample = sampler.get_log_prob()
-            np.savetxt(self.prefix + 'logprob.dat', self.logprob_sample)
+            logprob_sample = emcee_sampler.get_log_prob()
+            np.savetxt(savepath_prefix + 'logprob.dat', logprob_sample)
             
             try:
-                self.autocorr_time = sampler.get_autocorr_time()
-                json.dump(self.autocorr_time, open(self.prefix + 'autocorr_time.json', 'w'), indent=4, cls=JsonEncoder)
+                autocorr_time = emcee_sampler.get_autocorr_time()
+                json.dump(autocorr_time, open(savepath_prefix + 'autocorr_time.json', 'w'), 
+                          indent=4, cls=JsonEncoder)
             except:
                 pass
 
-        self.params_samples = np.load(self.prefix + '.npz')['samples']
-        self.logprob_sample = np.loadtxt(self.prefix + 'logprob.dat')
+        params_sample = np.load(savepath_prefix + '.npz')['sample']
+        logprob_sample = np.loadtxt(savepath_prefix + 'logprob.dat')
         
-        flat_params_sample = self.params_samples[self.discard:, :, :].reshape(-1, ndim)
-        flat_logprob_sample = self.logprob_sample[self.discard:, :].reshape(-1)
+        flat_params_sample = params_sample[discard:, :, :].reshape(-1, ndim)
+        flat_logprob_sample = logprob_sample[discard:, :].reshape(-1)
         
         self.posterior_sample = np.hstack((flat_params_sample, np.reshape(flat_logprob_sample, (-1, 1))))
         
-        np.savetxt(self.prefix + 'post_equal_weights.dat', self.posterior_sample)
-        json.dump(self.nstep, open(self.prefix + 'nstep.json', 'w'), indent=4, cls=JsonEncoder)
-        json.dump(self.discard, open(self.prefix + 'discard.json', 'w'), indent=4, cls=JsonEncoder)
+        np.savetxt(savepath_prefix + 'posterior_sample.txt', self.posterior_sample)
+        json.dump(nstep, open(savepath_prefix + 'nstep.json', 'w'), indent=4, cls=JsonEncoder)
+        json.dump(discard, open(savepath_prefix + 'discard.json', 'w'), indent=4, cls=JsonEncoder)
         
         return Posterior(self)
 
@@ -1057,6 +1066,77 @@ class MaxLikeFit(Infer):
         self.inference_type = 'Maximum Likelihood Estimation'
         
         
+    def _make_bootstrap_sample(self, means, covar=None, errors=None, nsample=1000, random_state=450001):
+
+        means = np.asarray(means, dtype=float)
+        ndim = means.size
+        
+        nsample = max(int(nsample), 1)
+
+        if covar is not None:
+            covar = np.asarray(covar, dtype=float)
+
+        if covar is None or covar.shape != (ndim, ndim) or (not np.isfinite(covar).all()):
+            msg = 'Covariance matrix is not provided or invalid. \
+                Using diagonal covariance with variances from errors or zeros.'
+            warnings.warn(msg)
+            err = np.zeros(ndim, dtype=float) if errors is None else np.asarray(errors, dtype=float)
+            err = np.where(np.isfinite(err), np.abs(err), 0.0)
+            covar = np.diag(err * err)
+        
+        covar = 0.5 * (covar + covar.T)
+        eigval, eigvec = np.linalg.eigh(covar)
+        scale = np.max(np.abs(eigval)) if eigval.size else 1.0
+        floor = np.finfo(float).eps * (scale if scale > 0 else 1.0)
+        eigval = np.clip(eigval, floor, None)
+        covar = eigvec @ np.diag(eigval) @ eigvec.T
+        
+        lower = np.array([pr[0] for pr in self.free_pranges], dtype=float)
+        upper = np.array([pr[1] for pr in self.free_pranges], dtype=float)
+        
+        rng = np.random.default_rng(random_state)
+        
+        param_sample = [means.copy()]
+        tries = 0
+        while len(param_sample) < nsample and tries < 10:
+            batch_size = max(4 * (nsample - len(param_sample)), 128)
+            draw = rng.multivariate_normal(means, covar, size=batch_size, check_valid='ignore')
+            draw = np.atleast_2d(draw)
+
+            inside = np.all((draw >= lower) & (draw <= upper), axis=1)
+            param_sample.extend(draw[inside][:nsample - len(param_sample)])
+            tries += 1
+            
+        if len(param_sample) < nsample:
+            msg = f'Only {len(param_sample)} valid samples were generated after {tries} attempts.'
+            warnings.warn(msg)
+            param_sample = np.asarray(param_sample, dtype=float)
+        else:
+            param_sample = np.asarray(param_sample[:nsample], dtype=float)
+
+        loglike_sample = np.array([self.calc_loglike(theta) for theta in param_sample], dtype=float)
+        
+        self.bootstrap_sample = np.hstack((param_sample, loglike_sample[:, None]))
+
+        self.at_par(means)
+
+
+    @staticmethod
+    def _display_results(*objects):
+
+        valid_objects = [obj for obj in objects if obj is not None]
+
+        try:
+            from IPython.display import HTML, display
+        except ImportError:
+            for obj in valid_objects:
+                print(obj)
+            return
+
+        for obj in valid_objects:
+            display(obj)
+        
+        
     def lmfit_residual(self, params):
         
         theta = [params[pl] for pl in self.clean_free_plabels]
@@ -1064,20 +1144,39 @@ class MaxLikeFit(Infer):
         return self.calc_pseudo_residual(theta)
         
         
-    def lmfit(self):
+    def lmfit(self, savepath=None):
         
         import lmfit
+        from .analyzer import Bootstrap
         
         self._you_free()
         
-        self.lmfit_params = lmfit.Parameters()
+        lmfit_params = lmfit.Parameters()
         
         for pl, pv, pr in zip(self.clean_free_plabels, self.free_pvalues, self.free_pranges):
-            self.lmfit_params.add(pl, value=pv, min=pr[0], max=pr[1], vary=True)
+            lmfit_params.add(pl, value=pv, min=pr[0], max=pr[1], vary=True)
             
-        res = lmfit.minimize(self.lmfit_residual, self.lmfit_params)
+        lmfit_result = lmfit.minimize(self.lmfit_residual, lmfit_params)
 
-        return res
+        self._display_results(lmfit_result)
+        
+        means = np.array([lmfit_result.params[pl].value for pl in self.clean_free_plabels])
+        errors = np.array([
+            np.nan if lmfit_result.params[pl].stderr is None else lmfit_result.params[pl].stderr \
+                for pl in self.clean_free_plabels])
+        covar = getattr(lmfit_result, 'covar', None)
+        
+        self._make_bootstrap_sample(means, covar=covar, errors=errors)
+        
+        maxlike_res = {'means': means, 'errors': errors, 'covar': covar}
+        
+        if savepath is not None:
+            savepath_prefix = savepath + '/1-'
+            
+            np.savetxt(savepath_prefix + 'bootstrap_sample.txt', self.bootstrap_sample)
+            json.dump(maxlike_res, open(savepath_prefix + 'maxlike_res.json', 'w'), indent=4, cls=JsonEncoder)
+
+        return Bootstrap(self)
     
     
     def iminuit_cost(self, *theta):
@@ -1090,68 +1189,39 @@ class MaxLikeFit(Infer):
             return 1e100
     
     
-    def iminuit(self, run_hesse=True, run_minos=False, tol=None, strategy=None, print_level=0):
-        """
-        Perform maximum-likelihood fitting with `iminuit`.
-
-        This method minimizes the fit statistic returned by `self.stat` using
-        Minuit2's `migrad` optimizer. The current free parameter values are used
-        as starting points, and parameter bounds are taken from `self.free_pranges`.
-
-        Parameters
-        ----------
-        run_hesse : bool, optional
-            If True, run `hesse()` after `migrad()` to estimate the symmetric
-            parameter uncertainties and covariance matrix. Default is True.
-        run_minos : bool or sequence of str, optional
-            If False, do not run `minos()`. If True, run `minos()` for all free
-            parameters. If a list, tuple, or set is provided, run `minos()` only
-            for the specified parameter names. Default is False.
-        tol : float or None, optional
-            Convergence tolerance passed to Minuit. If None, the Minuit default
-            value is used. Default is None.
-        strategy : int or None, optional
-            Minuit strategy level controlling the trade-off between speed and
-            robustness. Typical values are 0, 1, and 2. If None, the default
-            Minuit strategy is used. Default is None.
-        print_level : int, optional
-            Verbosity level of Minuit output. Larger values produce more
-            diagnostic information during optimization. Default is 0.
-
-        Returns
-        -------
-        iminuit.Minuit
-            The configured `Minuit` object after the optimization has been run.
-            The best-fit values, estimated errors, covariance information, and
-            minimization status can be accessed from this object.
-        """
+    def iminuit(self, savepath=None):
         
         import iminuit
+        from .analyzer import Bootstrap
         
         self._you_free()
         
-        self.minuit = iminuit.Minuit(self.iminuit_cost, *self.free_pvalues, name=self.clean_free_plabels)
-        self.minuit.errordef = 2 * iminuit.Minuit.LIKELIHOOD
-        self.minuit.print_level = print_level
+        minuit = iminuit.Minuit(self.iminuit_cost, *self.free_pvalues, name=self.clean_free_indexed_plabels)
+        minuit.errordef = 2 * iminuit.Minuit.LIKELIHOOD
+        minuit.print_level = 0
         
-        if strategy is not None:
-            self.minuit.strategy = strategy
+        for pl, pr in zip(self.clean_free_indexed_plabels, self.free_pranges):
+            minuit.limits[pl] = pr
         
-        if tol is not None:
-            self.minuit.tol = tol
+        minuit.migrad()
+        minuit.hesse()
+        minuit.minos()
         
-        for pl, pr in zip(self.clean_free_plabels, self.free_pranges):
-            self.minuit.limits[pl] = pr
+        self._display_results(minuit)
         
-        self.minuit.migrad()
+        means = np.array([par.value for par in minuit.params])
+        errors = np.array([par.error for par in minuit.params])
+        minos_errors = np.array([par.merror for par in minuit.params])
+        covar = None if minuit.covariance is None else np.asarray(minuit.covariance)
         
-        if run_hesse:
-            self.minuit.hesse()
+        self._make_bootstrap_sample(means, covar=covar, errors=errors)
         
-        if run_minos:
-            if isinstance(run_minos, (list, tuple, set)):
-                self.minuit.minos(*run_minos)
-            else:
-                self.minuit.minos()
+        maxlike_res = {'means': means, 'errors': errors, 'minos_errors': minos_errors, 'covar': covar}
+        
+        if savepath is not None:
+            savepath_prefix = savepath + '/1-'
+            
+            np.savetxt(savepath_prefix + 'bootstrap_sample.txt', self.bootstrap_sample)
+            json.dump(maxlike_res, open(savepath_prefix + 'maxlike_res.json', 'w'), indent=4, cls=JsonEncoder)
 
-        return self.minuit
+        return Bootstrap(self)

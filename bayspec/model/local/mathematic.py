@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
-from ...util.param import Par
 from ..model import Mathematic
+from ...util.param import Par
 from ...util.prior import unif
 
 

@@ -7,11 +7,11 @@ from io import BytesIO
 from scipy import special
 from collections import OrderedDict
 
+from .spectrum import Source, Background
+from .response import Response, Redistribution, Auxiliary
 from ..util.info import Info
 from ..util.tools import SuperDict
-from .spectrum import Source, Background
 from ..util.significance import pgsig, ppsig
-from .response import Response, Redistribution, Auxiliary
 from ..util.tools import cached_property, clear_cached_property, json_dump
 
 

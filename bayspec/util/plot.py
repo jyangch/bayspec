@@ -11,14 +11,14 @@ from getdist import plots, MCSamples
 from plotly.subplots import make_subplots
 
 from .tools import json_dump
-from ..infer.pair import Pair
-from ..model.model import Model
-from ..infer.infer import Infer
 from .corner import corner_plotly
 from ..data.spectrum import Spectrum
-from ..data.data import Data, DataUnit
-from ..infer.posterior import Posterior
 from ..data.response import Response, Auxiliary
+from ..data.data import Data, DataUnit
+from ..model.model import Model
+from ..infer.pair import Pair
+from ..infer.infer import Infer, BayesInfer
+from ..infer.analyzer import Posterior, Bootstrap
 
 
 
@@ -703,14 +703,16 @@ class Plot(object):
     @staticmethod
     def emcee_walker(cls):
         
-        if not isinstance(cls, (Infer, Posterior)):
-            raise TypeError('cls is not Infer or Posterior type, cannot call walker method')
+        if not isinstance(cls, (BayesInfer, Posterior)):
+            raise TypeError('cls is not BayesInfer or Posterior type, cannot call walker method')
+        
+        params_sample = cls.posterior_sample[:, :cls.free_nparams].copy()
         
         fig, axes = plt.subplots(cls.free_nparams, figsize=(10, 2 * cls.free_nparams), sharex='all')
         for i in range(cls.free_nparams):
             ax = axes[i]
-            ax.plot(cls.params_samples[:, :, i], "k", alpha=0.3)
-            ax.set_xlim(0, len(cls.params_samples))
+            ax.plot(params_sample[:, :, i], "k", alpha=0.3)
+            ax.set_xlim(0, len(params_sample))
             ax.set_ylabel(cls.free_plabels[i])
             ax.yaxis.set_label_coords(-0.1, 0.5)
             ax.minorticks_on()
@@ -730,10 +732,10 @@ class Plot(object):
     @staticmethod
     def infer(cls, ploter='plotly', style='CE', rebin=True, at_par='best'):
         
-        if not isinstance(cls, (Infer, Posterior)):
-            raise TypeError('cls is not Infer or Posterior type, cannot call infer method')
+        if not isinstance(cls, Infer):
+            raise TypeError('cls is not Infer type, cannot call infer method')
         
-        if isinstance(cls, Posterior):
+        if isinstance(cls, (Posterior, Bootstrap)):
             if at_par == 'best': cls.at_par(cls.par_best)
             elif at_par == 'best-ci': cls.at_par(cls.par_best_ci)
             elif at_par == 'median': cls.at_par(cls.par_median)
@@ -934,14 +936,14 @@ class Plot(object):
     @staticmethod
     def post_corner(cls, ploter='plotly', at_par='best'):
         
-        if not isinstance(cls, Posterior):
-            raise TypeError('cls is not Posterior type, cannot call corner method')
+        if not isinstance(cls, (Posterior, Bootstrap)):
+            raise TypeError('cls is not Posterior or Bootstrap type, cannot call corner method')
         
-        data = cls.posterior_sample[:, :-1].copy()
-        weights = np.ones(cls.posterior_sample.shape[0]) / cls.posterior_sample.shape[0]
+        data = cls.param_sample
+        weights = np.ones(data.shape[0], dtype=float) / data.shape[0]
 
         title_fmt = '$%.2f_{-%.2f}^{+%.2f}~(%.2f)$'
-        plabels = [f'p{key}({label})' for label, key in zip(cls.free_plabels, cls.free_par.keys())]
+        plabels = cls.free_indexed_plabels
         
         if at_par == 'best': truth = cls.par_best
         elif at_par == 'best-ci': truth = cls.par_best_ci
@@ -1005,7 +1007,8 @@ class Plot(object):
             fig.settings.num_shades = 30
             fig.settings.title_limit_fontsize = 10
 
-            mcsample = MCSamples(samples=data, names=plabels, sampler=cls.sampler)
+            sampler_type = getattr(cls, 'sampler_type', 'mcmc')
+            mcsample = MCSamples(samples=data, names=plabels, sampler=sampler_type)
             mcsample.updateSettings({"contours": [0.6827, 0.9545, 0.9973]})
             
             fig.triangle_plot(mcsample, plabels, shaded=True)
