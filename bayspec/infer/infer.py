@@ -310,13 +310,13 @@ class Infer(object):
     @property
     def free_indexed_plabels(self):
         
-        return [f'p{key}_{label}' for label, key in zip(self.free_plabels, self.free_par.keys())]
+        return [f'p{key}({label})' for label, key in zip(self.free_plabels, self.free_par.keys())]
     
     
     @property
     def clean_free_indexed_plabels(self):
         
-        return [f'p{key}_{label}' for label, key in zip(self.clean_free_plabels, self.free_par.keys())]
+        return [f'p{key}({label})' for label, key in zip(self.clean_free_plabels, self.free_par.keys())]
     
     
     @property
