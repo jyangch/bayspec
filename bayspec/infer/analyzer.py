@@ -329,3 +329,34 @@ class Bootstrap(SampleAnalyzer):
             raise TypeError('expected an instance of MaxLikeFit')
         
         super().__init__(infer)
+        
+        
+    @property
+    def par_truth(self):
+        
+        return self.param_sample[0].tolist()
+    
+    
+    @property
+    def free_par_info(self):
+        
+        self._you_free()
+        
+        free_params = self.free_params.copy()
+        
+        free_params = Info.list_dict_to_dict(free_params)
+        
+        del free_params['Posterior']
+        del free_params['Mates']
+        del free_params['Frozen']
+        del free_params['Prior']
+        del free_params['Value']
+        
+        free_params['Truth'] = [par for par in self.par_truth]
+        free_params['Mean'] = [par for par in self.par_mean]
+        free_params['Median'] = [par for par in self.par_median]
+        free_params['Best'] = [par for par in self.par_best]
+        free_params['1sigma Best'] = [par for par in self.par_best_ci]
+        free_params['1sigma CI'] = ['[%.3f, %.3f]' % tuple(ci) for ci in self.par_Isigma]
+        
+        return Info.from_dict(free_params)

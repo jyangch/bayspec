@@ -1066,10 +1066,10 @@ class MaxLikeFit(Infer):
         self.inference_type = 'Maximum Likelihood Estimation'
         
         
-    def _make_bootstrap_sample(self, means, covar=None, errors=None, nsample=1000, random_state=450001):
+    def _make_bootstrap_sample(self, values, covar=None, errors=None, nsample=1000, random_state=450001):
 
-        means = np.asarray(means, dtype=float)
-        ndim = means.size
+        values = np.asarray(values, dtype=float)
+        ndim = values.size
         
         nsample = max(int(nsample), 1)
 
@@ -1096,11 +1096,11 @@ class MaxLikeFit(Infer):
         
         rng = np.random.default_rng(random_state)
         
-        param_sample = [means.copy()]
+        param_sample = [values.copy()]
         tries = 0
         while len(param_sample) < nsample and tries < 10:
             batch_size = max(4 * (nsample - len(param_sample)), 128)
-            draw = rng.multivariate_normal(means, covar, size=batch_size, check_valid='ignore')
+            draw = rng.multivariate_normal(values, covar, size=batch_size, check_valid='ignore')
             draw = np.atleast_2d(draw)
 
             inside = np.all((draw >= lower) & (draw <= upper), axis=1)
@@ -1118,7 +1118,7 @@ class MaxLikeFit(Infer):
         
         self.bootstrap_sample = np.hstack((param_sample, loglike_sample[:, None]))
 
-        self.at_par(means)
+        self.at_par(values)
 
 
     @staticmethod
@@ -1160,15 +1160,15 @@ class MaxLikeFit(Infer):
 
         self._display_results(lmfit_result)
         
-        means = np.array([lmfit_result.params[pl].value for pl in self.clean_free_plabels])
+        values = np.array([lmfit_result.params[pl].value for pl in self.clean_free_plabels])
         errors = np.array([
             np.nan if lmfit_result.params[pl].stderr is None else lmfit_result.params[pl].stderr \
                 for pl in self.clean_free_plabels])
         covar = getattr(lmfit_result, 'covar', None)
         
-        self._make_bootstrap_sample(means, covar=covar, errors=errors)
+        self._make_bootstrap_sample(values, covar=covar, errors=errors)
         
-        maxlike_res = {'means': means, 'errors': errors, 'covar': covar}
+        maxlike_res = {'values': values, 'errors': errors, 'covar': covar}
         
         if savepath is not None:
             savepath_prefix = savepath + '/1-'
@@ -1209,14 +1209,14 @@ class MaxLikeFit(Infer):
         
         self._display_results(minuit)
         
-        means = np.array([par.value for par in minuit.params])
+        values = np.array([par.value for par in minuit.params])
         errors = np.array([par.error for par in minuit.params])
         minos_errors = np.array([par.merror for par in minuit.params])
         covar = None if minuit.covariance is None else np.asarray(minuit.covariance)
         
-        self._make_bootstrap_sample(means, covar=covar, errors=errors)
+        self._make_bootstrap_sample(values, covar=covar, errors=errors)
         
-        maxlike_res = {'means': means, 'errors': errors, 'minos_errors': minos_errors, 'covar': covar}
+        maxlike_res = {'values': values, 'errors': errors, 'minos_errors': minos_errors, 'covar': covar}
         
         if savepath is not None:
             savepath_prefix = savepath + '/1-'
