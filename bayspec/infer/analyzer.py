@@ -360,3 +360,11 @@ class Bootstrap(SampleAnalyzer):
         free_params['1sigma CI'] = ['[%.3f, %.3f]' % tuple(ci) for ci in self.par_Isigma]
         
         return Info.from_dict(free_params)
+    
+    
+    @property
+    def max_loglike(self):
+        
+        self.at_par(self.par_truth)
+        
+        return self.loglike
