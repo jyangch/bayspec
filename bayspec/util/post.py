@@ -73,13 +73,25 @@ class Post(object):
     @property
     def best_ci(self):
         
-        return self._best_ci
+        return getattr(self, '_best_ci', None)
     
     
     @best_ci.setter
     def best_ci(self, new_best_ci):
         
         self._best_ci = new_best_ci
+    
+    
+    @property
+    def truth(self):
+        
+        return getattr(self, '_truth', None)
+    
+    
+    @truth.setter
+    def truth(self, new_truth):
+        
+        self._truth = new_truth
     
     
     def quantile(self, q):

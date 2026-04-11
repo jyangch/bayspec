@@ -730,17 +730,27 @@ class Plot(object):
             
     
     @staticmethod
-    def infer(cls, ploter='plotly', style='CE', rebin=True, at_par='best'):
+    def infer(cls, ploter='plotly', style='CE', rebin=True, at_par=None):
         
         if not isinstance(cls, Infer):
             raise TypeError('cls is not Infer type, cannot call infer method')
+        
+        if at_par is None:
+            if isinstance(cls, Posterior): at_par = 'best'
+            if isinstance(cls, Bootstrap): at_par = 'truth'
         
         if isinstance(cls, (Posterior, Bootstrap)):
             if at_par == 'best': cls.at_par(cls.par_best)
             elif at_par == 'best-ci': cls.at_par(cls.par_best_ci)
             elif at_par == 'median': cls.at_par(cls.par_median)
             elif at_par == 'mean': cls.at_par(cls.par_mean)
+            elif at_par == 'truth': 
+                if None in cls.par_truth: raise ValueError('no truth value for some parameters')
+                else: cls.at_par(cls.par_truth)
             else: raise ValueError(f'unsupported at_par argument: {at_par}')
+            
+        if isinstance(cls, Bootstrap):
+            cls.at_par(cls.par_truth)
         
         if ploter == 'plotly':
             fig = make_subplots(
@@ -934,7 +944,7 @@ class Plot(object):
             
         
     @staticmethod
-    def post_corner(cls, ploter='plotly', at_par='best'):
+    def post_corner(cls, ploter='plotly', at_par=None):
         
         if not isinstance(cls, (Posterior, Bootstrap)):
             raise TypeError('cls is not Posterior or Bootstrap type, cannot call corner method')
@@ -945,10 +955,17 @@ class Plot(object):
         title_fmt = '$%.2f_{-%.2f}^{+%.2f}~(%.2f)$'
         plabels = cls.free_indexed_plabels
         
+        if at_par is None:
+            if isinstance(cls, Posterior): at_par = 'best'
+            if isinstance(cls, Bootstrap): at_par = 'truth'
+        
         if at_par == 'best': truth = cls.par_best
         elif at_par == 'best-ci': truth = cls.par_best_ci
         elif at_par == 'median': truth = cls.par_median
         elif at_par == 'mean': truth = cls.par_mean
+        elif at_par == 'truth': 
+            if None in cls.par_truth: raise ValueError('no truth value for some parameters')
+            else: truth = cls.par_truth
         else: raise ValueError(f'unsupported at_par argument: {at_par}')
         
         median = cls.par_median
@@ -1147,13 +1164,17 @@ class ModelPlot(object):
         return 'rgba(%d, %d, %d, %f)' % tuple(rgb)
         
         
-    def add_model(self, model, E, T=None, post=None, at_par='best'):
+    def add_model(self, model, E, T=None, post=None, at_par=None):
         
         if not isinstance(model, Model):
             raise TypeError('model is not Model type, cannot call add_model method')
         
         if post is None:
             post = self.post
+            
+        if post and at_par is None:
+            if None in model.par_truth: at_par = 'best'
+            else: at_par = 'truth'
         
         self.model_index += 1
         
@@ -1168,6 +1189,9 @@ class ModelPlot(object):
                 elif at_par == 'best-ci': y = model.best_ci_phtspec(E, T).astype(float)
                 elif at_par == 'median': y = model.median_phtspec(E, T).astype(float)
                 elif at_par == 'mean': y = model.mean_phtspec(E, T).astype(float)
+                elif at_par == 'truth': 
+                    if None in model.par_truth: raise ValueError('no truth value for some parameters')
+                    else: y = model.truth_phtspec(E, T).astype(float)
                 else: raise ValueError(f'unsupported at_par argument: {at_par}')
                 y_sample = model.phtspec_sample(E, T)
                 y_ci = y_sample['Isigma'].astype(float)
@@ -1183,6 +1207,9 @@ class ModelPlot(object):
                 elif at_par == 'best-ci': y = model.best_ci_flxspec(E, T).astype(float)
                 elif at_par == 'median': y = model.median_flxspec(E, T).astype(float)
                 elif at_par == 'mean': y = model.mean_flxspec(E, T).astype(float)
+                elif at_par == 'truth': 
+                    if None in model.par_truth: raise ValueError('no truth value for some parameters')
+                    else: y = model.truth_flxspec(E, T).astype(float)
                 else: raise ValueError(f'unsupported at_par argument: {at_par}')
                 y_sample = model.flxspec_sample(E, T)
                 y_ci = y_sample['Isigma'].astype(float)
@@ -1198,6 +1225,9 @@ class ModelPlot(object):
                 elif at_par == 'best-ci': y = model.best_ci_ergspec(E, T).astype(float)
                 elif at_par == 'median': y = model.median_ergspec(E, T).astype(float)
                 elif at_par == 'mean': y = model.mean_ergspec(E, T).astype(float)
+                elif at_par == 'truth': 
+                    if None in model.par_truth: raise ValueError('no truth value for some parameters')
+                    else: y = model.truth_ergspec(E, T).astype(float)
                 else: raise ValueError(f'unsupported at_par argument: {at_par}')
                 y_sample = model.ergspec_sample(E, T)
                 y_ci = y_sample['Isigma'].astype(float)
@@ -1213,6 +1243,9 @@ class ModelPlot(object):
                 elif at_par == 'best-ci': y = model.best_ci_nouspec(E).astype(float)
                 elif at_par == 'median': y = model.median_nouspec(E).astype(float)
                 elif at_par == 'mean': y = model.mean_nouspec(E).astype(float)
+                elif at_par == 'truth': 
+                    if None in model.par_truth: raise ValueError('no truth value for some parameters')
+                    else: y = model.truth_nouspec(E).astype(float)
                 else: raise ValueError(f'unsupported at_par argument: {at_par}')
                 y_sample = model.nouspec_sample(E)
                 y_ci = y_sample['Isigma'].astype(float)

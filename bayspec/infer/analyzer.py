@@ -127,6 +127,12 @@ class SampleAnalyzer(Infer):
     def par_best_ci(self):
         
         return [par.post.best_ci for par in self.free_par.values()]
+    
+    
+    @property
+    def par_truth(self):
+        
+        return [par.post.truth for par in self.free_par.values()]
 
 
     def par_quantile(self, q):
@@ -212,6 +218,9 @@ class SampleAnalyzer(Infer):
         del free_params['Frozen']
         del free_params['Prior']
         del free_params['Value']
+        
+        if None not in self.par_truth:
+            free_params['Truth'] = [par for par in self.par_truth]
         
         free_params['Mean'] = [par for par in self.par_mean]
         free_params['Median'] = [par for par in self.par_median]
@@ -331,35 +340,20 @@ class Bootstrap(SampleAnalyzer):
         super().__init__(infer)
         
         
-    @property
-    def par_truth(self):
+    def _allot_post(self):
         
-        return self.param_sample[0].tolist()
-    
-    
-    @property
-    def free_par_info(self):
+        for i in range(self.free_nparams):
+            self.free_par[i+1].post = Post(self.param_sample[:, i], self.prob_sample)
+            
+        self._allot_best_ci(q=0.6827)
+        self._allot_truth()
+        self.at_par(self.par_truth)
         
-        self._you_free()
         
-        free_params = self.free_params.copy()
+    def _allot_truth(self):
         
-        free_params = Info.list_dict_to_dict(free_params)
-        
-        del free_params['Posterior']
-        del free_params['Mates']
-        del free_params['Frozen']
-        del free_params['Prior']
-        del free_params['Value']
-        
-        free_params['Truth'] = [par for par in self.par_truth]
-        free_params['Mean'] = [par for par in self.par_mean]
-        free_params['Median'] = [par for par in self.par_median]
-        free_params['Best'] = [par for par in self.par_best]
-        free_params['1sigma Best'] = [par for par in self.par_best_ci]
-        free_params['1sigma CI'] = ['[%.3f, %.3f]' % tuple(ci) for ci in self.par_Isigma]
-        
-        return Info.from_dict(free_params)
+        for par, value in zip(self.free_par.values(), self.param_sample[0].tolist()):
+            par.post.truth = value
     
     
     @property

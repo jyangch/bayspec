@@ -523,6 +523,26 @@ class Model(object):
     def par_best_ci(self):
         
         return [par.val if par.frozen else par.post.best_ci for par in self.par.values()]
+    
+    
+    @property
+    def par_truth(self):
+        
+        return [par.val if par.frozen else par.post.truth for par in self.par.values()]
+
+
+    def mean_phtspec(self, E, T=None):
+        
+        self.at_par(self.par_mean)
+        
+        return self.phtspec(E, T)
+    
+    
+    def median_phtspec(self, E, T=None):
+        
+        self.at_par(self.par_median)
+        
+        return self.phtspec(E, T)
 
 
     def best_phtspec(self, E, T=None):
@@ -539,18 +559,28 @@ class Model(object):
         return self.phtspec(E, T)
     
     
-    def median_phtspec(self, E, T=None):
+    def truth_phtspec(self, E, T=None):
         
-        self.at_par(self.par_median)
+        if None in self.par_truth:
+            raise ValueError('no truth value for some parameters')
+        
+        self.at_par(self.par_truth)
         
         return self.phtspec(E, T)
     
     
-    def mean_phtspec(self, E, T=None):
+    def mean_nouspec(self, E, T=None):
         
         self.at_par(self.par_mean)
         
-        return self.phtspec(E, T)
+        return self.nouspec(E, T)
+    
+    
+    def median_nouspec(self, E, T=None):
+        
+        self.at_par(self.par_median)
+        
+        return self.nouspec(E, T)
     
     
     def best_nouspec(self, E, T=None):
@@ -567,18 +597,28 @@ class Model(object):
         return self.nouspec(E, T)
     
     
-    def median_nouspec(self, E, T=None):
+    def truth_nouspec(self, E, T=None):
         
-        self.at_par(self.par_median)
+        if None in self.par_truth:
+            raise ValueError('no truth value for some parameters')
+        
+        self.at_par(self.par_truth)
         
         return self.nouspec(E, T)
     
     
-    def mean_nouspec(self, E, T=None):
+    def mean_flxspec(self, E, T=None):
         
         self.at_par(self.par_mean)
         
-        return self.nouspec(E, T)
+        return self.flxspec(E, T)
+    
+    
+    def median_flxspec(self, E, T=None):
+        
+        self.at_par(self.par_median)
+        
+        return self.flxspec(E, T)
     
     
     def best_flxspec(self, E, T=None):
@@ -595,18 +635,28 @@ class Model(object):
         return self.flxspec(E, T)
     
     
-    def median_flxspec(self, E, T=None):
+    def truth_flxspec(self, E, T=None):
         
-        self.at_par(self.par_median)
+        if None in self.par_truth:
+            raise ValueError('no truth value for some parameters')
+        
+        self.at_par(self.par_truth)
         
         return self.flxspec(E, T)
     
     
-    def mean_flxspec(self, E, T=None):
+    def mean_ergspec(self, E, T=None):
         
         self.at_par(self.par_mean)
         
-        return self.flxspec(E, T)
+        return self.ergspec(E, T)
+    
+    
+    def median_ergspec(self, E, T=None):
+        
+        self.at_par(self.par_median)
+        
+        return self.ergspec(E, T)
     
     
     def best_ergspec(self, E, T=None):
@@ -623,19 +673,29 @@ class Model(object):
         return self.ergspec(E, T)
     
     
-    def median_ergspec(self, E, T=None):
+    def truth_ergspec(self, E, T=None):
         
-        self.at_par(self.par_median)
+        if None in self.par_truth:
+            raise ValueError('no truth value for some parameters')
+        
+        self.at_par(self.par_truth)
         
         return self.ergspec(E, T)
+
     
-    
-    def mean_ergspec(self, E, T=None):
+    def mean_phtflux(self, emin, emax, ngrid, time=None):
         
         self.at_par(self.par_mean)
         
-        return self.ergspec(E, T)
+        return self.phtflux(emin, emax, ngrid, time)
     
+    
+    def median_phtflux(self, emin, emax, ngrid, time=None):
+        
+        self.at_par(self.par_median)
+        
+        return self.phtflux(emin, emax, ngrid, time)
+
     
     def best_phtflux(self, emin, emax, ngrid, time=None):
         
@@ -651,18 +711,28 @@ class Model(object):
         return self.phtflux(emin, emax, ngrid, time)
     
     
-    def median_phtflux(self, emin, emax, ngrid, time=None):
+    def truth_phtflux(self, emin, emax, ngrid, time=None):
         
-        self.at_par(self.par_median)
+        if None in self.par_truth:
+            raise ValueError('no truth value for some parameters')
+        
+        self.at_par(self.par_truth)
         
         return self.phtflux(emin, emax, ngrid, time)
     
     
-    def mean_phtflux(self, emin, emax, ngrid, time=None):
+    def mean_ergflux(self, emin, emax, ngrid, time=None):
         
         self.at_par(self.par_mean)
         
-        return self.phtflux(emin, emax, ngrid, time)
+        return self.ergflux(emin, emax, ngrid, time)
+    
+    
+    def median_ergflux(self, emin, emax, ngrid, time=None):
+        
+        self.at_par(self.par_median)
+        
+        return self.ergflux(emin, emax, ngrid, time)
     
     
     def best_ergflux(self, emin, emax, ngrid, time=None):
@@ -679,18 +749,36 @@ class Model(object):
         return self.ergflux(emin, emax, ngrid, time)
     
     
-    def median_ergflux(self, emin, emax, ngrid, time=None):
+    def truth_ergflux(self, emin, emax, ngrid, time=None):
         
-        self.at_par(self.par_median)
+        if None in self.par_truth:
+            raise ValueError('no truth value for some parameters')
+        
+        self.at_par(self.par_truth)
         
         return self.ergflux(emin, emax, ngrid, time)
     
     
-    def mean_ergflux(self, emin, emax, ngrid, time=None):
+    def mean_phtflux_ratio(self, erange1, erange2, ngrid, time=None):
         
         self.at_par(self.par_mean)
+
+        emin1, emax1 = erange1
+
+        emin2, emax2 = erange2
         
-        return self.ergflux(emin, emax, ngrid, time)
+        return self.phtflux(emin1, emax1, ngrid, time) / self.phtflux(emin2, emax2, ngrid, time)
+    
+    
+    def median_phtflux_ratio(self, erange1, erange2, ngrid, time=None):
+        
+        self.at_par(self.par_median)
+
+        emin1, emax1 = erange1
+
+        emin2, emax2 = erange2
+        
+        return self.phtflux(emin1, emax1, ngrid, time) / self.phtflux(emin2, emax2, ngrid, time)
     
     
     def best_phtflux_ratio(self, erange1, erange2, ngrid, time=None):
@@ -715,9 +803,12 @@ class Model(object):
         return self.phtflux(emin1, emax1, ngrid, time) / self.phtflux(emin2, emax2, ngrid, time)
     
 
-    def median_phtflux_ratio(self, erange1, erange2, ngrid, time=None):
+    def truth_phtflux_ratio(self, erange1, erange2, ngrid, time=None):
         
-        self.at_par(self.par_median)
+        if None in self.par_truth:
+            raise ValueError('no truth value for some parameters')
+        
+        self.at_par(self.par_truth)
 
         emin1, emax1 = erange1
 
@@ -726,7 +817,7 @@ class Model(object):
         return self.phtflux(emin1, emax1, ngrid, time) / self.phtflux(emin2, emax2, ngrid, time)
     
     
-    def mean_phtflux_ratio(self, erange1, erange2, ngrid, time=None):
+    def mean_ergflux_ratio(self, erange1, erange2, ngrid, time=None):
         
         self.at_par(self.par_mean)
 
@@ -734,7 +825,18 @@ class Model(object):
 
         emin2, emax2 = erange2
         
-        return self.phtflux(emin1, emax1, ngrid, time) / self.phtflux(emin2, emax2, ngrid, time)
+        return self.ergflux(emin1, emax1, ngrid, time) / self.ergflux(emin2, emax2, ngrid, time)
+    
+    
+    def median_ergflux_ratio(self, erange1, erange2, ngrid, time=None):
+        
+        self.at_par(self.par_median)
+
+        emin1, emax1 = erange1
+
+        emin2, emax2 = erange2
+        
+        return self.ergflux(emin1, emax1, ngrid, time) / self.ergflux(emin2, emax2, ngrid, time)
     
 
     def best_ergflux_ratio(self, erange1, erange2, ngrid, time=None):
@@ -759,20 +861,12 @@ class Model(object):
         return self.ergflux(emin1, emax1, ngrid, time) / self.ergflux(emin2, emax2, ngrid, time)
     
     
-    def median_ergflux_ratio(self, erange1, erange2, ngrid, time=None):
+    def truth_ergflux_ratio(self, erange1, erange2, ngrid, time=None):
         
-        self.at_par(self.par_median)
-
-        emin1, emax1 = erange1
-
-        emin2, emax2 = erange2
+        if None in self.par_truth:
+            raise ValueError('no truth value for some parameters')
         
-        return self.ergflux(emin1, emax1, ngrid, time) / self.ergflux(emin2, emax2, ngrid, time)
-    
-    
-    def mean_ergflux_ratio(self, erange1, erange2, ngrid, time=None):
-        
-        self.at_par(self.par_mean)
+        self.at_par(self.par_truth)
 
         emin1, emax1 = erange1
 
