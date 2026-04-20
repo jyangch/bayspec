@@ -66,23 +66,25 @@ class Pair(object):
     
     @data.setter
     def data(self, new_data):
-        
+        """Replace the bound ``Data`` and re-run :meth:`_pair` to refresh caches."""
+
         self._data = new_data
-        
+
         self._pair()
 
 
     @property
     def model(self):
-        
+
         return self._model
-    
-    
+
+
     @model.setter
     def model(self, new_model):
-        
+        """Replace the bound ``Model`` and re-run :meth:`_pair` to refresh caches."""
+
         self._model = new_model
-        
+
         self._pair()
         
         

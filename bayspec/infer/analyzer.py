@@ -65,13 +65,20 @@ class SampleAnalyzer(Infer):
     
     @infer.setter
     def infer(self, new_infer):
-        
+        """Absorb ``new_infer``, then load its sample matrix and wire up posteriors.
+
+        Raises:
+            TypeError: If ``new_infer`` is not an :class:`Infer`.
+            AttributeError/ValueError: If the sample matrix is missing or
+                has the wrong shape.
+        """
+
         if not isinstance(new_infer, Infer):
             raise TypeError('expected an instance of Infer')
-        
+
         self._infer = new_infer
         self.__dict__.update(new_infer.__dict__)
-        
+
         self._check_sample()
         self._allot_post()
     

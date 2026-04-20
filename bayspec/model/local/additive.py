@@ -31,21 +31,23 @@ class pl(Additive):
     """Single power-law photon spectrum."""
 
     def __init__(self):
+        """Initialise power-law with spectral index and log-normalisation."""
 
         self.expr = 'pl'
         self.comment = 'power-law model'
-        
+
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
-        
+
         self.params = OrderedDict()
         self.params[r'$\alpha$'] = Par(0, unif(-10, 10))
         self.params[r'log$A$'] = Par(0, unif(-10, 10))
 
 
     def func(self, E, T=None, O=None):
-        
+        r"""Return the power-law photon flux density :math:`A (E/E_0)^\alpha`."""
+
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
         
@@ -71,19 +73,21 @@ class cpl(Additive):
     """Power law with an exponential high-energy cutoff (``vfv_peak`` aware)."""
 
     def __init__(self):
+        """Initialise cutoff power-law; parameters switch on ``vfv_peak`` config."""
 
         self.expr = 'cpl'
         self.comment = 'power-law model with high-energy cutoff'
-        
+
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
         self.config['vfv_peak'] = Cfg(True)
-        
-        
+
+
     @cached_property(lambda self: self.config['vfv_peak'].value)
     def params(self):
-        
+        """Return the parameter dict chosen by the ``vfv_peak`` config flag."""
+
         params = OrderedDict()
         
         if self.config['vfv_peak'].value:
@@ -103,21 +107,22 @@ class cpl(Additive):
 
 
     def func(self, E, T=None, O=None):
-        
+        r"""Return the cutoff power-law :math:`A (E/E_0)^\alpha e^{-E/E_c}`."""
+
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
         peak = self.config['vfv_peak'].value
-        
+
         alpha = self.params[r'$\alpha$'].value
-        
+
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
-        
+
         if peak:
             logEp = self.params[r'log$E_p$'].value
             Ep = 10 ** logEp
-            
+
             if not alpha > -2:
                 return np.nan if scalar else np.ones_like(E) * np.nan
 
@@ -145,20 +150,22 @@ class sbpl(Additive):
     # 10.1086/505911
 
     def __init__(self):
+        """Initialise sbpl; params switch on ``vfv_peak`` config."""
 
         self.expr = 'sbpl'
         self.comment = 'smoothly broken power-law model'
-        
+
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
         self.config['vfv_peak'] = Cfg(True)
         self.config['smoothness'] = Cfg(0.3)
-        
-        
+
+
     @cached_property(lambda self: self.config['vfv_peak'].value)
     def params(self):
-        
+        """Return the parameter dict chosen by the ``vfv_peak`` config flag."""
+
         params = OrderedDict()
         
         if self.config['vfv_peak'].value:
@@ -186,81 +193,83 @@ class sbpl(Additive):
 
 
     def func(self, E, T=None, O=None):
-        
+        """Return the sbpl photon spectrum joining two power laws at ``Eb``."""
+
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
         peak = self.config['vfv_peak'].value
         delta = self.config['smoothness'].value
-        
+
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
-        
+
         if peak:
             alpha1 = self.params[r'$\alpha$'].value
             alpha2 = self.params[r'$\beta$'].value
-            
+
             logEp = self.params[r'log$E_p$'].value
             Ep = 10 ** logEp
-            
+
             if not (alpha1 > -2 and alpha2 < -2):
                 return np.nan if scalar else np.ones_like(E) * np.nan
-            
+
             Eb = Ep / (10 ** (delta * np.arctanh((alpha1 + alpha2 + 4) / (alpha1 - alpha2))))
-        
+
         else:
             alpha1 = self.params[r'$\alpha_1$'].value
             alpha2 = self.params[r'$\alpha_2$'].value
-            
+
             logEb = self.params[r'log$E_b$'].value
             Eb = 10 ** logEb
 
         b = (alpha1 + alpha2) / 2
         m = (alpha2 - alpha1) / 2
-            
+
         logA = self.params[r'log$A$'].value
         Amp = 10 ** logA
-        
+
         zi = 1 + redshift
         E = E * zi
-            
+
         q = np.log10(E / Eb) / delta
         qpiv = np.log10(epiv / Eb) / delta
-        
+
         a = m * delta * self._log_cosh(q)
         apiv = m * delta * self._log_cosh(qpiv)
-        
+
         phtspec = Amp * (E / epiv) ** b * 10 ** (a - apiv)
-        
+
         return phtspec[0] if scalar else phtspec
-    
-    
+
+
     def slope_func(self, E, T=None, O=None):
-        
+        """Return the local spectral slope of the sbpl model at ``E``."""
+
         redshift = self.config['redshift'].value
         peak = self.config['vfv_peak'].value
         delta = self.config['smoothness'].value
-        
+
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
-        
+
         if peak:
             alpha1 = self.params[r'$\alpha$'].value
             alpha2 = self.params[r'$\beta$'].value
-            
+
             logEp = self.params[r'log$E_p$'].value
             Ep = 10 ** logEp
-            
+
             if not (alpha1 > -2 and alpha2 < -2):
                 return np.nan if scalar else np.ones_like(E) * np.nan
-            
+
             Eb = Ep / (10 ** (delta * np.arctanh((alpha1 + alpha2 + 4) / (alpha1 - alpha2))))
-            
+
         else:
             alpha1 = self.params[r'$\alpha_1$'].value
             alpha2 = self.params[r'$\alpha_2$'].value
-            
+
             logEb = self.params[r'log$E_b$'].value
             Eb = 10 ** logEb
 
@@ -269,11 +278,11 @@ class sbpl(Additive):
 
         zi = 1 + redshift
         E = E * zi
-        
+
         q = np.log10(E / Eb) / delta
-        
+
         slope = b + m * np.tanh(q)
-        
+
         return slope[0] if scalar else slope
 
 
@@ -282,20 +291,22 @@ class csbpl(Additive):
     """Smoothly broken power law with an added exponential cutoff."""
 
     def __init__(self):
+        """Initialise sbpl with exponential cutoff; uses ``vfv_peak`` config."""
 
         self.expr = 'csbpl'
         self.comment = 'smoothly broken power-law model with high-energy cutoff'
-        
+
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
         self.config['vfv_peak'] = Cfg(True)
         self.config['smoothness'] = Cfg(0.3)
-        
-        
+
+
     @cached_property(lambda self: self.config['vfv_peak'].value)
     def params(self):
-        
+        """Return the parameter dict chosen by the ``vfv_peak`` config flag."""
+
         params = OrderedDict()
         
         if self.config['vfv_peak'].value:
@@ -325,29 +336,30 @@ class csbpl(Additive):
 
 
     def func(self, E, T=None, O=None):
-        
+        """Return the sbpl photon spectrum with exponential cutoff."""
+
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
         peak = self.config['vfv_peak'].value
         delta = self.config['smoothness'].value
-        
+
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
-        
+
         logEb = self.params[r'log$E_b$'].value
         Eb = 10 ** logEb
-        
+
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
-        
+
         if peak:
             logEp = self.params[r'log$E_p$'].value
             Ep = 10 ** logEp
-            
+
             if not alpha2 > -2:
                 return np.nan if scalar else np.ones_like(E) * np.nan
-            
+
             Ec = Ep / (2 + alpha2)
             
         else:
@@ -379,6 +391,7 @@ class dsbpl(Additive):
     """Double smoothly broken power law (three segments, two smooth breaks)."""
 
     def __init__(self):
+        """Initialise double sbpl with three indices and two breaks."""
 
         self.expr = 'dsbpl'
         self.comment = 'double smoothly broken power-law model'
@@ -405,12 +418,13 @@ class dsbpl(Additive):
 
 
     def func(self, E, T=None, O=None):
-        
+        """Return the dsbpl photon spectrum, joining three power laws."""
+
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
         delta1 = self.config['smoothness1'].value
         delta2 = self.config['smoothness2'].value
-        
+
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
         alpha3 = self.params[r'$\alpha_3$'].value
@@ -421,41 +435,42 @@ class dsbpl(Additive):
         Eb1 = 10.0 ** logEb1
         Eb2 = 10.0 ** logEb2
         Amp = 10.0 ** logA
-        
+
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
 
         zi = 1.0 + redshift
         E = E * zi
-        
+
         b = 0.5 * (alpha1 + alpha3)
         m1 = 0.5 * (alpha2 - alpha1)
         m2 = 0.5 * (alpha3 - alpha2)
 
         q1 = np.log10(E / Eb1) / delta1
         q2 = np.log10(E / Eb2) / delta2
-        
+
         qpiv1 = np.log10(epiv / Eb1) / delta1
         qpiv2 = np.log10(epiv / Eb2) / delta2
-        
+
         a1 = m1 * delta1 * self._log_cosh(q1)
         a2 = m2 * delta2 * self._log_cosh(q2)
-        
+
         apiv1 = m1 * delta1 * self._log_cosh(qpiv1)
         apiv2 = m2 * delta2 * self._log_cosh(qpiv2)
-        
+
         phtspec = Amp * (E / epiv) ** b * 10.0 ** ((a1 + a2) - (apiv1 + apiv2))
-        
+
         return phtspec[0] if scalar else phtspec
-    
-    
+
+
     def slope_func(self, E, T=None, O=None):
-        
+        """Return the local spectral slope of the dsbpl model at ``E``."""
+
         redshift = self.config['redshift'].value
         delta1 = self.config['smoothness1'].value
         delta2 = self.config['smoothness2'].value
-        
+
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
         alpha3 = self.params[r'$\alpha_3$'].value
@@ -464,7 +479,7 @@ class dsbpl(Additive):
 
         Eb1 = 10 ** logEb1
         Eb2 = 10 ** logEb2
-        
+
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
@@ -478,9 +493,9 @@ class dsbpl(Additive):
 
         q1 = np.log10(E / Eb1) / delta1
         q2 = np.log10(E / Eb2) / delta2
-        
+
         slope = b + m1 * np.tanh(q1) + m2 * np.tanh(q2)
-        
+
         return slope[0] if scalar else slope
 
 
@@ -489,6 +504,7 @@ class tsbpl(Additive):
     """Triple smoothly broken power law (four segments, three smooth breaks)."""
 
     def __init__(self):
+        """Initialise triple sbpl with four indices and three breaks."""
 
         self.expr = 'tsbpl'
         self.comment = 'triple smoothly broken power-law model'
@@ -518,6 +534,7 @@ class tsbpl(Additive):
 
 
     def func(self, E, T=None, O=None):
+        """Return the tsbpl photon spectrum, joining four power laws."""
 
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
@@ -621,20 +638,22 @@ class sb2pl(Additive):
     # 10.1051/0004-6361/201732245
 
     def __init__(self):
-        
+        """Initialise convex two-segment sbpl; uses ``vfv_peak`` config."""
+
         self.expr = 'sb2pl'
         self.comment = '2-segment smoothly broken power-law model (always convex)'
-        
+
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
         self.config['vfv_peak'] = Cfg(True)
         self.config['smoothness'] = Cfg(2.0)
-        
-        
+
+
     @cached_property(lambda self: self.config['vfv_peak'].value)
     def params(self):
-        
+        """Return the parameter dict chosen by the ``vfv_peak`` config flag."""
+
         params = OrderedDict()
         
         if self.config['vfv_peak'].value:
@@ -656,26 +675,27 @@ class sb2pl(Additive):
 
 
     def func(self, E, T=None, O=None):
-        
+        """Return the sb2pl photon spectrum (convex join of two power laws)."""
+
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
         peak = self.config['vfv_peak'].value
         omega = self.config['smoothness'].value
-        
+
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
-        
+
         if peak:
             alpha1 = self.params[r'$\alpha$'].value
             alpha2 = self.params[r'$\beta$'].value
-            
+
             logEp = self.params[r'log$E_p$'].value
             Ep = 10 ** logEp
-            
+
             if not (alpha1 > -2 and alpha2 < -2):
                 return np.nan if scalar else np.ones_like(E) * np.nan
-            
+
             Eb = Ep * (-(alpha1 + 2) / (alpha2 + 2)) ** (1 / ((alpha2 - alpha1) * omega))
 
         else:
@@ -707,20 +727,22 @@ class csb2pl(Additive):
     """Convex 2-segment smoothly broken power law with an exponential cutoff."""
 
     def __init__(self):
+        """Initialise convex two-segment sbpl with cutoff; uses ``vfv_peak``."""
 
         self.expr = 'csb2pl'
         self.comment = '2-segment smoothly broken power-law model (always convex) with high-energy cutoff'
-        
+
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
         self.config['vfv_peak'] = Cfg(True)
         self.config['smoothness'] = Cfg(2.0)
-        
-        
+
+
     @cached_property(lambda self: self.config['vfv_peak'].value)
     def params(self):
-        
+        """Return the parameter dict chosen by the ``vfv_peak`` config flag."""
+
         params = OrderedDict()
         
         if self.config['vfv_peak'].value:
@@ -744,25 +766,26 @@ class csb2pl(Additive):
 
 
     def func(self, E, T=None, O=None):
-        
+        """Return the csb2pl photon spectrum (convex sb2pl plus cutoff)."""
+
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
         peak = self.config['vfv_peak'].value
         omega = self.config['smoothness'].value
-        
+
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
-        
+
         logEb = self.params[r'log$E_b$'].value
         Eb = 10 ** logEb
-        
+
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
-        
+
         if not alpha1 > alpha2:
             return np.nan if scalar else np.ones_like(E) * np.nan
-        
+
         if peak:
             logEp = self.params[r'log$E_p$'].value
             Ep = 10 ** logEp
@@ -796,6 +819,7 @@ class sb3pl(Additive):
     """Convex 3-segment smoothly broken power law."""
 
     def __init__(self):
+        """Initialise convex three-segment smoothly broken power-law."""
 
         self.expr = 'sb3pl'
         self.comment = '3-segment smoothly broken power-law model (always convex)'
@@ -816,12 +840,13 @@ class sb3pl(Additive):
 
 
     def func(self, E, T=None, O=None):
-        
+        """Return the sb3pl spectrum (convex join of three power laws)."""
+
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
         omega1 = self.config['smoothness1'].value
         omega2 = self.config['smoothness2'].value
-        
+
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
         alpha3 = self.params[r'$\alpha_3$'].value
@@ -832,11 +857,11 @@ class sb3pl(Additive):
         Eb1 = 10 ** logEb1
         Eb2 = 10 ** logEb2
         Amp = 10 ** logA
-        
+
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
-        
+
         if not alpha1 > alpha2 > alpha3:
             return np.nan if scalar else np.ones_like(E) * np.nan
 
@@ -895,6 +920,7 @@ class sb4pl(Additive):
     """Convex 4-segment smoothly broken power law."""
 
     def __init__(self):
+        """Initialise convex four-segment smoothly broken power-law."""
 
         self.expr = 'sb4pl'
         self.comment = '4-segment smoothly broken power-law model (always convex)'
@@ -918,13 +944,14 @@ class sb4pl(Additive):
         
         
     def func(self, E, T=None, O=None):
-        
+        """Return the sb4pl photon spectrum (convex join of four power laws)."""
+
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
         omega1 = self.config['smoothness1'].value
         omega2 = self.config['smoothness2'].value
         omega3 = self.config['smoothness3'].value
-        
+
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
         alpha3 = self.params[r'$\alpha_3$'].value
@@ -1022,6 +1049,7 @@ class band(Additive):
     # 10.1086/172995
 
     def __init__(self):
+        """Initialise Band function with low/high indices, log-Ep, log-A."""
 
         self.expr = 'band'
         self.comment = 'band function'
@@ -1038,10 +1066,11 @@ class band(Additive):
 
 
     def func(self, E, T=None, O=None):
-        
+        """Return the Band-function photon spectrum; piecewise below/above ``Ebreak``."""
+
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
-        
+
         alpha = self.params[r'$\alpha$'].value
         beta = self.params[r'$\beta$'].value
         logEp = self.params[r'log$E_p$'].value
@@ -1049,7 +1078,7 @@ class band(Additive):
 
         Ep = 10 ** logEp
         Amp = 10 ** logA
-        
+
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
@@ -1065,7 +1094,7 @@ class band(Additive):
         phtspec[i1] = Amp * (E[i1] / epiv) ** alpha * np.exp(-E[i1] / Ec)
         phtspec[i2] = Amp * (Eb / epiv) ** (alpha - beta) * np.exp(beta - alpha) \
             * (E[i2] / epiv) ** beta
-        
+
         return phtspec[0] if scalar else phtspec
 
 
@@ -1076,6 +1105,7 @@ class cband(Additive):
     # 10.1088/0004-637X/751/2/90
 
     def __init__(self):
+        """Initialise Band function with high-energy exponential cutoff."""
 
         self.expr = 'cband'
         self.comment = 'band function with high-energy cutoff'
@@ -1093,10 +1123,11 @@ class cband(Additive):
 
 
     def func(self, E, T=None, O=None):
-        
+        """Return the cband spectrum: Band function with exponential cutoff."""
+
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
-        
+
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
         logEb = self.params[r'log$E_b$'].value
@@ -1106,7 +1137,7 @@ class cband(Additive):
         Eb = 10 ** logEb
         Ep = 10 ** logEp
         Amp = 10 ** logA
-        
+
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
@@ -1122,7 +1153,7 @@ class cband(Additive):
         phtspec[i1] = Amp * (E[i1] / epiv) ** alpha1 * np.exp(-E[i1] / Ec1)
         phtspec[i2] = Amp * (Eb / epiv) ** (alpha1 - alpha2) * np.exp(alpha2 - alpha1) \
             * (E[i2] / epiv) ** alpha2 * np.exp(-E[i2] / Ec2)
-        
+
         return phtspec[0] if scalar else phtspec
 
 
@@ -1133,6 +1164,7 @@ class dband(Additive):
     # 10.1088/0004-637X/751/2/90
 
     def __init__(self):
+        """Initialise double Band: two low indices, high index, two breaks."""
 
         self.expr = 'dband'
         self.comment = 'double band functions'
@@ -1151,10 +1183,11 @@ class dband(Additive):
 
 
     def func(self, E, T=None, O=None):
-        
+        """Return the dband spectrum with three piecewise Band-like segments."""
+
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
-        
+
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
         beta = self.params[r'$\beta$'].value
@@ -1194,6 +1227,7 @@ class bb(Additive):
     """Single-temperature blackbody photon spectrum."""
 
     def __init__(self):
+        """Initialise single-temperature blackbody with log-kT and log-A."""
 
         self.expr = 'bb'
         self.comment = 'black-body model'
@@ -1207,9 +1241,10 @@ class bb(Additive):
 
 
     def func(self, E, T=None, O=None):
-        
+        """Return the single-temperature blackbody photon flux density."""
+
         redshift = self.config['redshift'].value
-    
+
         logKT = self.params[r'log$kT$'].value
         logA = self.params[r'log$A$'].value
 
@@ -1239,7 +1274,8 @@ class mbb(Additive):
     _MBB_GAUSS_WEIGHTS = _MBB_GAUSS_WEIGHTS.astype(np.float64)
 
     def __init__(self):
-        
+        """Initialise multi-colour blackbody: kT-range, slope ``m``, log-A."""
+
         self.expr = 'mbb'
         self.comment = 'multi-color black-body model'
         
@@ -1254,9 +1290,10 @@ class mbb(Additive):
 
 
     def func(self, E, T=None, O=None):
-        
+        """Return the multi-colour blackbody via Gauss-Legendre quadrature."""
+
         redshift = self.config['redshift'].value
-        
+
         logkTmin = self.params[r'log$kT_{min}$'].value
         logkTmax = self.params[r'log$kT_{max}$'].value
         m = self.params[r'$m$'].value
@@ -1338,6 +1375,7 @@ class hlecpl(Additive):
     # 10.1088/0004-637X/690/1/L10
 
     def __init__(self):
+        """Initialise HLE cutoff power-law: alpha, log-Ep/c, log-Ac, t0, tc."""
 
         self.expr = 'hlecpl'
         self.comment = 'curvature effect model for cpl function'
@@ -1355,10 +1393,11 @@ class hlecpl(Additive):
 
 
     def func(self, E, T, O=None):
-        
+        """Return the time-dependent HLE cutoff-power-law at ``(E, T)``."""
+
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
-        
+
         alpha = self.params[r'$\alpha$'].value
         logEpc = self.params[r'log$E_{p,c}$'].value
         logAc = self.params[r'log$A_c$'].value
@@ -1402,6 +1441,7 @@ class hleband(Additive):
     """High-latitude-emission curvature model for a Band function (time-dependent)."""
 
     def __init__(self):
+        """Initialise HLE Band with alpha, beta, log-Ep/c, log-Ac, t0, tc."""
 
         self.expr = 'hleband'
         self.comment = 'curvature effect model for band function'
@@ -1420,10 +1460,11 @@ class hleband(Additive):
 
 
     def func(self, E, T, O=None):
-        
+        """Return the time-dependent HLE Band-function at ``(E, T)``."""
+
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
-        
+
         alpha = self.params[r'$\alpha$'].value
         beta = self.params[r'$\beta$'].value
         logEpc = self.params[r'log$E_{p,c}$'].value
@@ -1474,6 +1515,7 @@ class zxhsync(Additive):
     """Time-dependent synchrotron model (ZXH provider, reads an external ``.o`` kernel)."""
 
     def __init__(self):
+        """Initialise ZXH synchrotron: magnetic, electron, jet, injection."""
 
         self.expr = 'zxhsync'
         self.comment = "zxh's synchrotron model"
@@ -1502,7 +1544,8 @@ class zxhsync(Additive):
 
 
     def func(self, E, T, O=None):
-        
+        """Return the ZXH synchrotron spectrum via the external kernel."""
+
         logB0 = self.params[r'log$B_0$'].value
         alphaB = self.params[r'$\alpha_B$'].value
         loggamma_min = self.params[r'log$\gamma_{min}$'].value
@@ -1706,6 +1749,7 @@ class katu(Additive):
     """External KATU provider invoked through a TOML-configured subprocess."""
 
     def __init__(self):
+        """Initialise KATU wrapper: load TOML, expose jet/injection params."""
 
         self.expr = 'katu'
         self.comment = 'katu model'
@@ -1735,7 +1779,8 @@ class katu(Additive):
 
 
     def func(self, E, T, O=None):
-        
+        """Return the KATU photon spectrum via the external binary."""
+
         redshift = self.config['redshift'].value
         t_obs_start = self.config['t_obs_start'].value
         t_obs_end = self.config['t_obs_end'].value

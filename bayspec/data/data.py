@@ -34,9 +34,33 @@ class Data(object):
     """Ordered collection of :class:`DataUnit` objects.
 
     Indexing with a key returns the stored :class:`DataUnit`; assignment
-    re-runs the aggregate update so cached views stay consistent. Every
-    list-valued property — e.g. ``src_counts``, ``rsp_chbin`` — is the
-    per-unit concatenation of the unit-level property of the same name.
+    re-runs the aggregate update so cached views stay consistent.
+
+    **Group docstring for aggregator properties.** Every list-valued
+    property on this class is the per-unit concatenation of the
+    same-named property on :class:`DataUnit`; for the formulas, read the
+    unit-level property. The family covers these naming patterns (the
+    ``_re_`` infix uses the re-binned channel grid; the ``_error`` suffix
+    returns 1-sigma uncertainties; the ``_f64`` suffix forces ``float64``):
+
+    - ``ebin``, ``ewidth``, ``nbin``, ``tarr``, ``ngrid``, ``egrid``,
+      ``tgrid``, ``bin_start``, ``bin_stop``;
+    - ``src_efficiency``, ``bkg_efficiency``, ``alpha``;
+    - ``src_counts`` / ``src_counts_f64`` / ``src_re_counts`` /
+      ``src_errors`` / ``src_errors_f64`` / ``src_re_errors``;
+    - ``bkg_counts`` / ``bkg_counts_f64`` / ``bkg_re_counts`` /
+      ``bkg_errors`` / ``bkg_errors_f64`` / ``bkg_re_errors``;
+    - ``rsp_chbin``, ``rsp_re_chbin``, ``rsp_chbin_mean``,
+      ``rsp_re_chbin_mean``, ``rsp_chbin_width``,
+      ``rsp_re_chbin_width``, ``rsp_chbin_tarr``, ``rsp_re_chbin_tarr``;
+    - ``rsp_drm``, ``rsp_re_drm``, ``corr_rsp_drm``, ``corr_rsp_re_drm``,
+      ``corr_src_efficiency``/``_f64``, ``corr_bkg_efficiency``/``_f64``;
+    - ``src_ctsrate``/``_error``, ``src_ctsspec``/``_error`` and their
+      ``_re_`` variants; matching ``bkg_*`` and ``net_*`` families;
+    - ``npoints``.
+
+    ``deconv_{pht,flx,erg}spec``/``_error`` and their ``_re_`` variants
+    are described on :attr:`deconv_phtspec`.
 
     Attributes:
         data: ``OrderedDict`` mapping names to :class:`DataUnit` instances.
@@ -69,12 +93,17 @@ class Data(object):
     
     @data.setter
     def data(self, new_data):
-        
+        """Replace the contents from a list of tuples or a dict and re-extract.
+
+        Raises:
+            ValueError: If ``new_data`` is not ``None``, a list, or a dict.
+        """
+
         self._data = OrderedDict()
 
         if new_data is None:
             pass
-            
+
         elif isinstance(new_data, list):
             for item in new_data:
                 if isinstance(item, tuple):
@@ -819,24 +848,28 @@ class Data(object):
 
 
     def __getitem__(self, key):
-        
+        """Return the stored :class:`DataUnit` registered under ``key``."""
+
         return self._data[key]
 
 
     def __setitem__(self, key, value):
-        
+        """Register ``value`` under ``key`` and re-run the aggregate update."""
+
         self._setitem(key, value)
         self._update()
 
 
     def __delitem__(self, key):
-        
+        """Remove the entry under ``key`` and re-run the aggregate update."""
+
         del self._data[key]
         self._update()
 
 
     def __contains__(self, key):
-        
+        """Return ``True`` when ``key`` is registered."""
+
         return key in self._data
     
     
@@ -882,6 +915,27 @@ class DataUnit(object):
 
     Changing any public attribute re-runs :meth:`_update`, which rebuilds
     noticing, grouping, rebinning, and invalidates cached views.
+
+    **Group docstring for computed properties.** One-line computed
+    properties are either trivial passes to an underlying object or a
+    direct numerical shortcut; read the member for the formula. The
+    ``_re_`` infix toggles between the grouping-based grid and the
+    rebinning-based grid. The family covers:
+
+    - ``ebin``, ``ewidth``, ``nbin``, ``tarr``, ``ngrid``, ``egrid``,
+      ``tgrid`` — energy/time grids used by the model convolution;
+    - ``src_efficiency``, ``bkg_efficiency``, ``alpha`` — exposure and
+      backscale combinations;
+    - ``src_counts``/``_re_`` and ``src_errors``/``_re_``, matching
+      ``bkg_counts``/``bkg_errors`` — grouping-aggregated counts/errors;
+    - ``rsp_chbin``/``_re_``, their ``_mean``/``_width``/``_tarr`` —
+      channel-bin views of the response;
+    - ``rsp_drm``/``_re_`` plus ``corr_rsp_drm``/``_re_`` — response
+      matrices (``corr_`` applies the ``rsp`` factor);
+    - ``corr_src_efficiency``/``corr_bkg_efficiency`` — efficiencies
+      multiplied by the relevant ``Par`` factor;
+    - ``src_ctsrate``/``_error`` and ``src_ctsspec``/``_error`` plus
+      their ``_re_`` variants; matching ``bkg_*`` and ``net_*`` families.
 
     Attributes:
         src_ins, bkg_ins, rmf_ins, arf_ins, rsp_ins: Concrete loaded

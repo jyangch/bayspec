@@ -583,7 +583,6 @@ class Model(object):
         Raises:
             TypeError: If the model type is not ``'add'``.
         """
-        # NE in units of photons cm-2 s-1 keV-1
 
         if self.type not in ['add']:
             msg = f'phtspec is invalid for {self.type} type model'
@@ -598,7 +597,6 @@ class Model(object):
         Raises:
             TypeError: If the model type is not ``'mul'`` or ``'math'``.
         """
-        # dimensionless
 
         if self.type not in ['mul', 'math']:
             msg = f'nouspec is invalid for {self.type} type model'
@@ -608,12 +606,11 @@ class Model(object):
 
 
     def flxspec(self, E, T=None):
-        """Energy flux density :math:`F_\\nu = E \\, N(E)` in erg/cm²/s/keV.
+        r"""Energy flux density :math:`F_\nu = E \, N(E)` in erg/cm²/s/keV.
 
         Raises:
             TypeError: If the model type is not ``'add'``.
         """
-        # Fv in units of erg cm-2 s-1 keV-1
 
         if self.type not in ['add']:
             msg = f'flxspec is invalid for {self.type} type model'
@@ -623,12 +620,11 @@ class Model(object):
 
 
     def ergspec(self, E, T=None):
-        """Energy spectrum :math:`\\nu F_\\nu = E^2 \\, N(E)` in erg/cm²/s.
+        r"""Energy spectrum :math:`\nu F_\nu = E^2 \, N(E)` in erg/cm²/s.
 
         Raises:
             TypeError: If the model type is not ``'add'``.
         """
-        # vFv in units of erg cm-2 s-1
 
         if self.type not in ['add']:
             msg = f'ergspec is invalid for {self.type} type model'
@@ -649,7 +645,6 @@ class Model(object):
         Raises:
             TypeError: If the model type is not ``'add'``.
         """
-        # integ(NE, E) in units of photons cm-2 s-1
 
         if self.type not in ['add']:
             msg = f'phtflux is invalid for {self.type} type model'
@@ -666,7 +661,6 @@ class Model(object):
         Raises:
             TypeError: If the model type is not ``'add'``.
         """
-        # integ(Fv, E) in units of erg cm-2 s-1
 
         if self.type not in ['add']:
             msg = f'ergflux is invalid for {self.type} type model'
@@ -722,10 +716,11 @@ class Model(object):
     def mean_phtspec(self, E, T=None):
         """Photon spectrum evaluated at the posterior mean parameter vector.
 
-        The family ``{mean,median,best,best_ci,truth}_{pht,nou,flx,erg}spec``
-        and ``_{pht,erg}flux`` all follow the same pattern: set ``par``
-        from the named posterior summary, then evaluate the spectrum or
-        flux. ``truth_*`` variants raise ``ValueError`` when any parameter
+        The family ``{mean,median,best,best_ci,truth}_{pht,nou,flx,erg}spec``,
+        ``_{pht,erg}flux``, and ``_{pht,erg}flux_ratio`` all follow the
+        same pattern: set ``par`` from the named posterior summary, then
+        evaluate the spectrum, integrated flux, or flux ratio.
+        ``truth_*`` variants raise ``ValueError`` when any parameter
         lacks a truth value.
         """
 

@@ -40,7 +40,12 @@ class Info(object):
     
     @data_dict.setter
     def data_dict(self, new_data_dict):
-        
+        """Store ``new_data_dict`` after wrapping scalar values into single-element lists.
+
+        Raises:
+            TypeError: If ``new_data_dict`` is not a ``dict``.
+        """
+
         if not isinstance(new_data_dict, dict):
             raise TypeError('expected an instance of dict')
 
@@ -50,7 +55,7 @@ class Info(object):
                 normalized_dict[key] = value
             else:
                 normalized_dict[key] = [value]
-        
+
         self._data_dict = normalized_dict
         
         

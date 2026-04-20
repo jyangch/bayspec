@@ -30,10 +30,21 @@ class Infer(object):
     Collects per-pair parameters into a single flat index, identifies
     which of them are free (after honouring ``Par.link``/``unlink``
     relations and the frozen flag), and publishes the pooled
-    log-likelihood, log-prior, fit statistic, and residuals. Most
-    list-valued properties on this class are concatenations of the same
-    named property over every :class:`~bayspec.infer.pair.Pair` or the
-    underlying ``Data``/``Model``.
+    log-likelihood, log-prior, fit statistic, and residuals.
+
+    **Group docstring for aggregator properties.** List-valued
+    ``data_*`` properties flatten the same-named ``Data`` property over
+    every bound ``Data``; ``model_*`` properties flatten the matching
+    ``Model`` property over every bound ``Model``. The family covers the
+    following patterns (the ``_re_`` infix uses re-binned channels):
+
+    - ``data_chbin_mean``/``_re_``, ``data_chbin_width``/``_re_``
+      (sourced from ``rsp_chbin_*``);
+    - ``data_{ctsrate,ctsspec,phtspec,flxspec,ergspec}`` plus their
+      ``_error``/``_re_`` variants (net counts and deconvolved spectra);
+    - ``model_{ctsrate,ctsspec,phtspec,flxspec,ergspec}`` plus their
+      ``_re_`` variants (convolved model spectra sampled at the data
+      channels).
 
     Attributes:
         pairs: The raw list of ``(Data, Model)`` tuples.
@@ -69,19 +80,24 @@ class Infer(object):
     
     @pairs.setter
     def pairs(self, new_pairs):
-        
+        """Replace all pairs from a list of tuples, then :meth:`_extract`.
+
+        Raises:
+            ValueError: If ``new_pairs`` is not ``None`` or a list.
+        """
+
         self._pairs = list()
 
         if new_pairs is None:
             pass
-            
+
         elif isinstance(new_pairs, list):
             for pair in new_pairs:
                 if isinstance(pair, (tuple, list)):
                     self._addpair(*pair)
-                    
+
             self._extract()
-            
+
         else:
             raise ValueError('unsupported pair type')
 

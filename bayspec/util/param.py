@@ -65,9 +65,10 @@ class Par(object):
 
     @val.setter
     def val(self, new_val):
-        
+        """Set ``val`` and propagate it to every linked mate; bumps ``version``."""
+
         self._val = new_val
-        
+
         for mate in self.mates:
             if mate.val != self.val:
                 mate.val = self.val
@@ -98,12 +99,17 @@ class Par(object):
         
     @prior.setter
     def prior(self, new_prior):
-        
+        """Set ``prior`` and propagate it to every linked mate.
+
+        Raises:
+            ValueError: If ``new_prior`` is neither a ``Prior`` nor ``None``.
+        """
+
         if isinstance(new_prior, (Prior, type(None))):
             self._prior = new_prior
         else:
             raise ValueError('Unsupported prior type')
-        
+
         for mate in self.mates:
             if mate.prior != self.prior:
                 mate.prior = self.prior
@@ -127,7 +133,12 @@ class Par(object):
     
     @post.setter
     def post(self, new_post):
-        
+        """Set ``post`` and propagate it to every linked mate.
+
+        Raises:
+            ValueError: If ``new_post`` is neither a ``Post`` nor ``None``.
+        """
+
         if isinstance(new_post, (Post, type(None))):
             self._post = new_post
         else:

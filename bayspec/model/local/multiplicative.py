@@ -22,7 +22,7 @@ class hecut(Multiplicative):
     """High-energy exponential cutoff above a configurable threshold energy."""
 
     def __init__(self):
-        """Initialise the cutoff with a log-cutoff parameter :math:`\\log E_c`."""
+        r"""Initialise the cutoff with a log-cutoff parameter :math:`\log E_c`."""
 
         self.expr = 'hecut'
         self.comment = 'high-energy cutoff model'
@@ -85,7 +85,7 @@ class wabs(Multiplicative):
     
     
     def func(self, E, T=None, O=None):
-        """Return :math:`\\exp(-N_H \\, \\sigma(E))` using the tabulated cross section."""
+        r"""Return :math:`\exp(-N_H \, \sigma(E))` using the tabulated cross section."""
 
         redshift = self.config['redshift'].value
         nh = self.params[r'$N_H$'].value
@@ -137,7 +137,7 @@ class phabs(Multiplicative):
     
     
     def func(self, E, T=None, O=None):
-        """Return :math:`\\exp(-N_H \\, \\sigma(E))` using the tabulated cross section."""
+        r"""Return :math:`\exp(-N_H \, \sigma(E))` using the tabulated cross section."""
 
         redshift = self.config['redshift'].value
         nh = self.params[r'$N_H$'].value
@@ -189,7 +189,7 @@ class tbabs(Multiplicative):
     
     
     def func(self, E, T=None, O=None):
-        """Return :math:`\\exp(-N_H \\, \\sigma(E))` using the tabulated cross section."""
+        r"""Return :math:`\exp(-N_H \, \sigma(E))` using the tabulated cross section."""
 
         redshift = self.config['redshift'].value
         nh = self.params[r'$N_H$'].value
@@ -219,14 +219,14 @@ class tbabs(Multiplicative):
 
 
 class tinvabs(Multiplicative):
-    """Exponentially-decaying absorption column :math:`N_H(T) = N_{H,0} e^{-T/\\tau}`.
+    r"""Exponentially-decaying absorption column :math:`N_H(T) = N_{H,0} e^{-T/\tau}`.
 
     Delegates the energy-dependent absorption to an inner :class:`tbabs`
     while updating its :math:`N_H` per unique ``T`` value.
     """
 
     def __init__(self):
-        """Initialise with initial column :math:`N_{H,0}` and decay time :math:`\\tau`."""
+        r"""Initialise with initial column :math:`N_{H,0}` and decay time :math:`\tau`."""
 
         self.expr = 'tinvabs'
         self.comment = 'time-involved absorption model'

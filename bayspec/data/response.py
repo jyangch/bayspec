@@ -328,7 +328,12 @@ class Response(object):
     
     @ra.setter
     def ra(self, new_ra):
-        
+        """Set the RA ``Par``; ``None`` installs a uniform prior on ``[0, 360)``.
+
+        Raises:
+            ValueError: If the resolved value is not a ``Par``.
+        """
+
         if new_ra is None:
             self._ra = Par(0, unif(0, 360))
         else:
@@ -346,6 +351,11 @@ class Response(object):
 
     @dec.setter
     def dec(self, new_dec):
+        """Set the Dec ``Par``; ``None`` installs a uniform prior on ``[-90, 90]``.
+
+        Raises:
+            ValueError: If the resolved value is not a ``Par``.
+        """
 
         if new_dec is None:
             self._dec = Par(0, unif(-90, 90))
@@ -364,7 +374,12 @@ class Response(object):
     
     @factor.setter
     def factor(self, new_factor):
-        
+        """Set the multiplicative ``Par``; ``None`` resets to a frozen unit factor.
+
+        Raises:
+            ValueError: If the resolved value is not a ``Par``.
+        """
+
         if new_factor is None:
             self._factor = Par(1, frozen=True)
         else:

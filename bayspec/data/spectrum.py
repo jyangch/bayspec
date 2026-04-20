@@ -130,7 +130,12 @@ class Spectrum(object):
     
     @factor.setter
     def factor(self, new_factor):
-        
+        """Set the multiplicative ``Par``; ``None`` resets to a frozen unit factor.
+
+        Raises:
+            ValueError: If the resolved value is not a ``Par``.
+        """
+
         if new_factor is None:
             self._factor = Par(1, frozen=True)
         else:
