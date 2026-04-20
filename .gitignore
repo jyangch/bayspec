@@ -60,3 +60,7 @@ tests/
 # private models
 bayspec/docs/katu/
 bayspec/docs/zxhsync/
+
+# Local-only docs and Claude Code project config
+docs/
+CLAUDE.md
