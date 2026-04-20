@@ -1,3 +1,18 @@
+"""Likelihood-statistic kernels for spectral fitting.
+
+Implements the Gaussian (``Gstat``), Poisson (``Pstat``), Poisson-source
+plus Poisson-background (``PPstat``/``cstat``), Poisson-source plus
+Gaussian-background (``PGstat``) statistics, and their upper-limit
+variants. ``StatisticNB`` exposes the numba-accelerated fast path (fused
+stat + signed residual per bin); ``Statistic`` is a pure-numpy fallback
+with the same interface.
+
+Every statistic takes the same keyword arguments (``S``, ``B``, ``m``,
+``ts``, ``tb``, ``sigma_S``, ``sigma_B``) and returns ``(stat,
+residual)`` where ``residual`` is the signed square-root of the per-bin
+statistic contribution.
+"""
+
 import numba as nb
 import numpy as np
 
@@ -6,6 +21,7 @@ from ..util.significance import ppsig, pgsig
 
 @nb.njit(cache=True, fastmath=True)
 def _gstat_core(S, B, m, ts, tb, sigma_S, sigma_B):
+    """Numba kernel for ``Gstat``; returns ``(total_stat, signed_residual)``."""
     
     n = S.shape[0]
     residual = np.empty(n, dtype=np.float64)
@@ -45,7 +61,8 @@ def _gstat_core(S, B, m, ts, tb, sigma_S, sigma_B):
 
 @nb.njit(cache=True, fastmath=True)
 def _pstat_core(S, m, ts):
-    
+    """Numba kernel for the pure-Poisson ``Pstat``; background is absent."""
+
     n = S.shape[0]
     residual = np.empty(n, dtype=np.float64)
     stat = 0.0
@@ -80,7 +97,12 @@ def _pstat_core(S, m, ts):
 
 @nb.njit(cache=True, fastmath=True)
 def _ppstat_core(S, B, m, ts, tb):
-    
+    """Numba kernel for ``PPstat``/``cstat``: Poisson source + Poisson background.
+
+    Profiles out the true background rate ``b`` per bin via the standard
+    ``cstat`` closed-form, then sums the profiled Poisson log-likelihoods.
+    """
+
     n = S.shape[0]
     residual = np.empty(n, dtype=np.float64)
     stat = 0.0
@@ -138,7 +160,13 @@ def _ppstat_core(S, B, m, ts, tb):
 
 @nb.njit(cache=True, fastmath=True)
 def _pgstat_core(S, B, m, ts, tb, sigma_B):
-    
+    """Numba kernel for ``PGstat``: Poisson source + Gaussian background.
+
+    Profiles the background rate via the quadratic closed-form used in
+    XSPEC's ``pgstat`` and combines the profiled Poisson source and
+    Gaussian background log-likelihoods.
+    """
+
     n = S.shape[0]
     residual = np.empty(n, dtype=np.float64)
     stat = 0.0
@@ -198,9 +226,18 @@ def _pgstat_core(S, B, m, ts, tb, sigma_B):
 
 
 class StatisticNB(object):
+    """Numba-accelerated statistic dispatch table.
+
+    Every method takes the standard keyword bundle (``S``, ``B``, ``m``,
+    ``ts``, ``tb``, ``sigma_S``, ``sigma_B``) and returns ``(stat,
+    residual)``. Upper-limit variants compare a significance against a
+    target (default 3σ) so that a minimiser can search for the
+    model normalization that produces the requested sigma.
+    """
 
     @staticmethod
     def Gstat(**kwargs):
+        """Gaussian statistic; delegates to :func:`_gstat_core`."""
         return _gstat_core(
             kwargs['S'],
             kwargs['B'],
@@ -213,6 +250,7 @@ class StatisticNB(object):
 
     @staticmethod
     def Pstat(**kwargs):
+        """Pure-Poisson statistic (no background); delegates to :func:`_pstat_core`."""
         return _pstat_core(
             kwargs['S'],
             kwargs['m'],
@@ -221,6 +259,7 @@ class StatisticNB(object):
 
     @staticmethod
     def PPstat(**kwargs):
+        """Profile Poisson–Poisson statistic (``cstat``); uses :func:`_ppstat_core`."""
         return _ppstat_core(
             kwargs['S'],
             kwargs['B'],
@@ -231,6 +270,7 @@ class StatisticNB(object):
 
     @staticmethod
     def PGstat(**kwargs):
+        """Profile Poisson–Gaussian statistic; uses :func:`_pgstat_core`."""
         return _pgstat_core(
             kwargs['S'],
             kwargs['B'],
@@ -242,7 +282,8 @@ class StatisticNB(object):
 
     @staticmethod
     def PPstat_UL(**kwargs):
-        
+        """Upper-limit driver for ``PPstat``: minimize ``(sigma - 3)^2``."""
+
         B = kwargs['B']
         m = kwargs['m']
 
@@ -264,7 +305,8 @@ class StatisticNB(object):
 
     @staticmethod
     def PGstat_UL(**kwargs):
-        
+        """Upper-limit driver for ``PGstat``: minimize ``(sigma - 3)^2``."""
+
         B = kwargs['B']
         m = kwargs['m']
 
@@ -289,55 +331,60 @@ class StatisticNB(object):
 
 
 class Statistic(object):
-    
+    """Pure-numpy fallback mirror of :class:`StatisticNB`.
+
+    Same ``(stat, residual)`` contract as the numba-accelerated class,
+    intended for debugging and for environments where numba cannot be
+    used. Every method returns the total statistic plus the signed
+    per-bin residual.
+    """
+
     @staticmethod
     def xlogy(x, y):
+        """Return ``x * log(y)`` element-wise, treating ``0 * log(·)`` as 0."""
 
         res = np.zeros_like(x, dtype=np.float64)
-        
+
         zero = (x == 0)
         res[~zero] = x[~zero] * np.log(y[~zero])
-        
+
         return res
-    
-    
+
+
     @staticmethod
     def xdivy(x, y):
-        
+        """Return ``x / y`` element-wise, treating ``0 / 0`` as 0."""
+
         res = np.zeros_like(x, dtype=np.float64)
-        
+
         zero = (x == 0) & (y == 0)
         res[~zero] = x[~zero] / y[~zero]
-        
+
         return res
-    
-    
+
+
     @staticmethod
     def poisson_logpmf(k, mu):
+        """Poisson log-PMF with Stirling's approximation for ``log(k!)``.
+
+        Drops the ``log(2πk) / 2`` term, so the result is accurate up to
+        an additive constant that cancels in likelihood ratios.
         """
-        NOTE
-        logpmf (for poisson) = klogmu - mu - log(k!)
-        Stirling's approximation: ln(K!) ~ klogk - k + log(2πk) / 2
-        Here omit the term log(2πk) / 2
-        """
-        
+
         return Statistic.xlogy(k, mu) - mu - Statistic.xlogy(k, k) + k
-    
-    
+
+
     @staticmethod
     def gaussian_logpdf(x, loc, scale):
-        """
-        NOTE
-        logpdf (for gaussian) = -0.5 * ((x-loc)^2/scale^2 + log(2π*scale^2))
-        Here omit the term log(2π*scale^2)
-        """
+        """Gaussian log-PDF dropping the ``log(2π σ²)`` normalization constant."""
 
         return -0.5 * (Statistic.xdivy(x - loc, scale) ** 2)
 
-    
+
     @staticmethod
     def Gstat(**kwargs):
-        
+        """Gaussian source–background statistic (``Gstat``/``chi2``)."""
+
         S = kwargs['S']
         B = kwargs['B']
         m = kwargs['m']
@@ -365,7 +412,8 @@ class Statistic(object):
     
     @staticmethod
     def Pstat(**kwargs):
-        
+        """Pure-Poisson statistic when the background is ignored."""
+
         S = kwargs['S']
         m = kwargs['m']
         ts = kwargs['ts']
@@ -381,14 +429,15 @@ class Statistic(object):
 
     @staticmethod
     def PPstat(**kwargs):
-        
+        """Profile Poisson–Poisson statistic (``cstat`` equivalent)."""
+
         S = kwargs['S']
         B = kwargs['B']
         m = kwargs['m']
-        
+
         ts = kwargs['ts']
         tb = kwargs['tb']
-        
+
         aa = ts + tb
         bb = (ts + tb) * m - S - B
         cc = -B * m
@@ -410,14 +459,15 @@ class Statistic(object):
 
 
     def PGstat(**kwargs):
-        
+        """Profile Poisson–Gaussian statistic (XSPEC-style ``pgstat``)."""
+
         S = kwargs['S']
         B = kwargs['B']
         m = kwargs['m']
-        
+
         ts = kwargs['ts']
         tb = kwargs['tb']
-        
+
         sigma = kwargs['sigma_B']
         
         aa = tb ** 2
@@ -443,36 +493,38 @@ class Statistic(object):
 
     @staticmethod
     def PPstat_UL(**kwargs):
-        
+        """Upper-limit driver for ``PPstat``: minimize ``(sigma - 3)^2``."""
+
         B = kwargs['B']
         m = kwargs['m']
-        
+
         ts = kwargs['ts']
         tb = kwargs['tb']
         alpha = ts / tb
-        
+
         bkg_cts = np.sum(B)
         mo_cts = np.sum(m * ts)
-        
+
         ul_sigma = 3.0
         sigma = ppsig(mo_cts + bkg_cts * alpha, bkg_cts, alpha)
-        
+
         stat = (sigma - ul_sigma) ** 2
         residual = np.array([sigma - ul_sigma], dtype=np.float64)
 
         return stat, residual
-    
-    
+
+
     @staticmethod
     def PGstat_UL(**kwargs):
-        
+        """Upper-limit driver for ``PGstat``: minimize ``(sigma - 3)^2``."""
+
         B = kwargs['B']
         m = kwargs['m']
-        
+
         ts = kwargs['ts']
         tb = kwargs['tb']
         alpha = ts / tb
-        
+
         sigma_B = kwargs['sigma_B']
         
         bkg_cts = np.sum(B)
