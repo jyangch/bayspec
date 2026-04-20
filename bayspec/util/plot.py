@@ -1,3 +1,14 @@
+"""High-level plotting helpers for spectra, responses, fits, and posteriors.
+
+``Plot`` dispatches per-object figures (spectrum, response, dataunit, fit
+comparison, corner), ``ModelPlot`` composes multi-model comparisons, and
+``Figure`` wraps the returned figure with notebook display plus
+filename-aware saving (HTML/PDF/JSON).
+
+Every renderer accepts ``ploter='plotly'`` or ``ploter='matplotlib'`` and
+returns a :class:`Figure`.
+"""
+
 import sys
 import corner
 import numpy as np
@@ -23,7 +34,14 @@ from ..infer.analyzer import Posterior, Bootstrap
 
 
 class Plot(object):
-    
+    """Static factory for single-object figures over bayspec data types.
+
+    Every method takes a concrete bayspec object (``Spectrum``,
+    ``Response``, ``DataUnit``, ``Data``, ``Pair``, ``Infer``,
+    ``Posterior``/``Bootstrap``) and returns a :class:`Figure`. Plotly is
+    the default backend; ``matplotlib`` is available for static output.
+    """
+
     colors = px.colors.qualitative.Plotly \
         + px.colors.qualitative.D3 \
             + px.colors.qualitative.G10 \
@@ -32,16 +50,29 @@ class Plot(object):
 
     @staticmethod
     def get_rgb(color, opacity=1.0):
-        
+        """Convert a matplotlib color plus opacity into a Plotly ``rgba`` string."""
+
         rgba = mpl.colors.to_rgba(color)
         rgb = [int(x * 255) for x in rgba[:3]] + [opacity]
-        
+
         return 'rgba(%d, %d, %d, %f)' % tuple(rgb)
-    
-    
+
+
     @staticmethod
     def spectrum(cls, ploter='plotly'):
-        
+        """Plot counts vs. channel for a ``Spectrum``.
+
+        Args:
+            cls: ``Spectrum`` whose counts and errors are drawn.
+            ploter: Backend — ``'plotly'`` or ``'matplotlib'``.
+
+        Returns:
+            A :class:`Figure` wrapping the plot.
+
+        Raises:
+            TypeError: If ``cls`` is not a ``Spectrum``.
+        """
+
         if not isinstance(cls, Spectrum):
             raise TypeError('cls is not Spectrum type, cannot call spectrum method')
         
@@ -96,7 +127,21 @@ class Plot(object):
 
     @staticmethod
     def response(cls, ploter='plotly', ch_range=None, ph_range=None):
-        
+        """Plot the 2D detector response matrix as a contour.
+
+        Args:
+            cls: ``Response`` (non-``Auxiliary``) to visualize.
+            ploter: Backend — ``'plotly'`` or ``'matplotlib'``.
+            ch_range: Optional ``(min, max)`` channel-energy window.
+            ph_range: Optional ``(min, max)`` photon-energy window.
+
+        Returns:
+            A :class:`Figure` wrapping the plot.
+
+        Raises:
+            TypeError: If ``cls`` is not a ``Response`` or is ``Auxiliary``.
+        """
+
         if not isinstance(cls, Response):
             raise TypeError('cls is not Response type, cannot call response method')
         
@@ -166,7 +211,20 @@ class Plot(object):
 
     @staticmethod
     def response_photon(cls, ploter='plotly', ph_range=None):
-        
+        """Plot effective area vs. photon energy.
+
+        Args:
+            cls: ``Response`` or ``Auxiliary``.
+            ploter: Backend — ``'plotly'`` or ``'matplotlib'``.
+            ph_range: Optional ``(min, max)`` photon-energy window.
+
+        Returns:
+            A :class:`Figure` wrapping the plot.
+
+        Raises:
+            TypeError: If ``cls`` is not a ``Response``.
+        """
+
         if not isinstance(cls, Response):
             raise TypeError('cls is not Response type, cannot call response_photon method')
         
@@ -226,7 +284,20 @@ class Plot(object):
 
     @staticmethod
     def response_channel(cls, ploter='plotly', ch_range=None):
-        
+        """Plot the channel-summed response vs. channel energy.
+
+        Args:
+            cls: ``Response`` (non-``Auxiliary``).
+            ploter: Backend — ``'plotly'`` or ``'matplotlib'``.
+            ch_range: Optional ``(min, max)`` channel-energy window.
+
+        Returns:
+            A :class:`Figure` wrapping the plot.
+
+        Raises:
+            TypeError: If ``cls`` is not a ``Response`` or is ``Auxiliary``.
+        """
+
         if not isinstance(cls, Response):
             raise TypeError('cls is not Response type, cannot call response_channel method')
         
@@ -285,7 +356,22 @@ class Plot(object):
 
     @staticmethod
     def dataunit(cls, ploter='plotly', style='CE'):
-        
+        """Plot a single ``DataUnit``'s observed spectrum.
+
+        Args:
+            cls: ``DataUnit`` to plot; must be complete.
+            ploter: Backend — ``'plotly'`` or ``'matplotlib'``.
+            style: Display style — e.g. ``'CC'`` counts/channel,
+                ``'CE'`` counts/keV, ``'NE'`` photon flux density.
+
+        Returns:
+            A :class:`Figure` wrapping the plot.
+
+        Raises:
+            TypeError: If ``cls`` is not a ``DataUnit``.
+            AttributeError: If the ``DataUnit`` fails its completeness check.
+        """
+
         if not isinstance(cls, DataUnit):
             raise TypeError('cls is not DataUnit type, cannot call dataunit method')
         
@@ -432,7 +518,20 @@ class Plot(object):
 
     @staticmethod
     def data(cls, ploter='plotly', style='CE'):
-        
+        """Plot every ``DataUnit`` in a ``Data`` container on one figure.
+
+        Args:
+            cls: ``Data`` whose units are drawn together.
+            ploter: Backend — ``'plotly'`` or ``'matplotlib'``.
+            style: Display style (see :meth:`dataunit`).
+
+        Returns:
+            A :class:`Figure` wrapping the plot.
+
+        Raises:
+            TypeError: If ``cls`` is not a ``Data``.
+        """
+
         if not isinstance(cls, Data):
             raise TypeError('cls is not Data type, cannot call data method')
         
@@ -526,6 +625,19 @@ class Plot(object):
 
     @staticmethod
     def model(ploter='plotly', style='NE', post=False, yrange=None):
+        """Create an empty :class:`ModelPlot` for accumulating model traces.
+
+        Args:
+            ploter: Backend — ``'plotly'`` or ``'matplotlib'``.
+            style: Spectrum style — ``'NE'``/``'Fv'``/``'ENE'``/``'vFv'``/
+                ``'EENE'`` for additive models, ``'NoU'`` for
+                multiplicative/mathematical models.
+            post: If ``True``, also draw the posterior credible band.
+            yrange: Optional ``(ymin, ymax)`` tuple for the y-axis.
+
+        Returns:
+            A fresh :class:`ModelPlot` ready for ``add_model`` calls.
+        """
 
         modelplot = ModelPlot(ploter=ploter, style=style, post=post, yrange=yrange)
 
@@ -534,7 +646,25 @@ class Plot(object):
 
     @staticmethod
     def pair(cls, ploter='plotly', style='CE'):
-        
+        """Plot data and model together for a ``Pair``, with residual panel.
+
+        The top panel shows observed and model spectra for every data unit;
+        the bottom panel shows residuals in units of sigma.
+
+        Args:
+            cls: ``Pair`` whose data and model are drawn.
+            ploter: Backend — ``'plotly'`` or ``'matplotlib'``.
+            style: Display style — ``'CC'``, ``'CE'``, ``'NE'``, ``'Fv'``/
+                ``'ENE'``, or ``'vFv'``/``'EENE'``.
+
+        Returns:
+            A :class:`Figure` wrapping the plot.
+
+        Raises:
+            TypeError: If ``cls`` is not a ``Pair``.
+            ValueError: If ``style`` is not recognized.
+        """
+
         if not isinstance(cls, Pair):
             raise TypeError('cls is not Pair type, cannot call pair method')
         
@@ -702,7 +832,19 @@ class Plot(object):
     
     @staticmethod
     def emcee_walker(cls):
-        
+        """Plot per-parameter emcee walker trajectories.
+
+        Args:
+            cls: ``BayesInfer`` or ``Posterior`` exposing
+                ``posterior_sample`` and ``free_nparams``.
+
+        Returns:
+            A :class:`Figure` wrapping the matplotlib walker plot.
+
+        Raises:
+            TypeError: If ``cls`` is not a ``BayesInfer`` or ``Posterior``.
+        """
+
         if not isinstance(cls, (BayesInfer, Posterior)):
             raise TypeError('cls is not BayesInfer or Posterior type, cannot call walker method')
         
@@ -731,7 +873,28 @@ class Plot(object):
     
     @staticmethod
     def infer(cls, ploter='plotly', style='CE', rebin=True, at_par=None):
-        
+        """Plot data vs. inferred model (with residuals) from an ``Infer``.
+
+        Args:
+            cls: ``Infer`` or one of its subclasses (``Posterior``,
+                ``Bootstrap``) to visualize.
+            ploter: Backend — ``'plotly'`` or ``'matplotlib'``.
+            style: Display style (see :meth:`pair`).
+            rebin: Draw with re-binned channels when ``True``.
+            at_par: Which parameter point to evaluate the model at —
+                ``'best'``, ``'best-ci'``, ``'median'``, ``'mean'``, or
+                ``'truth'``. Defaults to ``'best'`` for ``Posterior`` and
+                ``'truth'`` for ``Bootstrap``.
+
+        Returns:
+            A :class:`Figure` wrapping the plot.
+
+        Raises:
+            TypeError: If ``cls`` is not an ``Infer``.
+            ValueError: If ``at_par`` or ``style`` is not recognized, or if
+                ``at_par='truth'`` but some parameters lack a truth value.
+        """
+
         if not isinstance(cls, Infer):
             raise TypeError('cls is not Infer type, cannot call infer method')
         
@@ -945,7 +1108,26 @@ class Plot(object):
         
     @staticmethod
     def post_corner(cls, ploter='plotly', at_par=None):
-        
+        """Corner plot of a ``Posterior`` or ``Bootstrap`` sample.
+
+        Args:
+            cls: ``Posterior`` or ``Bootstrap`` whose parameter samples are
+                visualized.
+            ploter: Backend — ``'plotly'``, ``'getdist'``, or ``'cornerpy'``.
+            at_par: Reference point overlaid on the plot — ``'best'``,
+                ``'best-ci'``, ``'median'``, ``'mean'``, or ``'truth'``.
+                Defaults to ``'best'`` for ``Posterior`` and ``'truth'``
+                for ``Bootstrap``.
+
+        Returns:
+            A :class:`Figure` wrapping the plot.
+
+        Raises:
+            TypeError: If ``cls`` is not a ``Posterior`` or ``Bootstrap``.
+            ValueError: If ``at_par`` is not recognized, or if
+                ``at_par='truth'`` but some parameters lack a truth value.
+        """
+
         if not isinstance(cls, (Posterior, Bootstrap)):
             raise TypeError('cls is not Posterior or Bootstrap type, cannot call corner method')
         
@@ -1094,15 +1276,43 @@ class Plot(object):
 
 
 class ModelPlot(object):
-    
+    """Accumulating figure that overlays multiple ``Model`` spectra.
+
+    Build one via :meth:`Plot.model`, then call :meth:`add_model` for each
+    model to compare, and finish with :meth:`get_fig`. The y-axis label
+    and which model spectra are valid depend on ``style``.
+
+    Attributes:
+        ploter: Active backend (``'plotly'`` or ``'matplotlib'``).
+        style: Spectrum style (see :meth:`Plot.model`).
+        post: Whether posterior credible bands are drawn alongside lines.
+        yrange: Optional y-axis range.
+        fig: Underlying figure object from the chosen backend.
+        fig_data: Raw plotted arrays keyed by model expression.
+        model_index: Running count of models added; used for color cycling.
+    """
+
     colors = px.colors.qualitative.Plotly \
         + px.colors.qualitative.D3 \
             + px.colors.qualitative.G10 \
                 + px.colors.qualitative.T10 \
                     + px.colors.qualitative.Alphabet
-    
+
     def __init__(self, ploter='plotly', style='NE', post=False, yrange=None):
-        
+        """Initialize the figure for the requested backend and style.
+
+        Args:
+            ploter: ``'plotly'`` or ``'matplotlib'``.
+            style: Spectrum style — ``'NE'``/``'Fv'``/``'ENE'``/``'vFv'``/
+                ``'EENE'`` for additive models, ``'NoU'`` for
+                multiplicative/mathematical models.
+            post: If ``True``, draw posterior credible bands.
+            yrange: Optional ``(ymin, ymax)`` tuple.
+
+        Raises:
+            ValueError: If ``style`` is not recognized.
+        """
+
         self.ploter = ploter
         self.style = style
         self.post = post
@@ -1157,15 +1367,38 @@ class ModelPlot(object):
         
     @staticmethod
     def get_rgb(color, opacity=1.0):
-        
+        """Convert a matplotlib color plus opacity into a Plotly ``rgba`` string."""
+
         rgba = mpl.colors.to_rgba(color)
         rgb = [int(x * 255) for x in rgba[:3]] + [opacity]
-        
+
         return 'rgba(%d, %d, %d, %f)' % tuple(rgb)
-        
-        
+
+
     def add_model(self, model, E, T=None, post=None, at_par=None):
-        
+        """Draw ``model`` at energies ``E`` onto the accumulating figure.
+
+        The required model spectrum method is selected from ``style`` and
+        ``at_par``. When ``post`` is ``True`` the one-sigma credible band
+        is added alongside the point estimate.
+
+        Args:
+            model: ``Model`` instance compatible with the current ``style``.
+            E: Energy grid (keV) at which to evaluate the model.
+            T: Optional time argument forwarded to time-dependent models.
+            post: Overrides the instance-level ``post`` flag for this call.
+            at_par: Which parameter point to evaluate at — ``'best'``,
+                ``'best-ci'``, ``'median'``, ``'mean'``, or ``'truth'``.
+                Defaults to ``'best'`` when any truth value is missing,
+                otherwise ``'truth'``.
+
+        Raises:
+            TypeError: If ``model`` is not a ``Model``.
+            AttributeError: If the model type is incompatible with ``style``.
+            ValueError: If ``at_par`` or ``style`` is not recognized, or if
+                ``at_par='truth'`` but some parameters lack a truth value.
+        """
+
         if not isinstance(model, Model):
             raise TypeError('model is not Model type, cannot call add_model method')
         
@@ -1301,30 +1534,62 @@ class ModelPlot(object):
 
 
     def get_fig(self):
+        """Wrap the accumulated plot in a :class:`Figure` for display or saving."""
 
         return Figure(self.fig, self.fig_data, self.ploter)
 
 
 
 class Figure(object):
-    
+    """Backend-agnostic figure wrapper with notebook auto-display and saving.
+
+    Shows plotly figures immediately when running in an IPython kernel and
+    supports saving to HTML, PDF, or JSON depending on the backend.
+
+    Attributes:
+        fig: Underlying figure object.
+        fig_data: Raw plotted arrays, saved alongside the figure as JSON.
+        plotter: Backend tag — ``'plotly'``, ``'matplotlib'``,
+            ``'cornerpy'``, or ``'getdist'``.
+    """
+
     def __init__(self, fig, fig_data, plotter):
-        
+        """Store the figure and auto-display it when running in a notebook.
+
+        Args:
+            fig: Backend-specific figure object.
+            fig_data: Raw plotted arrays, or ``None`` if not exported.
+            plotter: Backend tag.
+        """
+
         self.fig = fig
         self.fig_data = fig_data
         self.plotter = plotter
-        
+
         if self.is_notebook() and self.plotter == 'plotly':
             self.fig.show()
 
 
     @staticmethod
     def is_notebook():
+        """Return ``True`` when running inside an IPython kernel."""
         return 'ipykernel' in sys.modules
 
 
     def save(self, fname):
-        
+        """Persist the figure (plus raw data) to disk using ``fname`` as stem.
+
+        The extension is picked per backend: ``.html`` for plotly, ``.pdf``
+        for matplotlib and cornerpy, and a getdist-native export otherwise.
+        Raw ``fig_data`` is additionally dumped as ``<fname>.json``.
+
+        Args:
+            fname: Target file path without extension.
+
+        Raises:
+            ValueError: If ``plotter`` is not recognized.
+        """
+
         if self.fig_data is not None:
             json_dump(self.fig_data, f'{fname}.json')
         

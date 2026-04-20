@@ -1,3 +1,10 @@
+"""Template for user-defined spectral models.
+
+Copy this file and customize the ``+++++++editable area+++++++`` blocks
+to define new components; ``expr``, ``type``, ``config`` and ``params``
+control how the model participates in composition and fitting.
+"""
+
 from collections import OrderedDict
 
 from ..model import Model
@@ -10,8 +17,10 @@ from ...util.param import Par, Cfg
 
 
 class user(Model):
+    """Example user-defined model scaffold; edit to implement your spectrum."""
 
     def __init__(self):
+        """Initialise the template with a single uniform parameter ``p1``."""
         super().__init__()
         
         #+++++++editable area+++++++

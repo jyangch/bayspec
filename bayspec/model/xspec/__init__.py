@@ -1,3 +1,12 @@
+"""Bayspec wrappers for XSPEC additive and multiplicative models.
+
+Walks the available ``xspec_models_cxc`` model list and synthesizes a
+bayspec :class:`Model` subclass for each one under an ``XS_<name>``
+alias. Additive XSPEC models get a ``logNorm`` parameter on top of the
+XSPEC-native parameter set. Helper functions (``chatter``, ``abund``,
+``xsect``, ``cosmo``) expose the XSPEC global state through wrappers.
+"""
+
 import numpy as np
 import xspec_models_cxc as xsp
 from collections import OrderedDict
@@ -26,11 +35,15 @@ model_types = dict(**add_model_types, **mul_model_types)
 
 
 def list_xspec_models():
+    """Return the ``XS_<name>`` aliases of every wrapped XSPEC model."""
+
     return [f'XS_{name}' for name in model_classes.keys()]
 __all__.append('list_xspec_models')
 
 
 def chatter(val=None):
+    """Read or write XSPEC's verbosity level; returns the current value when called with no argument."""
+
     if val is None:
         return xsp.chatter()
     else:
@@ -39,6 +52,17 @@ __all__.append('chatter')
 
 
 def abund(val=None):
+    """Read or set the XSPEC elemental abundance table.
+
+    Args:
+        val: One of ``'angr'``, ``'aspl'``, ``'feld'``, ``'aneb'``,
+            ``'grsa'``, ``'wilm'``, ``'lodd'``, ``'lpgp'``. ``None``
+            returns the current table.
+
+    Raises:
+        ValueError: If ``val`` is not in the allowed list.
+    """
+
     allowed_abund = ['angr', 'aspl', 'feld', 'aneb', 'grsa', 'wilm', 'lodd', 'lpgp']
     if val is None:
         return xsp.abundance()
@@ -51,6 +75,16 @@ __all__.append('abund')
 
 
 def xsect(val=None):
+    """Read or set the XSPEC photoelectric cross-section table.
+
+    Args:
+        val: One of ``'bcmc'``, ``'obcm'``, ``'vern'``; ``None`` returns
+            the current table.
+
+    Raises:
+        ValueError: If ``val`` is not in the allowed list.
+    """
+
     allowed_xsect = ['bcmc', 'obcm', 'vern']
     if val is None:
         return xsp.cross_section()
@@ -63,6 +97,16 @@ __all__.append('xsect')
 
 
 def cosmo(val=None):
+    """Read or set the XSPEC cosmology.
+
+    Args:
+        val: Dict with keys ``h0``, ``lambda0``, ``q0``; ``None`` returns
+            the current cosmology.
+
+    Raises:
+        ValueError: If ``val`` does not carry exactly those keys.
+    """
+
     allowed_key = ['h0', 'lambda0', 'q0']
     if val is None:
         return xsp.cosmology()
@@ -75,9 +119,10 @@ __all__.append('cosmo')
 
 
 for name, cls in model_classes.items():
-    
+
     def make_init(name, cls):
-        
+        """Closure that produces the ``__init__`` for the wrapped ``XS_<name>`` class."""
+
         def __init__(self):
             
             self.xsexpr = name
@@ -113,7 +158,8 @@ for name, cls in model_classes.items():
 
     
     def func(self, E, T=None, O=None):
-        
+        """Gather parameters, invoke the XSPEC backend, and rescale the result."""
+
         pars = []
         for pr in xsp.info(self.xsexpr).parameters:
             pl = pr.name

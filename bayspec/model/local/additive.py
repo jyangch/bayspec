@@ -1,3 +1,14 @@
+"""Additive photon-spectrum components shipped with bayspec.
+
+Each class implements a concrete analytic family (power-law, cutoff
+power-law, Band function, blackbody, synchrotron, etc.) and returns the
+photon flux density :math:`N(E, T)` from :meth:`func`. Most components
+expose a ``vfv_peak`` configuration flag that switches between
+peak-energy and break-energy parameterizations, and every component
+accepts an optional ``redshift`` configuration that blueshifts ``E`` by
+``1 + redshift`` before evaluation.
+"""
+
 import os
 import toml
 import numba as nb
@@ -17,9 +28,10 @@ from ...util.tools import cached_property
 
 
 class pl(Additive):
+    """Single power-law photon spectrum."""
 
     def __init__(self):
-        
+
         self.expr = 'pl'
         self.comment = 'power-law model'
         
@@ -56,9 +68,10 @@ class pl(Additive):
 
 
 class cpl(Additive):
+    """Power law with an exponential high-energy cutoff (``vfv_peak`` aware)."""
 
     def __init__(self):
-        
+
         self.expr = 'cpl'
         self.comment = 'power-law model with high-energy cutoff'
         
@@ -127,10 +140,12 @@ class cpl(Additive):
 
 
 class sbpl(Additive):
+    """Smoothly broken power law (Kaneko et al. 2006, ``10.1086/505911``)."""
+
     # 10.1086/505911
-    
+
     def __init__(self):
-        
+
         self.expr = 'sbpl'
         self.comment = 'smoothly broken power-law model'
         
@@ -264,9 +279,10 @@ class sbpl(Additive):
 
 
 class csbpl(Additive):
-    
+    """Smoothly broken power law with an added exponential cutoff."""
+
     def __init__(self):
-        
+
         self.expr = 'csbpl'
         self.comment = 'smoothly broken power-law model with high-energy cutoff'
         
@@ -360,6 +376,7 @@ class csbpl(Additive):
 
 
 class dsbpl(Additive):
+    """Double smoothly broken power law (three segments, two smooth breaks)."""
 
     def __init__(self):
 
@@ -469,9 +486,10 @@ class dsbpl(Additive):
 
 
 class tsbpl(Additive):
-    
+    """Triple smoothly broken power law (four segments, three smooth breaks)."""
+
     def __init__(self):
-        
+
         self.expr = 'tsbpl'
         self.comment = 'triple smoothly broken power-law model'
         
@@ -556,12 +574,13 @@ class tsbpl(Additive):
 
 
     def slope_func(self, E, T=None, O=None):
-        
+        """Return the local spectral index of the tsbpl model at ``E``."""
+
         redshift = self.config['redshift'].value
         delta1 = self.config['smoothness1'].value
         delta2 = self.config['smoothness2'].value
         delta3 = self.config['smoothness3'].value
-        
+
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
         alpha3 = self.params[r'$\alpha_3$'].value
@@ -597,8 +616,10 @@ class tsbpl(Additive):
 
 
 class sb2pl(Additive):
+    """Smoothly broken power law variant (Ravasio et al. 2018, ``10.1051/0004-6361/201732245``)."""
+
     # 10.1051/0004-6361/201732245
-    
+
     def __init__(self):
         
         self.expr = 'sb2pl'
@@ -683,9 +704,10 @@ class sb2pl(Additive):
 
 
 class csb2pl(Additive):
+    """Convex 2-segment smoothly broken power law with an exponential cutoff."""
 
     def __init__(self):
-        
+
         self.expr = 'csb2pl'
         self.comment = '2-segment smoothly broken power-law model (always convex) with high-energy cutoff'
         
@@ -771,9 +793,10 @@ class csb2pl(Additive):
 
 
 class sb3pl(Additive):
-    
+    """Convex 3-segment smoothly broken power law."""
+
     def __init__(self):
-        
+
         self.expr = 'sb3pl'
         self.comment = '3-segment smoothly broken power-law model (always convex)'
         
@@ -869,9 +892,10 @@ class sb3pl(Additive):
 
 
 class sb4pl(Additive):
+    """Convex 4-segment smoothly broken power law."""
 
     def __init__(self):
-        
+
         self.expr = 'sb4pl'
         self.comment = '4-segment smoothly broken power-law model (always convex)'
         
@@ -993,10 +1017,12 @@ class sb4pl(Additive):
 
 
 class band(Additive):
+    """Band function (Band et al. 1993, ``10.1086/172995``)."""
+
     # 10.1086/172995
 
     def __init__(self):
-        
+
         self.expr = 'band'
         self.comment = 'band function'
         
@@ -1045,10 +1071,12 @@ class band(Additive):
 
 
 class cband(Additive):
+    """Band function augmented with an exponential high-energy cutoff."""
+
     # 10.1088/0004-637X/751/2/90
-    
+
     def __init__(self):
-        
+
         self.expr = 'cband'
         self.comment = 'band function with high-energy cutoff'
         
@@ -1100,10 +1128,12 @@ class cband(Additive):
 
 
 class dband(Additive):
+    """Double Band function (two adjoining Band segments)."""
+
     # 10.1088/0004-637X/751/2/90
-    
+
     def __init__(self):
-        
+
         self.expr = 'dband'
         self.comment = 'double band functions'
         
@@ -1161,9 +1191,10 @@ class dband(Additive):
 
 
 class bb(Additive):
+    """Single-temperature blackbody photon spectrum."""
 
     def __init__(self):
-        
+
         self.expr = 'bb'
         self.comment = 'black-body model'
         
@@ -1199,6 +1230,8 @@ class bb(Additive):
 
 
 class mbb(Additive):
+    """Multi-color (multi-temperature) blackbody (Hou et al. 2018, ``10.3847/1538-4357/aadc07``)."""
+
     # 10.3847/1538-4357/aadc07
 
     _MBB_GAUSS_NODES, _MBB_GAUSS_WEIGHTS = np.polynomial.legendre.leggauss(64)
@@ -1300,10 +1333,12 @@ class mbb(Additive):
 
 
 class hlecpl(Additive):
+    """High-latitude-emission curvature model for a cutoff power law (time-dependent)."""
+
     # 10.1088/0004-637X/690/1/L10
-    
+
     def __init__(self):
-        
+
         self.expr = 'hlecpl'
         self.comment = 'curvature effect model for cpl function'
         
@@ -1364,9 +1399,10 @@ class hlecpl(Additive):
     
 
 class hleband(Additive):
-    
+    """High-latitude-emission curvature model for a Band function (time-dependent)."""
+
     def __init__(self):
-        
+
         self.expr = 'hleband'
         self.comment = 'curvature effect model for band function'
         
@@ -1435,9 +1471,10 @@ class hleband(Additive):
     
 
 class zxhsync(Additive):
+    """Time-dependent synchrotron model (ZXH provider, reads an external ``.o`` kernel)."""
 
     def __init__(self):
-        
+
         self.expr = 'zxhsync'
         self.comment = "zxh's synchrotron model"
         
@@ -1553,7 +1590,8 @@ class zxhsync(Additive):
     
     @property
     def luminosity_distance(self):
-        
+        """Luminosity distance in cm at the configured redshift (Planck18 cosmology)."""
+
         return Planck18.luminosity_distance(self.config['redshift'].value).to(u.cm).value
 
 
@@ -1665,9 +1703,10 @@ class zxhsync(Additive):
     
 
 class katu(Additive):
+    """External KATU provider invoked through a TOML-configured subprocess."""
 
     def __init__(self):
-        
+
         self.expr = 'katu'
         self.comment = 'katu model'
         
@@ -1774,6 +1813,7 @@ class katu(Additive):
 
 
     def set_cfg(self, key, value):
+        """Set a nested KATU TOML key ``a.b.c`` in ``mo_cfg`` to ``value``."""
 
         key_list = key.split('.')
         n_key = len(key_list)

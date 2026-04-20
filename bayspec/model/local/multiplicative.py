@@ -1,3 +1,10 @@
+"""Dimensionless multiplicative components — cutoffs and ISM absorbers.
+
+The absorption models (``wabs``, ``phabs``, ``tbabs``, ``tinvabs``) load
+their tabulated cross sections from the ``docs/xsect`` archive; the
+cross-section lookup is memoized per instance for speed.
+"""
+
 import numpy as np
 import numba as nb
 from collections import OrderedDict
@@ -12,9 +19,11 @@ from ...util.tools import memoized
 
 
 class hecut(Multiplicative):
+    """High-energy exponential cutoff above a configurable threshold energy."""
 
     def __init__(self):
-        
+        """Initialise the cutoff with a log-cutoff parameter :math:`\\log E_c`."""
+
         self.expr = 'hecut'
         self.comment = 'high-energy cutoff model'
         
@@ -27,10 +36,11 @@ class hecut(Multiplicative):
 
 
     def func(self, E, T=None, O=None):
-        
+        """Return 1 below ``threshold_energy`` and ``exp((ethr - E) / Ec)`` above."""
+
         redshift = self.config['redshift'].value
         ethr = self.config['threshold_energy'].value
-        
+
         logEc = self.params[r'log$E_c$'].value
         
         Ec = 10 ** logEc
@@ -53,9 +63,11 @@ class hecut(Multiplicative):
 
 
 class wabs(Multiplicative):
-    
+    """Wisconsin ISM photoelectric absorption (``angr`` abundances)."""
+
     def __init__(self):
-        
+        """Initialise with the single parameter :math:`N_H` in ``1e22 cm^-2`` units."""
+
         self.expr = 'wabs'
         self.comment = 'Wisconsin ISM absorption model'
         
@@ -73,27 +85,29 @@ class wabs(Multiplicative):
     
     
     def func(self, E, T=None, O=None):
-        
+        """Return :math:`\\exp(-N_H \\, \\sigma(E))` using the tabulated cross section."""
+
         redshift = self.config['redshift'].value
         nh = self.params[r'$N_H$'].value
-        
+
         sigma = self._get_cached_sigma(E, redshift)
-        
+
         fracspec = np.exp(-nh * sigma)
-        
+
         return fracspec
-    
-    
+
+
     @memoized()
     def _get_cached_sigma(self, E, redshift):
-        
+        """Interpolate the rest-frame cross section at redshift-corrected ``E``."""
+
         E = np.asarray(E, dtype=np.float64)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
-        
+
         zi = 1 + redshift
         E = E * zi
-        
+
         sigma = np.interp(E, self.xsect_energy, self.xsect_sigma, right=0.0)
 
         return sigma[0] if scalar else sigma
@@ -101,9 +115,11 @@ class wabs(Multiplicative):
 
 
 class phabs(Multiplicative):
-    
+    """Photoelectric absorption using the ``aspl`` abundance table."""
+
     def __init__(self):
-        
+        """Initialise with the single parameter :math:`N_H` in ``1e22 cm^-2`` units."""
+
         self.expr = 'phabs'
         self.comment = 'photoelectric absorption model'
         
@@ -121,27 +137,29 @@ class phabs(Multiplicative):
     
     
     def func(self, E, T=None, O=None):
-        
+        """Return :math:`\\exp(-N_H \\, \\sigma(E))` using the tabulated cross section."""
+
         redshift = self.config['redshift'].value
         nh = self.params[r'$N_H$'].value
-        
+
         sigma = self._get_cached_sigma(E, redshift)
-        
+
         fracspec = np.exp(-nh * sigma)
-        
+
         return fracspec
-    
-    
+
+
     @memoized()
     def _get_cached_sigma(self, E, redshift):
-        
+        """Interpolate the rest-frame cross section at redshift-corrected ``E``."""
+
         E = np.asarray(E, dtype=np.float64)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
-        
+
         zi = 1 + redshift
         E = E * zi
-        
+
         sigma = np.interp(E, self.xsect_energy, self.xsect_sigma, right=0.0)
 
         return sigma[0] if scalar else sigma
@@ -149,9 +167,11 @@ class phabs(Multiplicative):
 
 
 class tbabs(Multiplicative):
-    
+    """Tuebingen-Boulder ISM absorption using the ``wilm`` abundance table."""
+
     def __init__(self):
-        
+        """Initialise with the single parameter :math:`N_H` in ``1e22 cm^-2`` units."""
+
         self.expr = 'tbabs'
         self.comment = 'Tuebingen-Boulder ISM absorption model'
         
@@ -169,27 +189,29 @@ class tbabs(Multiplicative):
     
     
     def func(self, E, T=None, O=None):
-        
+        """Return :math:`\\exp(-N_H \\, \\sigma(E))` using the tabulated cross section."""
+
         redshift = self.config['redshift'].value
         nh = self.params[r'$N_H$'].value
-        
+
         sigma = self._get_cached_sigma(E, redshift)
-        
+
         fracspec = np.exp(-nh * sigma)
-        
+
         return fracspec
-    
-    
+
+
     @memoized()
     def _get_cached_sigma(self, E, redshift):
-        
+        """Interpolate the rest-frame cross section at redshift-corrected ``E``."""
+
         E = np.asarray(E, dtype=np.float64)
         scalar = E.ndim == 0
         if scalar: E = E[np.newaxis]
-        
+
         zi = 1 + redshift
         E = E * zi
-        
+
         sigma = np.interp(E, self.xsect_energy, self.xsect_sigma, right=0.0)
 
         return sigma[0] if scalar else sigma
@@ -197,9 +219,15 @@ class tbabs(Multiplicative):
 
 
 class tinvabs(Multiplicative):
-    
+    """Exponentially-decaying absorption column :math:`N_H(T) = N_{H,0} e^{-T/\\tau}`.
+
+    Delegates the energy-dependent absorption to an inner :class:`tbabs`
+    while updating its :math:`N_H` per unique ``T`` value.
+    """
+
     def __init__(self):
-        
+        """Initialise with initial column :math:`N_{H,0}` and decay time :math:`\\tau`."""
+
         self.expr = 'tinvabs'
         self.comment = 'time-involved absorption model'
         self.tbabs = tbabs()
@@ -213,9 +241,22 @@ class tinvabs(Multiplicative):
         
         
     def func(self, E, T, O=None):
-        
+        """Absorb ``E`` by a column that decays with ``T``.
+
+        Args:
+            E: Energies in keV.
+            T: Times; ``E`` and ``T`` must match in scalar-ness and shape.
+            O: Unused.
+
+        Returns:
+            Per-sample attenuation factor.
+
+        Raises:
+            ValueError: If ``E`` and ``T`` shapes disagree.
+        """
+
         redshift = self.config['redshift'].value
-        
+
         NH0 = self.params[r'$N_{H,0}$'].value
         tau = self.params[r'$\tau$'].value
         

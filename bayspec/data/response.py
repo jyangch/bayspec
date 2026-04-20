@@ -1,3 +1,12 @@
+"""Detector response containers: full DRM, pure redistribution, and ARF.
+
+Provides the base :class:`Response` (channel × photon redistribution
+matrix), :class:`Redistribution` (RMF only), :class:`Auxiliary` (ARF
+only), and the location-driven :class:`BalrogResponse` used for
+Fermi/GBM localization-dependent responses. ``Redistribution * Auxiliary``
+composes into a full :class:`Response`.
+"""
+
 import inspect
 import numpy as np
 from io import BytesIO
@@ -13,16 +22,39 @@ from ..util.tools import cached_property
 
 
 class Response(object):
-    
+    """Full detector response: channel bins, photon bins, and DRM.
+
+    Attributes:
+        chbin: ``(nchan, 2)`` array of channel energy bin edges.
+        phbin: ``(nphot, 2)`` array of photon energy bin edges.
+        drm: ``(nphot, nchan)`` detector redistribution matrix.
+        ra: Optional right-ascension ``Par``.
+        dec: Optional declination ``Par``.
+        factor: Multiplicative ``Par`` applied during convolution.
+    """
+
     def __init__(
-        self, 
-        chbin, 
-        phbin, 
-        drm, 
-        ra=Par(0, frozen=True), 
-        dec=Par(0, frozen=True), 
+        self,
+        chbin,
+        phbin,
+        drm,
+        ra=Par(0, frozen=True),
+        dec=Par(0, frozen=True),
         factor=Par(1, frozen=True)
         ):
+        """Build a response from channel/photon bins and the response matrix.
+
+        Args:
+            chbin: ``(nchan, 2)`` array of channel energy bin edges.
+            phbin: ``(nphot, 2)`` array of photon energy bin edges.
+            drm: ``(nphot, nchan)`` detector redistribution matrix.
+            ra: Optional RA ``Par``.
+            dec: Optional Dec ``Par``.
+            factor: Multiplicative ``Par``.
+
+        Raises:
+            ValueError: If the shape invariants above are violated.
+        """
         
         if not (np.ndim(chbin) == np.ndim(phbin) == np.ndim(drm) == 2):
             raise ValueError('chbin, phbin and drm must be 2D arrays')
@@ -43,7 +75,22 @@ class Response(object):
         
     @classmethod
     def from_rsp(cls, rsp_file):
-        
+        """Load a single-extension OGIP RSP/RMF file.
+
+        Supports both ``SPECRESP MATRIX`` and legacy ``MATRIX`` extension
+        names. Handles both variable-length (``P``-form) and fixed-length
+        ``FCHAN``/``NCHAN`` columns.
+
+        Args:
+            rsp_file: Path to the FITS file, or a ``BytesIO``.
+
+        Returns:
+            A new ``Response`` instance.
+
+        Raises:
+            ValueError: If ``rsp_file`` is neither a string nor ``BytesIO``.
+        """
+
         if isinstance(rsp_file, BytesIO):
             rsp_file = deepcopy(rsp_file)
         elif isinstance(rsp_file, str):
@@ -114,7 +161,22 @@ class Response(object):
     
     @classmethod
     def from_rsp2(cls, rsp_file, ii=None):
-        
+        """Load extension ``ii`` of a multi-extension RSP2 file.
+
+        Accepts the row index via ``ii`` or via ``"path:ii"``.
+
+        Args:
+            rsp_file: Path or ``BytesIO`` to the RSP2 file.
+            ii: Extension index within ``SPECRESP MATRIX``/``MATRIX``.
+
+        Returns:
+            A new ``Response`` instance.
+
+        Raises:
+            ValueError: If ``rsp_file`` is neither a string nor ``BytesIO``.
+            AssertionError: If ``ii`` is not an ``int`` when required.
+        """
+
         if isinstance(rsp_file, BytesIO):
             rsp_file = deepcopy(rsp_file)
             assert isinstance(ii, int), 'ii should be int type'
@@ -191,7 +253,16 @@ class Response(object):
 
     @classmethod
     def from_plain(cls, rsp_file, ii=None):
-        
+        """Dispatch to ``from_rsp`` or ``from_rsp2`` based on ``rsp_file`` form.
+
+        Args:
+            rsp_file: Path (optionally ``"path:ii"``) or ``BytesIO``.
+            ii: Extension index; forces the RSP2 loader when given.
+
+        Returns:
+            A new ``Response`` instance.
+        """
+
         if ii is not None:
             return cls.from_rsp2(rsp_file, ii)
         else:
@@ -200,10 +271,23 @@ class Response(object):
             else:
                 return cls.from_rsp(rsp_file)
 
-        
+
     @classmethod
     def from_rmf_arf(cls, rmf, arf):
-        
+        """Compose a full response from a redistribution matrix and ARF.
+
+        Args:
+            rmf: A :class:`Redistribution`-like object carrying ``chbin``,
+                ``phbin``, and ``drm``.
+            arf: An :class:`Auxiliary`-like object carrying ``srp``.
+
+        Returns:
+            A new ``Response`` whose DRM is ``rmf.drm * arf.srp``.
+
+        Raises:
+            ValueError: If the photon-bin dimensions disagree.
+        """
+
         chbin = rmf._chbin
         phbin = rmf._phbin
         drm = rmf._drm
@@ -292,36 +376,44 @@ class Response(object):
 
     @property
     def chbin_mean(self):
-        
+        """Per-channel midpoint energy, computed from ``chbin``."""
+
         return np.mean(self.chbin, axis=1)
-    
-    
+
+
     @property
     def chbin_width(self):
-        
+        """Per-channel bin width, computed from ``chbin``."""
+
         return np.diff(self.chbin, axis=1).reshape(1, -1)[0]
 
 
     @property
     def info(self):
-        
+        """Return a tabular :class:`Info` summary of bin counts."""
+
         num_chbin = len(self.chbin)
         num_phbin = len(self.phbin)
-        info_dict = OrderedDict([('Name', [self.name]), 
-                                 ('Channel bins', [num_chbin]), 
+        info_dict = OrderedDict([('Name', [self.name]),
+                                 ('Channel bins', [num_chbin]),
                                  ('Photon bins', [num_phbin])])
-        
+
         return Info.from_dict(info_dict)
-    
-    
+
+
     @property
     def name(self):
-        
+        """Best-effort identifier inferred from the caller scope."""
+
         return self.get_obj_name()
-    
-    
+
+
     def get_obj_name(self):
-        
+        """Walk call frames and return the outermost local name bound to ``self``.
+
+        Returns ``None`` if no binding is found.
+        """
+
         frame = inspect.currentframe()
         
         possible_var_names = []
@@ -365,43 +457,66 @@ class Response(object):
 
 
 class DisableMethodsMeta(type):
-    
+    """Metaclass that hides inherited methods listed in ``methods_to_disable``.
+
+    Each named method is replaced by a shim that raises ``AttributeError``,
+    so the class still advertises the inherited API surface but callers
+    are told the method does not apply to this subclass.
+    """
+
     def __new__(cls, name, bases, dct):
-        
+        """Replace every method in ``methods_to_disable`` with a disabling shim."""
+
         cls_to_create = super().__new__(cls, name, bases, dct)
-        
+
         methods_to_disable = dct.get('methods_to_disable', [])
-        
+
         for method in methods_to_disable:
             if hasattr(cls_to_create, method):
                 setattr(cls_to_create, method, cls.disable_method(method))
-                
+
         return cls_to_create
 
     @staticmethod
     def disable_method(method_name):
-        
+        """Return a function that raises ``AttributeError`` for ``method_name``."""
+
         def method(*args, **kwargs):
             raise AttributeError(f"'{args[0].__class__.__name__}' object has no attribute '{method_name}'")
-        
+
         return method
 
 
 
 class BalrogResponse(Response, metaclass=DisableMethodsMeta):
+    """Location-driven Fermi/GBM response backed by a balrog DRM.
 
-    methods_to_disable = ['from_rsp', 
+    Recomputes the response matrix whenever ``ra`` or ``dec`` change. The
+    file-based factory methods inherited from :class:`Response` are
+    disabled since the DRM is produced by the balrog provider.
+    """
+
+    methods_to_disable = ['from_rsp',
                           'from_rsp2',
                           'from_plain',
                           'from_rmf_arf']
 
     def __init__(
-        self, 
-        balrog_drm, 
-        ra=Par(0, unif(0, 360)), 
-        dec=Par(0, unif(-90, 90)), 
+        self,
+        balrog_drm,
+        ra=Par(0, unif(0, 360)),
+        dec=Par(0, unif(-90, 90)),
         factor=Par(1, frozen=True)
         ):
+        """Store the balrog provider and the sky location parameters.
+
+        Args:
+            balrog_drm: Balrog DRM provider exposing ``set_location``,
+                ``matrix``, ``ebounds``, and ``monte_carlo_energies``.
+            ra: RA ``Par``, by default uniform on ``[0, 360)``.
+            dec: Dec ``Par``, by default uniform on ``[-90, 90]``.
+            factor: Multiplicative ``Par``.
+        """
 
         self._balrog_drm = balrog_drm
         self._ra = ra
@@ -417,21 +532,24 @@ class BalrogResponse(Response, metaclass=DisableMethodsMeta):
     
     @cached_property()
     def chbin(self):
+        """Channel bins derived from the balrog ``ebounds`` array."""
 
-        return np.vstack([self.balrog_drm.ebounds[:-1], 
+        return np.vstack([self.balrog_drm.ebounds[:-1],
                           self.balrog_drm.ebounds[1:]]).T
-    
-    
+
+
     @cached_property()
     def phbin(self):
+        """Photon bins derived from ``monte_carlo_energies``."""
 
-        return np.vstack([self.balrog_drm.monte_carlo_energies[:-1], 
+        return np.vstack([self.balrog_drm.monte_carlo_energies[:-1],
                           self.balrog_drm.monte_carlo_energies[1:]]).T
 
 
     @cached_property(lambda self: (self.ra.value, self.dec.value))
     def drm(self):
-        
+        """Response matrix at the current ``(ra, dec)``; NaNs are coerced to 0."""
+
         self.balrog_drm.set_location(self.ra.value, self.dec.value)
         
         drm = self.balrog_drm.matrix
@@ -447,29 +565,34 @@ class BalrogResponse(Response, metaclass=DisableMethodsMeta):
 
 
 class Redistribution(Response, metaclass=DisableMethodsMeta):
-    
+    """Pure redistribution matrix (RMF); combines with :class:`Auxiliary` via ``*``."""
+
     methods_to_disable = ['from_rmf_arf']
 
     def __init__(self, chbin, phbin, drm):
-        
+        """Build an RMF with the same shape invariants as :class:`Response`."""
+
         super().__init__(chbin, phbin, drm)
 
 
     @classmethod
     def from_rmf(cls, rmf_file):
-        
+        """Alias for :meth:`Response.from_rsp` that returns an RMF."""
+
         return cls.from_rsp(rmf_file)
-        
-        
+
+
     @classmethod
     def from_rmf2(cls, rmf_file, ii=None):
-        
+        """Alias for :meth:`Response.from_rsp2` that returns an RMF."""
+
         return cls.from_rsp2(rmf_file, ii)
 
 
     @classmethod
     def from_plain(cls, rmf_file, ii=None):
-        
+        """Dispatch to ``from_rmf`` or ``from_rmf2`` based on ``rmf_file`` form."""
+
         if ii is not None:
             return cls.from_rmf2(rmf_file, ii)
         else:
@@ -481,47 +604,65 @@ class Redistribution(Response, metaclass=DisableMethodsMeta):
 
     @property
     def info(self):
-        
+        """Return a tabular :class:`Info` summary labelled as a redistribution."""
+
         num_chbin = len(self.chbin)
         num_phbin = len(self.phbin)
-        info_dict = OrderedDict([('redistribution', [self.name]), 
-                                 ('channel bins', [num_chbin]), 
+        info_dict = OrderedDict([('redistribution', [self.name]),
+                                 ('channel bins', [num_chbin]),
                                  ('photon bins', [num_phbin])])
-        
+
         return Info.from_dict(info_dict)
 
-    
+
     def __mul__(self, arf):
-        
+        """Compose with an :class:`Auxiliary` to yield a full :class:`Response`."""
+
         if not isinstance(arf, Auxiliary):
             raise ValueError('it should be Redistribution * Auxiliary')
         return Response.from_rmf_arf(self, arf)
 
 
     def __rmul__(self, arf):
-        
+        """Right-side variant of :meth:`__mul__`."""
+
         return self.__mul__(arf)
 
 
 
 class Auxiliary(Response, metaclass=DisableMethodsMeta):
-    
-    methods_to_disable = ['from_rsp', 
-                          'from_rsp2', 
+    """Auxiliary response (ARF): effective area per photon bin.
+
+    Attributes:
+        phbin: ``(nphot, 2)`` array of photon energy bin edges.
+        srp: 1D array of effective-area values aligned with ``phbin``.
+    """
+
+    methods_to_disable = ['from_rsp',
+                          'from_rsp2',
                           'from_rmf_arf'
                           ]
-    
+
     def __init__(self, phbin, srp):
-        
+        """Build an ARF from photon bins and the effective-area vector.
+
+        Args:
+            phbin: ``(nphot, 2)`` photon bin edges.
+            srp: Effective area per photon bin.
+
+        Raises:
+            ValueError: If the shape invariants above are violated.
+        """
+
         if not np.ndim(phbin) == 2:
             raise ValueError('phbin must be 2D array')
-        
+
         if not np.ndim(srp) == 1:
             raise ValueError('srp must be 1D array')
-        
+
         if not (phbin.shape[0] == srp.shape[0]):
             raise ValueError('phbin and srp should have same rows')
-        
+
         self._phbin = phbin
         self._srp = srp
 
@@ -534,7 +675,18 @@ class Auxiliary(Response, metaclass=DisableMethodsMeta):
 
     @classmethod
     def from_arf(cls, arf_file):
-        
+        """Load a single-extension OGIP ARF file.
+
+        Args:
+            arf_file: Path to the ARF FITS file, or a ``BytesIO``.
+
+        Returns:
+            A new ``Auxiliary`` instance.
+
+        Raises:
+            ValueError: If ``arf_file`` is neither a string nor ``BytesIO``.
+        """
+
         if isinstance(arf_file, BytesIO):
             arf_file = deepcopy(arf_file)
         elif isinstance(arf_file, str):
@@ -562,7 +714,17 @@ class Auxiliary(Response, metaclass=DisableMethodsMeta):
     
     @classmethod
     def from_arf2(cls, arf_file, ii=None):
-        
+        """Load extension ``ii`` of a multi-extension ARF2 file.
+
+        Args:
+            arf_file: Path or ``BytesIO`` to the ARF2 file; may use the
+                ``"path:ii"`` convention.
+            ii: Extension index within ``SPECRESP``.
+
+        Returns:
+            A new ``Auxiliary`` instance.
+        """
+
         if isinstance(arf_file, BytesIO):
             arf_file = deepcopy(arf_file)
             assert isinstance(ii, int), 'ii should be int type'
@@ -596,7 +758,8 @@ class Auxiliary(Response, metaclass=DisableMethodsMeta):
 
     @classmethod
     def from_plain(cls, arf_file, ii=None):
-        
+        """Dispatch to ``from_arf`` or ``from_arf2`` based on ``arf_file`` form."""
+
         if ii is not None:
             return cls.from_arf2(arf_file, ii)
         else:
@@ -608,21 +771,24 @@ class Auxiliary(Response, metaclass=DisableMethodsMeta):
 
     @property
     def info(self):
-        
+        """Return a tabular :class:`Info` summary labelled as an auxiliary."""
+
         num_phbin = len(self.phbin)
-        info_dict = OrderedDict([('auxiliary', [self.name]), 
+        info_dict = OrderedDict([('auxiliary', [self.name]),
                                  ('photon bins', [num_phbin])])
-        
+
         return Info.from_dict(info_dict)
 
 
     def __mul__(self, rmf):
-        
+        """Compose with a :class:`Redistribution` to yield a full :class:`Response`."""
+
         if not isinstance(rmf, Redistribution):
             raise ValueError('it should be Redistribution * Auxiliary')
         return Response.from_rmf_arf(rmf, self)
 
 
     def __rmul__(self, rmf):
-        
+        """Right-side variant of :meth:`__mul__`."""
+
         return self.__mul__(rmf)

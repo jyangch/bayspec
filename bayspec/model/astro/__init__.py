@@ -1,3 +1,13 @@
+"""Bayspec wrappers for ``astromodels`` spectral functions.
+
+Iterates curated lists of additive, multiplicative, and mathematical
+``astromodels`` functions and synthesizes a bayspec :class:`Model`
+subclass for each one under an ``AS_<name>`` alias. ``list_astro_models``
+enumerates the wrapped models; normalization-type parameters are
+expressed in log-space when useful, and ``NH`` columns get a dedicated
+prior range.
+"""
+
 import numpy as np
 import astromodels
 from collections import OrderedDict
@@ -77,14 +87,17 @@ model_types = dict(**add_model_types, **mul_model_types, **math_model_types)
 
 
 def list_astro_models():
+    """Return the ``AS_<name>`` aliases of every wrapped astromodels function."""
+
     return [f'AS_{name}' for name in model_classes.keys()]
 __all__.append('list_astro_models')
 
 
 for name, cls in model_classes.items():
-    
+
     def make_init(name, cls):
-        
+        """Closure that produces the ``__init__`` for the wrapped ``AS_<name>`` class."""
+
         def __init__(self):
             self.asexpr = name
             self.expr = f'AS_{name}'
@@ -124,7 +137,8 @@ for name, cls in model_classes.items():
 
     
     def func(self, E, T=None, O=None):
-        
+        """Push parameters to the astromodels instance and evaluate at ``E``."""
+
         for pl, pr in self.asmodel.parameters.items():
             if pr.free:
                 if pr.is_normalization and pl != 'NH':

@@ -1,10 +1,11 @@
-"""
-NOTE: this script is basically from gv_significance 
-(https://github.com/giacomov/gv_significance.git)
-Giacomo Vianello 2018 ApJS: https://doi.org/10.3847/1538-4365/aab780
-BSD 3-Clause License
-Copyright (c) 2018, Giacomo Vianello
-All rights reserved.
+"""Significance calculators for count detections against a noisy background.
+
+Adapted from ``gv_significance`` (Giacomo Vianello, 2018, BSD 3-Clause,
+https://github.com/giacomov/gv_significance) and the corresponding
+Vianello 2018 ApJS (https://doi.org/10.3847/1538-4365/aab780) and Li &
+Ma (1983) formulations. ``pgsig`` treats the background as Gaussian;
+``ppsig`` dispatches to Li & Ma, Vianello eq. 7, or Vianello eq. 9
+based on the systematic-uncertainty inputs.
 """
 
 import numpy as np
@@ -14,28 +15,38 @@ from numpy import sqrt, squeeze
 
 
 def xlogy(x, y):
-    """
-    This function implements x * log(y) so that if both x and y are 0, 
-    the results is zero (and not infinite or nan
-    as the computer would return otherwise).
-    NOTE: x and y must be numbers, not arrays
+    """Return ``x * log(y)``, evaluating to 0 when ``x`` is 0.
+
+    Avoids the ``0 * -inf = nan`` trap that naive multiplication hits.
+
+    Args:
+        x: Scalar multiplier.
+        y: Scalar argument to the logarithm; must be positive when
+            ``x`` is non-zero.
+
+    Returns:
+        ``0.0`` if ``x == 0``; otherwise ``x * log(y)``.
     """
 
     if x == 0.0:
-        
+
         return 0.0
-    
+
     else:
-        
+
         return x * log(y)
 
 
 def xlogyv(x, y):
-    """
-    This function implements x * log(y) so that if both x and y are 0, 
-    the results is zero (and not infinite or nan
-    as the computer would return otherwise).
-    Version which accepts numpy.array as inputs.
+    """Vectorized :func:`xlogy` that returns 0 where ``x`` is 0.
+
+    Args:
+        x: Scalar or array multiplier.
+        y: Array argument to the logarithm; must be positive wherever
+            ``x`` is non-zero.
+
+    Returns:
+        Squeezed array of ``x * log(y)`` with 0 in place of ``0 * log(0)``.
     """
 
     x = np.array(x, ndmin=1)
@@ -51,6 +62,19 @@ def xlogyv(x, y):
 
 
 def size_one_or_n(value, other_array, name):
+    """Broadcast a scalar or length-``n`` array to match ``other_array``.
+
+    Args:
+        value: Scalar or 1D array.
+        other_array: Reference array whose length defines ``n``.
+        name: Label used in the assertion message.
+
+    Returns:
+        A 1D float array of the same length as ``other_array``.
+
+    Raises:
+        AssertionError: If ``value`` is neither length 1 nor length ``n``.
+    """
 
     value_ = np.array(value, dtype=float, ndmin=1)
 
@@ -67,14 +91,20 @@ def size_one_or_n(value, other_array, name):
 
 
 def pgsig(n, b, sigma):
-    """
-    Returns the significance for observing n counts when b are expected. 
-    The measurement "b +/- sigma" is returned by some kind of background estimation procedure, 
-    and b is assumed to be a Gaussian random variable.
-    :param n: observed counts
-    :param b: estimation of the background coming from some method
-    :param sigma: error on the estimation of the background
-    :return: the significance of the measurement(s)
+    """Compute the Gaussian-background detection significance.
+
+    Treats the background estimate ``b`` as a Gaussian with standard
+    deviation ``sigma``, maximizes the likelihood under the null
+    hypothesis, and returns the signed square-root of the likelihood
+    ratio.
+
+    Args:
+        n: Observed counts; scalar or array.
+        b: Background expectation; same shape as ``n``.
+        sigma: Background uncertainty; broadcasts against ``n``.
+
+    Returns:
+        Signed significance (``z`` score); negative when ``n < b``.
     """
 
     n_ = np.array(n, dtype=float, ndmin=1)
@@ -82,16 +112,11 @@ def pgsig(n, b, sigma):
 
     sigma_ = size_one_or_n(sigma, n_, "sigma")
 
-    # Assign sign depending on whether n_ > b_
-
     sign = np.where(n_ >= b_, 1, -1)
 
     B0_mle = 0.5 * (b_ - sigma_ ** 2 + sqrt(b_ ** 2 - 2 * b_ * sigma_ ** 2 + 4 * n_ * sigma_ ** 2 + sigma_ ** 4))
 
-    # B0_mle could be slightly < 0 (even though it shouldn't) because of the
-    # limited numerical precision of the calculator. let's accept as negative as 0.01, and clip
-    # at zero to avoid giving results difficult to interpret
-    
+    # Clip tiny negative values produced by finite-precision arithmetic to zero.
     assert np.all(B0_mle > -0.01), "This is a bug. B0_mle cannot be negative."
 
     B0_mle = np.clip(B0_mle, 0, None)
@@ -100,14 +125,12 @@ def pgsig(n, b, sigma):
 
 
 def _li_and_ma(n_, b_, alpha):
+    """Return the Li & Ma (1983) significance for array inputs."""
 
-    # In order to avoid numerical problem with 0 * log(0), 
-    # we add a tiny number to n_ and b_, inconsequential for the computation
-    
+    # Nudge by 1e-25 to sidestep the 0 * log(0) singularity; negligible downstream.
     n_ += 1E-25  # type: np.ndarray
     b_ += 1E-25  # type: np.ndarray
 
-    # Pre-compute for speed
     n_plus_b = n_ + b_
     ap1 = alpha + 1
 
@@ -119,14 +142,14 @@ def _li_and_ma(n_, b_, alpha):
 
 
 def _likelihood_with_sys(o, b, a, s, k, B, M):
-    # Keep away from unphysical solutions during maximization
-    # (where the argument of the logarithm is negative) by returning
-    # a large negative number
+    """Log-likelihood for the Vianello 2018 eq. 9 model with a systematic term.
+
+    Returns a large negative number in unphysical regions so that
+    :func:`scipy.optimize.minimize` steers away.
+    """
 
     if M + a * B <= 0 or k + 1 <= 0 or B <= 0:
         return -1000
-
-    # Pre-compute for speed
 
     Ba = B * a
     Bak = B * a * k
@@ -137,12 +160,14 @@ def _likelihood_with_sys(o, b, a, s, k, B, M):
 
 
 def _get_TS_by_numerical_optimization(n_, b_, alpha, sigma):
+    """Return the likelihood-ratio test statistic for Vianello 2018 eq. 9.
 
-    # Numerical optimization to find the maximum likelihood value
-    # for the null hypothesis (M=0). We use the closed form for B_mle provided in the paper
-    # so that the optimization is in one variable (kk)
-    # NOTE: optimize.minimize minimizes, so we multiply the log-likelihood by -1
+    Uses the paper's closed-form ``B_mle`` to reduce the null-hypothesis
+    optimization to a single variable ``kk``, then computes
+    ``TS = 2 * (logL_H0 - logL_H1)``.
+    """
 
+    # minimize() minimizes, so the log-likelihood is negated.
     wrapper = lambda kk: -1 * _likelihood_with_sys(n_, b_, alpha, sigma, kk,
                                                    B=(b_ + n_) / (alpha * kk + alpha + 1),
                                                    M=0)
@@ -151,14 +176,9 @@ def _get_TS_by_numerical_optimization(n_, b_, alpha, sigma):
                                   [0.0],
                                   tol=1e-3)
 
-    # Get the minimum of the -log likelihood
     h0_mlike_value = res['fun']
 
-    # Get alternative hypothesis minimum of the -log likelihood
-
     h1_mlike_value = -(xlogy(b_, b_) - b_ + xlogy(n_, n_) - n_)
-
-    # Compute Test Statistic of Likelihood Ratio Test
 
     TS = 2 * (h0_mlike_value - h1_mlike_value)
 
@@ -169,35 +189,29 @@ _get_TS_by_numerical_optimization_v = np.vectorize(_get_TS_by_numerical_optimiza
 
 
 def ppsig(n, b, alpha, sigma=0, k=0):
+    """Compute the Poisson-background detection significance.
+
+    Dispatches per-element among three formulations:
+
+    - Both ``sigma == 0`` and ``k == 0``: classic Li & Ma (1983).
+    - ``k > 0``: Vianello 2018 eq. 7, treating ``k`` as an upper bound
+      on the fractional systematic uncertainty (``sigma`` is ignored).
+    - ``sigma > 0``: Vianello 2018 eq. 9, assuming a Gaussian systematic
+      with standard deviation ``sigma`` (``k`` is ignored).
+
+    Args:
+        n: Observed counts; scalar or array.
+        b: Expected background counts under the null; same shape as ``n``.
+        alpha: Ratio of source to background observation efficiencies;
+            scalar or same shape as ``n``.
+        sigma: Gaussian systematic standard deviation; scalar or matching ``n``.
+        k: Upper bound on fractional systematic uncertainty; scalar or
+            matching ``n``.
+
+    Returns:
+        Signed significance (``z`` score) for each element; negative when
+        ``n < alpha * b``.
     """
-    Returns the significance for detecting n counts when alpha * B are expected.
-
-    If sigma=0 and k=0 (default), this is the case with no additional systematic error and the classic result
-    from Li & Ma (1983) is used. Example:
-
-        > significance(n, b, alpha)
-
-    If k>0 then eq.7 from Vianello (2018) is used, which assumes that k is the upper boundary on the fractional
-    systematic uncertainty. In this case sigma has no meaning and is ignored. Example:
-
-        > significance(n, b, alpha, k=0.1)
-
-    If sigma>0, then eq. 9 from Vianello (2018) is used, which assumes a Gaussian distribution for the systematic
-    uncertainty. In this case k has no meaning and is ignored.Example:
-
-        > significance(n, b, alpha, sigma=0.1)
-
-    :param n: observed counts (can be an array)
-    :param b: expected background counts (can be an array)
-    :param alpha: ratio of the source observation efficiency and background observation efficiency
-    (either a float, or an array of the same shape of n)
-    :param sigma: standard deviation for the Gaussian case (either a float, or an array of the same shape of n)
-    :param k: maximum fractional systematic uncertainty expected (either a float, or an array of the same shape of n)
-    :return: the significance (z score) for the measurement(s)
-    """
-
-    # Make sure we are dealing with arrays, and if not, make the input so. This way
-    # we can unify the treatment
 
     n_ = np.array(n, dtype=float, ndmin=1)
     b_ = np.array(b, dtype=float, ndmin=1)
@@ -208,25 +222,18 @@ def ppsig(n, b, alpha, sigma=0, k=0):
 
     alpha_ = size_one_or_n(alpha, n_, "alpha")
 
-    # Assign sign depending on whether n_ > b_
-
     sign = np.where(n_ >= alpha_ * b_, 1, -1)
 
-    # Prepare vector for results
     res = np.zeros(n_.shape[0], dtype=float)
 
-    # Select elements where we need to apply Li & Ma and apply it
     idx_lima = (sigma_ == 0) & (k_ == 0)
 
     res[idx_lima] = _li_and_ma(n_[idx_lima], b_[idx_lima], alpha_[idx_lima])
 
-    # Select elements where we need to apply eq. 7 from Vianello (2018),
-    # which is simply Li & Ma with alpha -> alpha * (k+1)
-
+    # Vianello 2018 eq. 7 reduces to Li & Ma with alpha -> alpha * (k + 1).
     idx_eq7 = (k_ > 0)
     res[idx_eq7] = _li_and_ma(n_[idx_eq7], b_[idx_eq7], alpha_[idx_eq7] * (k_[idx_eq7] + 1))
 
-    # Select elements where we need to apply eq. 9 from Vianello (2018)
     idx_eq9 = (sigma_ > 0)
 
     if np.any(idx_eq9):
@@ -234,7 +241,5 @@ def ppsig(n, b, alpha, sigma=0, k=0):
         TS = _get_TS_by_numerical_optimization_v(n_[idx_eq9], b_[idx_eq9], alpha_[idx_eq9], sigma_[idx_eq9])
 
         res[idx_eq9] = np.sqrt(TS)
-
-    # Return significance
 
     return np.squeeze(sign * res)

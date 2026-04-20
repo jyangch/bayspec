@@ -1,3 +1,5 @@
+"""Shared utilities: priors, parameters, posteriors, tables, and plotting."""
+
 from .prior import *
 from .info import Info
 from .post import Post

@@ -1,3 +1,5 @@
+"""Plotly-based corner-plot renderer for posterior samples."""
+
 import logging
 import numpy as np
 import plotly.graph_objects as go
@@ -18,6 +20,28 @@ def corner_plotly(
     quantiles: Optional[List[float]] = None,
     levels: Optional[List[float]] = None
     ) -> go.Figure:
+    """Render a Plotly corner plot of 1D marginals and 2D contours.
+
+    Draws smoothed 1D histograms on the diagonal and 2D contour plots on
+    the lower triangle, with optional quantile markers.
+
+    Args:
+        xs: 1D or 2D array of samples; a 2D array is treated as rows of
+            observations.
+        bins: Number of bins used for both 1D and 2D histograms.
+        ranges: Per-parameter plotting range. Defaults to full data range.
+        weights: Sample weights.
+        color: Line color for 1D histograms; defaults to a dark blue.
+        smooth1d: Gaussian smoothing sigma for 1D histograms.
+        smooth: Gaussian smoothing sigma for 2D histograms.
+        labels: Axis labels, one per parameter.
+        quantiles: Quantiles to mark on the 1D histograms.
+        levels: Contour levels as enclosed probability mass. Defaults to
+            the one- and two-sigma enclosed masses.
+
+    Returns:
+        The assembled ``plotly.graph_objects.Figure``.
+    """
 
     xs = _parse_input(xs)
     K = xs.shape[0]
@@ -106,13 +130,33 @@ def corner_plotly(
 
 
 def plot_hist2d(
-    x: np.ndarray, y: np.ndarray, 
-    bins: List[int], ranges: List[Tuple[float, float]], 
-    weights: Optional[np.ndarray], smooth: Optional[float], 
-    labels: List[str], levels: np.ndarray, 
+    x: np.ndarray, y: np.ndarray,
+    bins: List[int], ranges: List[Tuple[float, float]],
+    weights: Optional[np.ndarray], smooth: Optional[float],
+    labels: List[str], levels: np.ndarray,
     fig: go.Figure, subfig_idx: Tuple[int, int]
     ) -> go.Figure:
-    
+    """Add a smoothed 2D histogram with contour levels to ``fig``.
+
+    Contour levels are chosen so that each encloses a requested cumulative
+    probability mass of the 2D histogram.
+
+    Args:
+        x: Horizontal samples.
+        y: Vertical samples.
+        bins: Bin counts ``[nx, ny]``.
+        ranges: Axis ranges ``[(xmin, xmax), (ymin, ymax)]``.
+        weights: Sample weights.
+        smooth: Gaussian smoothing sigma for the 2D histogram.
+        labels: ``[xlabel, ylabel]`` used to tag the trace.
+        levels: Enclosed probability masses for contour generation.
+        fig: Figure to add the contour trace to.
+        subfig_idx: ``(row, col)`` zero-based index of the target subplot.
+
+    Returns:
+        The modified figure.
+    """
+
     i2, j2 = subfig_idx
     
     bins_x = np.linspace(ranges[0][0], ranges[0][1], bins[0] + 1)
@@ -180,11 +224,27 @@ def plot_hist2d(
 
 
 def quantile(
-    x: np.ndarray, 
-    q: Union[float, List[float]], 
+    x: np.ndarray,
+    q: Union[float, List[float]],
     weights: Optional[np.ndarray] = None
     ) -> List[float]:
-    
+    """Return (optionally weighted) quantiles of ``x``.
+
+    Falls back to ``numpy.percentile`` when ``weights`` is ``None``.
+
+    Args:
+        x: 1D sample array.
+        q: Quantile or list of quantiles, each in ``[0, 1]``.
+        weights: Optional sample weights.
+
+    Returns:
+        The requested quantile values as a list.
+
+    Raises:
+        ValueError: If any ``q`` is outside ``[0, 1]``, or if ``weights``
+            has a different length than ``x``.
+    """
+
     x = np.atleast_1d(x)
     q = np.atleast_1d(q)
 

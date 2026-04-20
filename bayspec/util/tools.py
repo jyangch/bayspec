@@ -1,3 +1,10 @@
+"""Small utilities shared across the package.
+
+Hosts the numpy-aware JSON encoder, the index-plus-key dictionary, the
+dependency-aware memoization decorators, and the numba-accelerated 1D/2D
+trapezoidal integrators used in model evaluation.
+"""
+
 import json
 import functools
 import collections
@@ -11,11 +18,15 @@ from collections import OrderedDict
 
 
 class JsonEncoder(json.JSONEncoder):
+    """JSON encoder that understands numpy, set, datetime, and ``todict``-ables.
+
+    Falls back to the default encoder for anything else, so ``TypeError``
+    is still raised on unsupported objects.
     """
-    Custom JSON encoder optimized for numpy data types and other common types.
-    """
-    
+
     def default(self, obj):
+        """Serialize numpy scalars/arrays, sets, dates, ``todict``-ables, and ``BytesIO``."""
+
         if isinstance(obj, np.generic):
             return obj.item()
 
@@ -27,10 +38,10 @@ class JsonEncoder(json.JSONEncoder):
 
         if isinstance(obj, (datetime, date)):
             return obj.isoformat()
-        
+
         if hasattr(obj, 'todict') and callable(obj.todict):
             return obj.todict()
-        
+
         if isinstance(obj, BytesIO):
             return obj.name
 
@@ -38,21 +49,18 @@ class JsonEncoder(json.JSONEncoder):
 
 
 def json_dump(data, filepath, indent=4, ensure_ascii=False):
+    """Write ``data`` to ``filepath`` as JSON using :class:`JsonEncoder`.
+
+    Creates missing parent directories. Uses UTF-8 and leaves non-ASCII
+    characters intact by default.
+
+    Args:
+        data: Serializable payload; may contain numpy and datetime values.
+        filepath: Target path; parents are created if absent.
+        indent: Indentation width for pretty-printing.
+        ensure_ascii: When ``True``, escape non-ASCII characters.
     """
-    Dump data to a JSON file with support for numpy data types and datetime objects.
-    
-    Parameters:
-    ----------
-    data : any
-        The data to be dumped to JSON. Can include numpy data types and datetime objects.
-    filepath : str or Path
-        The path to the JSON file where the data will be saved.
-    indent : int, optional
-        The number of spaces to use for indentation in the JSON file. Default is 4.
-    ensure_ascii : bool, optional
-        Whether to escape non-ASCII characters in the JSON output. Default is False. 
-    """
-    
+
     path = Path(filepath)
     path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -61,58 +69,62 @@ def json_dump(data, filepath, indent=4, ensure_ascii=False):
 
 
 class SuperDict(OrderedDict):
+    """``OrderedDict`` that also supports 1-based positional indexing.
+
+    Integer keys are interpreted as ordinal positions; every other key
+    type falls through to the underlying dictionary.
     """
-    A dictionary that allows access to its elements using both keys and 1-based indices.
-    """
-    
+
     def __getitem__(self, key):
-        
+        """Look up by ordinal position when ``key`` is an ``int``, else by key.
+
+        Raises:
+            IndexError: If an integer ``key`` is outside ``[1, len(self)]``.
+        """
+
         if isinstance(key, int):
             real_index = key - 1
-            
+
             if real_index < 0 or real_index >= len(self):
                 raise IndexError("index out of range")
-            
+
             actual_key = next(islice(self.keys(), real_index, None))
-            
+
             return super().__getitem__(actual_key)
-            
+
         return super().__getitem__(key)
 
 
-_WITH_MEMOIZATION = True 
-_CACHE_SIZE = 10 
+_WITH_MEMOIZATION = True
+_CACHE_SIZE = 10
 
 def memoized(dep_getter=None, *, verbose=False):
-    """
-    A decorator that memoizes the result of a method based on its dependencies and arguments.
-    
-    Parameters:
-    ----------
-    dep_getter : callable, optional
-        A function that takes the instance as an argument and returns a value representing 
-        the dependencies of the method. If the returned value changes, the cached value will 
-        be recomputed. If not provided, the method will be memoized without any dependency tracking.
-    verbose : bool, optional
-        If True, print messages when the method is recomputed or when a cache hit occurs. 
-        Default is False.
-        
+    """Method-memoization decorator keyed on arguments and a dependency value.
+
+    Each decorated method gets a per-instance bounded LRU cache keyed on
+    a fingerprint of ``dep_getter(self)``, the positional arguments, and
+    the keyword arguments. Numpy arrays are fingerprinted by ``id``,
+    size, and min/max so identical buffers hit the cache.
+
+    Args:
+        dep_getter: Callable mapping ``self`` to the dependency value.
+            When ``None``, dependencies are ignored.
+        verbose: When ``True``, print one line on every hit or miss.
+
     Returns:
-    -------
-    callable
-        A memoized version of the method.
+        A decorator that wraps a method with memoization.
     """
 
     if dep_getter is None:
         dep_getter = lambda self: None
 
     def decorator(func):
-        
+
         cache_attr = f"_cache_{func.__name__}"
 
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
-            
+
             if not _WITH_MEMOIZATION:
                 return func(self, *args, **kwargs)
 
@@ -143,16 +155,16 @@ def memoized(dep_getter=None, *, verbose=False):
             cache = getattr(self, cache_attr)
 
             if fingerprint in cache:
-                if verbose: 
+                if verbose:
                     print(f"[{func.__name__}] hit")
                 val = cache.pop(fingerprint)
                 cache[fingerprint] = val
                 return val
 
-            if verbose: 
+            if verbose:
                 print(f"[{func.__name__}] recompute")
             result = func(self, *args, **kwargs)
-            
+
             cache[fingerprint] = result
             if len(cache) > _CACHE_SIZE:
                 cache.popitem(last=False)
@@ -165,17 +177,14 @@ def memoized(dep_getter=None, *, verbose=False):
 
 
 def clear_memoized(obj, *names):
+    """Drop :func:`memoized` caches from ``obj``.
+
+    Args:
+        obj: Instance whose caches should be cleared.
+        *names: Method names to clear; clears every memoized method when
+            empty.
     """
-    Clear memoization caches of an object.
-    
-    Parameters:
-    ----------
-    obj : object
-        The object whose memoization caches are to be cleared.
-    names : str, optional
-        The names of the memoized functions to clear. If not provided, all memoization caches will be cleared.
-    """
-    
+
     if names:
         for name in names:
             attr = f"_cache_{name}"
@@ -190,30 +199,26 @@ def clear_memoized(obj, *names):
 _MISSING = object()
 
 def cached_property(dep_getter=None, *, verbose=False):
-    """
-    A decorator that converts a method into a cached property. 
-    
-    Parameters:
-    ----------
-    dep_getter : callable, optional
-        A function that takes the instance as an argument and returns a value representing 
-        the dependencies of the property. If the returned value changes, the cached value will 
-        be recomputed. If not provided, the property will be cached without any dependency tracking.
-    verbose : bool, optional
-        If True, print messages when the property is recomputed or when a cache hit occurs. 
-        Default is False.
-        
+    """Cached-property decorator with optional dependency tracking.
+
+    The wrapped method is evaluated once and the result is cached; when
+    ``dep_getter(self)`` returns a value that differs from the last
+    observed one, the cache is invalidated and the method is re-run.
+
+    Args:
+        dep_getter: Callable mapping ``self`` to the dependency value.
+            When ``None``, the property caches forever.
+        verbose: When ``True``, print one line on every hit or miss.
+
     Returns:
-    -------
-    property
-        A property that caches its value and optionally tracks dependencies for cache invalidation.
+        A ``property`` that memoizes the underlying method.
     """
 
     if dep_getter is None:
         dep_getter = lambda self: None
 
     def decorator(func):
-        
+
         cache_attr = f"__cached_{func.__name__}"
         dep_attr = f"__cached_deps_{func.__name__}"
 
@@ -235,20 +240,17 @@ def cached_property(dep_getter=None, *, verbose=False):
             return getattr(self, cache_attr)
 
         return wrapper
-    
+
     return decorator
 
 
 def clear_cached_property(obj, *names):
-    """
-    Clear cached properties of an object.
+    """Drop :func:`cached_property` caches from ``obj``.
 
-    Parameters:
-    ----------
-    obj : object
-        The object whose cached properties are to be cleared.
-    names : str, optional
-        The names of the cached properties to clear. If not provided, all cached properties will be cleared.
+    Args:
+        obj: Instance whose caches should be cleared.
+        *names: Property names to clear; clears every cached property
+            when empty.
     """
 
     if names:
@@ -264,21 +266,14 @@ def clear_cached_property(obj, *names):
 
 @nb.njit(fastmath=True, cache=True)
 def trapz_1d(y, x):
-    """
-    Numba-accelerated 1D trapezoidal integration.
-    
-    Parameters:
-    ----------
-    y : array_like
-        The values to integrate. Should be a 1D array.
-    x : array_like
-        The x-coordinates corresponding to the y values. 
-        Should have the same shape as y.
-        
+    """Integrate ``y`` over ``x`` with the trapezoidal rule (numba-accelerated).
+
+    Args:
+        y: 1D array of integrand values.
+        x: 1D array of sample points; must match ``y`` in length.
+
     Returns:
-    -------
-    out : float
-        The integrated value over the range of x.
+        The trapezoidal integral of ``y`` over ``x``.
     """
 
     acc = 0.0
@@ -290,23 +285,14 @@ def trapz_1d(y, x):
 
 @nb.njit(fastmath=True, cache=True)
 def trapz_2d(y, x):
-    """
-    Numba-accelerated 2D trapezoidal integration along columns.
-    
-    Parameters:
-    ----------
-    y : 2D array_like
-        The values to integrate. Should be a 2D array 
-        where integration is performed along columns.
-    x : 2D array_like
-        The x-coordinates corresponding to the y values. 
-        Should have the same shape as y.
-        
+    """Row-wise trapezoidal integration of a 2D array (numba-accelerated).
+
+    Args:
+        y: 2D array; integration runs along columns for each row.
+        x: 2D array of matching shape holding the sample points.
+
     Returns:
-    -------
-    out : 1D ndarray
-        The integrated values along columns, 
-        resulting in a 1D array of length equal to the number of rows in y.
+        1D array of row integrals, length equal to ``y.shape[0]``.
     """
 
     nrow, ncol = y.shape

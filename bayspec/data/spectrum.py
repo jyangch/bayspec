@@ -1,3 +1,5 @@
+"""OGIP-style spectrum containers for source and background observations."""
+
 import inspect
 import numpy as np
 from io import BytesIO
@@ -11,17 +13,48 @@ from ..util.param import Par
 
 
 class Spectrum(object):
-    
+    """Channel-binned spectrum with exposure, quality, and scaling metadata.
+
+    The object holds raw per-channel counts and errors, the observing
+    exposure, optional quality and grouping flags, the backscale, and a
+    multiplicative scaling parameter used during fitting.
+
+    Attributes:
+        counts: Per-channel counts.
+        errors: Per-channel uncertainties.
+        exposure: Observing exposure in seconds.
+        quality: Per-channel quality flags; zero marks good channels.
+        grouping: Per-channel OGIP grouping flags.
+        backscale: Ratio of source-to-background extraction geometry.
+        factor: ``Par`` scaling applied during model convolution.
+    """
+
     def __init__(
-        self, 
-        counts, 
-        errors, 
-        exposure, 
-        quality=None, 
+        self,
+        counts,
+        errors,
+        exposure,
+        quality=None,
         grouping=None,
         backscale=1.0,
         factor=Par(1, frozen=True)
         ):
+        """Build a spectrum from raw channel arrays and metadata.
+
+        Args:
+            counts: 1D array of per-channel counts.
+            errors: 1D array of per-channel errors; same shape as ``counts``.
+            exposure: Observing exposure in seconds.
+            quality: Optional quality flags; defaults to all-good zeros.
+            grouping: Optional OGIP grouping flags; defaults to all-ones.
+            backscale: Source-to-background extraction ratio.
+            factor: Multiplicative ``Par`` applied during fitting.
+
+        Raises:
+            ValueError: If ``counts``/``errors`` shapes disagree, either is
+                not 1D, ``exposure`` is not numeric, or ``quality``/
+                ``grouping`` shapes disagree with ``counts``.
+        """
         
         if not (np.ndim(counts) == np.ndim(errors) == 1):
             raise ValueError('counts and errors must be 1D arrays')
@@ -108,33 +141,41 @@ class Spectrum(object):
     
     
     def set_zero(self):
-        
+        """Zero out both ``counts`` and ``errors`` in place."""
+
         self._counts = np.zeros_like(self._counts).astype(float)
         self._errors = np.zeros_like(self._errors).astype(float)
 
 
     @property
     def info(self):
-        
+        """Return a tabular :class:`Info` summary of name, channels, and counts."""
+
         num_channel = len(self.counts)
         num_counts = sum(self.counts)
-        info_dict = OrderedDict([('Name', [self.name]), 
-                                 ('Channels', [num_channel]), 
-                                 ('Counts', [num_counts]), 
-                                 ('Exposure', [self.exposure]), 
+        info_dict = OrderedDict([('Name', [self.name]),
+                                 ('Channels', [num_channel]),
+                                 ('Counts', [num_counts]),
+                                 ('Exposure', [self.exposure]),
                                  ('Backscale', [self.backscale])])
 
         return Info.from_dict(info_dict)
-    
-    
+
+
     @property
     def name(self):
-        
+        """Best-effort identifier for this spectrum inferred from caller scope."""
+
         return self.get_obj_name()
-        
+
 
     def get_obj_name(self):
-        
+        """Walk call frames and return the outermost local name bound to ``self``.
+
+        Used to label spectra by the variable name the user chose.
+        Returns ``None`` if no binding is found.
+        """
+
         frame = inspect.currentframe()
         
         possible_var_names = []
@@ -178,10 +219,25 @@ class Spectrum(object):
 
 
 class Source(Spectrum):
-    
+    """Source-region spectrum, constructed from OGIP FITS files."""
+
     @classmethod
     def from_src(cls, src_file):
-        
+        """Load a source spectrum from a single-row OGIP PHA file.
+
+        Falls back to ``RATE`` if ``COUNTS`` is absent, and synthesizes
+        Poisson errors if ``STAT_ERR`` is missing.
+
+        Args:
+            src_file: Path to the PHA file, or a ``BytesIO`` holding its bytes.
+
+        Returns:
+            A new ``Source`` instance.
+
+        Raises:
+            ValueError: If ``src_file`` is neither a string nor ``BytesIO``.
+        """
+
         if isinstance(src_file, BytesIO):
             src_file = deepcopy(src_file)
         elif isinstance(src_file, str):
@@ -243,7 +299,23 @@ class Source(Spectrum):
 
     @classmethod
     def from_src2(cls, src_file, ii=None):
-        
+        """Load row ``ii`` of a multi-row PHA2 source spectrum.
+
+        The row index may be passed explicitly via ``ii`` or appended to
+        the path as ``"file.pha2:ii"``.
+
+        Args:
+            src_file: Path or ``BytesIO`` to the PHA2 file.
+            ii: Zero-based row index within the ``SPECTRUM`` extension.
+
+        Returns:
+            A new ``Source`` instance for the selected row.
+
+        Raises:
+            ValueError: If ``src_file`` is neither a string nor ``BytesIO``.
+            AssertionError: If ``ii`` is not an ``int`` when required.
+        """
+
         if isinstance(src_file, BytesIO):
             src_file = deepcopy(src_file)
             assert isinstance(ii, int), 'ii should be int type'
@@ -311,7 +383,16 @@ class Source(Spectrum):
     
     @classmethod
     def from_plain(cls, src_file, ii=None):
-        
+        """Dispatch to ``from_src`` or ``from_src2`` based on ``src_file`` form.
+
+        Args:
+            src_file: PHA/PHA2 path (optionally ``"path:ii"``) or ``BytesIO``.
+            ii: Row index; when given, forces the PHA2 loader.
+
+        Returns:
+            A new ``Source`` instance.
+        """
+
         if ii is not None:
             return cls.from_src2(src_file, ii)
         else:
@@ -321,12 +402,26 @@ class Source(Spectrum):
                 return cls.from_src(src_file)
 
 
-    
+
 class Background(Spectrum):
-    
+    """Background-region spectrum, constructed from OGIP FITS files."""
+
     @classmethod
     def from_bkg(cls, bkg_file):
-        
+        """Load a background spectrum from a single-row OGIP PHA file.
+
+        Mirrors :meth:`Source.from_src`; quality and grouping are not read.
+
+        Args:
+            bkg_file: Path to the PHA file, or a ``BytesIO``.
+
+        Returns:
+            A new ``Background`` instance.
+
+        Raises:
+            ValueError: If ``bkg_file`` is neither a string nor ``BytesIO``.
+        """
+
         if isinstance(bkg_file, BytesIO):
             bkg_file = deepcopy(bkg_file)
         elif isinstance(bkg_file, str):
@@ -378,7 +473,19 @@ class Background(Spectrum):
     
     @classmethod
     def from_bkg2(cls, bkg_file, ii=None):
-        
+        """Load row ``ii`` of a multi-row PHA2 background spectrum.
+
+        Mirrors :meth:`Source.from_src2`.
+
+        Args:
+            bkg_file: Path or ``BytesIO`` to the PHA2 file; may use the
+                ``"path:ii"`` convention.
+            ii: Zero-based row index.
+
+        Returns:
+            A new ``Background`` instance.
+        """
+
         if isinstance(bkg_file, BytesIO):
             bkg_file = deepcopy(bkg_file)
             assert isinstance(ii, int), 'ii should be int type'
@@ -436,7 +543,16 @@ class Background(Spectrum):
 
     @classmethod
     def from_plain(cls, bkg_file, ii=None):
-        
+        """Dispatch to ``from_bkg`` or ``from_bkg2`` based on ``bkg_file`` form.
+
+        Args:
+            bkg_file: PHA/PHA2 path (optionally ``"path:ii"``) or ``BytesIO``.
+            ii: Row index; when given, forces the PHA2 loader.
+
+        Returns:
+            A new ``Background`` instance.
+        """
+
         if ii is not None:
             return cls.from_bkg2(bkg_file, ii)
         else:

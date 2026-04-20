@@ -1,3 +1,17 @@
+"""Container types that pair spectra with responses and binning policy.
+
+A :class:`DataUnit` bundles one source spectrum with its background,
+response (RMF/ARF or combined), statistic choice, channel noticing,
+grouping, optional rebinning, and time tag. A :class:`Data` holds an
+ordered collection of ``DataUnit`` instances and exposes aggregated
+views of their counts, count rates, binned spectra, and responses, which
+the inference layer consumes.
+
+Many ``Data`` properties are thin aggregators that broadcast the
+identically-named property over every contained ``DataUnit`` — consult
+the ``DataUnit`` property of the same name for the underlying formula.
+"""
+
 import os
 import copy
 import inspect
@@ -17,9 +31,33 @@ from ..util.tools import cached_property, clear_cached_property, json_dump
 
 
 class Data(object):
-    
+    """Ordered collection of :class:`DataUnit` objects.
+
+    Indexing with a key returns the stored :class:`DataUnit`; assignment
+    re-runs the aggregate update so cached views stay consistent. Every
+    list-valued property — e.g. ``src_counts``, ``rsp_chbin`` — is the
+    per-unit concatenation of the unit-level property of the same name.
+
+    Attributes:
+        data: ``OrderedDict`` mapping names to :class:`DataUnit` instances.
+        names: Names of every unit in insertion order.
+        srcs/bkgs/rsps: Per-unit ``Source``/``Background``/``Response``.
+        stats/notcs/grpgs/rebns/times/weights: Per-unit metadata lists.
+        cdicts/pdicts: Per-unit config/parameter dictionaries.
+    """
+
     def __init__(self, data=None):
-        
+        """Build a container from a list of ``(name, unit)`` tuples or a dict.
+
+        Args:
+            data: ``None``, a list of ``(name, DataUnit)`` tuples, or a
+                dict mapping names to :class:`DataUnit` instances.
+
+        Raises:
+            ValueError: If ``data`` is not one of the supported types, or
+                if any unit fails its completeness check.
+        """
+
         self.data = data
         
 
@@ -91,41 +129,45 @@ class Data(object):
 
     @cached_property()
     def cfg(self):
+        """Flat :class:`SuperDict` of every config parameter across all units."""
 
         cid = 0
         cfg = SuperDict()
-        
+
         for config in self.cdicts.values():
             for cg in config.values():
                 cid += 1
                 cfg[str(cid)] = cg
-                
+
         return cfg
 
 
     @cached_property()
     def par(self):
-        
+        """Flat :class:`SuperDict` of every free/fixed parameter across all units."""
+
         pid = 0
         par = SuperDict()
-        
+
         for params in self.pdicts.values():
             for pr in params.values():
                 pid += 1
                 par[str(pid)] = pr
-                
+
         return par
-    
-    
+
+
     @property
     def pvalues(self):
+        """Tuple of current parameter values, preserving ``par`` order."""
 
         return tuple([pr.value for pr in self.par.values()])
-    
-    
+
+
     @property
     def all_config(self):
-        
+        """List of per-config rows with component, label, and value."""
+
         cid = 0
         all_config = list()
         
@@ -144,7 +186,8 @@ class Data(object):
     
     @property
     def all_params(self):
-        
+        """List of per-parameter rows with value, prior, posterior, and frozen flag."""
+
         pid = 0
         all_params = list()
         
@@ -166,27 +209,30 @@ class Data(object):
     
     @property
     def cfg_info(self):
-        
+        """Tabular :class:`Info` view of every configuration parameter."""
+
         all_config = self.all_config.copy()
 
         return Info.from_list_dict(all_config)
-    
-    
+
+
     @property
     def par_info(self):
-        
+        """Tabular :class:`Info` view of parameters, posterior column dropped."""
+
         all_params = self.all_params.copy()
-        
+
         all_params = Info.list_dict_to_dict(all_params)
-        
+
         del all_params['Posterior']
-        
+
         return Info.from_dict(all_params)
 
 
     @property
     def info(self):
-        
+        """Tabular :class:`Info` view of per-unit noticing, statistic, and time."""
+
         info = OrderedDict()
         info['Name'] = [key for key in self.data.keys()]
         info['Noticing'] = [unit.notc for unit in self.data.values()]
@@ -198,16 +244,26 @@ class Data(object):
 
 
     def save(self, savepath):
-        
+        """Dump the per-unit info table to ``<savepath>/data.json``.
+
+        Args:
+            savepath: Directory path. Created if missing.
+        """
+
         if not os.path.exists(savepath):
             os.makedirs(savepath)
-        
+
         json_dump(self.info.data_list_dict, savepath + '/data.json')
 
 
     @property
     def fit_with(self):
-        
+        """Return the ``Model`` this data is bound to, or raise if unset.
+
+        Raises:
+            AttributeError: If no model has been assigned.
+        """
+
         try:
             return self._fit_with
         except AttributeError:
@@ -216,9 +272,14 @@ class Data(object):
 
     @fit_with.setter
     def fit_with(self, new_model):
-        
+        """Bind a ``Model`` to this data and keep the back-reference in sync.
+
+        Raises:
+            ValueError: If ``new_model`` is not a ``Model``.
+        """
+
         from ..model.model import Model
-        
+
         self._fit_with = new_model
         
         if not isinstance(self._fit_with, Model): 
@@ -630,18 +691,34 @@ class Data(object):
     
     
     def net_counts_upperlimit(self, cl=0.9):
-        
+        """Per-unit net-counts upper limit at confidence level ``cl``.
+
+        Args:
+            cl: Target confidence level in ``(0, 1)``.
+
+        Returns:
+            List of per-unit upper limits.
+        """
+
         return [unit.net_counts_upperlimit(cl) for unit in self.data.values()]
-        
-        
+
+
     def net_ctsrate_upperlimit(self, cl=0.9):
-        
+        """Per-unit net-count-rate upper limit at confidence level ``cl``."""
+
         return [unit.net_ctsrate_upperlimit(cl) for unit in self.data.values()]
-    
-    
+
+
     @property
     def deconv_phtspec(self):
-        
+        """Deconvolved photon spectrum: net counts × model ``cts_to_pht``.
+
+        Each deconvolved-spectrum property (``deconv_phtspec``,
+        ``deconv_flxspec``, ``deconv_ergspec``, their ``_error`` and
+        ``_re_`` variants) multiplies per-unit net counts by the conversion
+        factor published by the bound model.
+        """
+
         return [factor * cts for (factor, cts) in zip(self.fit_with.cts_to_pht, self.net_ctsspec)]
     
     
@@ -713,26 +790,31 @@ class Data(object):
 
     @property
     def expr(self):
-        
+        """Best-effort identifier for this container inferred from caller scope."""
+
         return self.get_obj_name()
-                
-                
+
+
     def get_obj_name(self):
-        
+        """Walk call frames and return the outermost local name bound to ``self``.
+
+        Returns ``None`` if no binding is found.
+        """
+
         frame = inspect.currentframe()
-        
+
         possible_var_names = []
-        
+
         while frame:
             local_vars = frame.f_locals.items()
             var_names = [var_name for var_name, var_val in local_vars if var_val is self]
             if var_names:
                 possible_var_names.extend(var_names)
             frame = frame.f_back
-        
+
         if possible_var_names:
             return possible_var_names[-1]
-        
+
         return None
 
 
@@ -790,22 +872,58 @@ class Data(object):
 
 
 class DataUnit(object):
-    
+    """One source/background/response triplet with binning and statistic.
+
+    Each of the constructor's ``src``/``bkg``/``rmf``/``arf``/``rsp`` slots
+    accepts either an already-constructed domain object (``Source``,
+    ``Background``, ``Redistribution``, ``Auxiliary``, ``Response``) or a
+    file handle. File handles may be a path string, a ``BytesIO``, or a
+    ``(file, index)`` tuple for multi-row PHA2/RSP2/ARF2 archives.
+
+    Changing any public attribute re-runs :meth:`_update`, which rebuilds
+    noticing, grouping, rebinning, and invalidates cached views.
+
+    Attributes:
+        src_ins, bkg_ins, rmf_ins, arf_ins, rsp_ins: Concrete loaded
+            spectrum/response objects.
+        qualifying/noticing/grouping/rebining: Per-channel flag arrays
+            driving ``grouping_slice``/``rebining_slice``.
+        config/params: Per-unit config and fit parameters.
+    """
+
     def __init__(
-        self, 
-        src, 
-        bkg=None, 
-        rmf=None, 
-        arf=None, 
-        rsp=None, 
-        stat='pgstat', 
-        notc=None, 
-        grpg=None, 
-        rebn=None, 
-        time=None, 
+        self,
+        src,
+        bkg=None,
+        rmf=None,
+        arf=None,
+        rsp=None,
+        stat='pgstat',
+        notc=None,
+        grpg=None,
+        rebn=None,
+        time=None,
         weight=1
         ):
-        
+        """Initialise a unit and run the first :meth:`_update` pass.
+
+        Args:
+            src: Source spectrum or handle.
+            bkg: Optional background; defaults to a zeroed copy of ``src``.
+            rmf: Optional redistribution matrix.
+            arf: Optional auxiliary response.
+            rsp: Optional full response; synthesized from ``rmf * arf`` if
+                missing and both are available.
+            stat: Statistic name — ``'pgstat'``, ``'pstat'``, ``'cstat'``,
+                ``'gstat'``, ``'chi2'``, or a variant thereof.
+            notc: Optional noticing windows in channel energy.
+            grpg: Optional grouping rule dict (``min_evt``/``min_nevt``/
+                ``min_sigma``/``max_bin``).
+            rebn: Optional rebinning rule dict with the same keys.
+            time: Optional time tag used by time-dependent models.
+            weight: Likelihood weight for this unit.
+        """
+
         self._src = src
         self._bkg = bkg
         self._rmf = rmf
@@ -1035,7 +1153,8 @@ class DataUnit(object):
 
     @property
     def completeness(self):
-        
+        """``True`` when both source and response are populated."""
+
         if self.src_ins is None or self.rsp_ins is None:
             return False
         else:
@@ -1308,6 +1427,7 @@ class DataUnit(object):
 
     @cached_property()
     def cfg(self):
+        """:class:`SuperDict` indexed view of this unit's config parameters."""
 
         cid = 0
         cfg = SuperDict()
@@ -1321,26 +1441,29 @@ class DataUnit(object):
 
     @cached_property()
     def par(self):
-        
+        """:class:`SuperDict` indexed view of this unit's fit parameters."""
+
         pid = 0
         par = SuperDict()
-        
+
         for pr in self.params.values():
             pid += 1
             par[str(pid)] = pr
-                
+
         return par
 
 
     @property
     def pvalues(self):
+        """Tuple of current parameter values, preserving ``par`` order."""
 
         return tuple([pr.value for pr in self.par.values()])
-    
-    
+
+
     @property
     def info(self):
-        
+        """Tabular :class:`Info` view of the unit's file names and settings."""
+
         info_dict = OrderedDict()
         info_dict['src'] = self.src_name
         info_dict['bkg'] = self.bkg_name
@@ -1360,10 +1483,15 @@ class DataUnit(object):
     
     
     def save(self, savepath):
-        
+        """Dump the unit's info table to ``<savepath>/dataunit.json``.
+
+        Args:
+            savepath: Directory path. Created if missing.
+        """
+
         if not os.path.exists(savepath):
             os.makedirs(savepath)
-        
+
         json_dump(self.info.data_list_dict, savepath + '/dataunit.json')
 
 
@@ -1754,22 +1882,36 @@ class DataUnit(object):
     
     
     def net_counts_upperlimit(self, cl=0.9):
-        
+        """Return the Bayesian net-counts upper limit at confidence ``cl``.
+
+        Uses the Poisson formulation with the incomplete gamma function
+        inverse; ``alpha`` accounts for the source/background exposure
+        ratio.
+
+        Args:
+            cl: Target confidence level in ``(0, 1)``.
+
+        Returns:
+            Upper limit on the net counts.
+        """
+
         N = np.sum(self.src_counts)
         B = np.sum(self.bkg_counts) * self.alpha
-        
-        return special.gammaincinv(N + 1, cl * special.gammaincc(N + 1, B) 
+
+        return special.gammaincinv(N + 1, cl * special.gammaincc(N + 1, B)
                                    + special.gammainc(N + 1, B)) - B
-        
-        
+
+
     def net_ctsrate_upperlimit(self, cl=0.9):
-        
+        """Return the net-count-rate upper limit at confidence ``cl``."""
+
         return self.net_counts_upperlimit(cl) / self.corr_src_efficiency
-    
-    
+
+
     @property
     def name(self):
-        
+        """User-assigned name if set, otherwise a best-effort caller-scope name."""
+
         try:
             return self._name
         except AttributeError:
@@ -1783,26 +1925,30 @@ class DataUnit(object):
     
     
     def get_obj_name(self):
-        
+        """Walk call frames and return the outermost local name bound to ``self``.
+
+        Returns ``None`` if no binding is found.
+        """
+
         frame = inspect.currentframe()
-        
+
         possible_var_names = []
-        
+
         while frame:
             local_vars = frame.f_locals.items()
             var_names = [var_name for var_name, var_val in local_vars if var_val is self]
             if var_names:
                 possible_var_names.extend(var_names)
             frame = frame.f_back
-        
+
         if possible_var_names:
             return possible_var_names[-1]
-        
+
         return None
 
 
     def __str__(self):
-        
+
         return (
             f'*** DataUnit ***\n'
             f'{self.info.text_table}'
@@ -1827,10 +1973,18 @@ class DataUnit(object):
     
     @staticmethod
     def _union(bins):
-        
+        """Merge overlapping intervals, returning them sorted and disjoint.
+
+        Args:
+            bins: Iterable of ``[low, high]`` intervals; may be ``None``.
+
+        Returns:
+            A list of merged ``[low, high]`` intervals.
+        """
+
         if bins is None or len(bins) == 0:
             return []
-        
+
         sorted_bins = sorted(bins, key=lambda x: x[0])
         
         res = []
@@ -1845,7 +1999,17 @@ class DataUnit(object):
 
     @staticmethod
     def _notice(chbin, notc=None):
-        
+        """Return per-channel ``True``/``False`` flags for inclusion in the fit.
+
+        Args:
+            chbin: ``(nchan, 2)`` channel energy bin edges.
+            notc: Noticing windows, either a single ``[low, high]`` pair or
+                a list of such pairs; ``None`` means notice everything.
+
+        Returns:
+            A list of booleans aligned with ``chbin`` rows.
+        """
+
         if notc is None:
             notc = [[np.min(chbin), np.max(chbin)]]
         elif type(notc[0]) is not list:
@@ -1863,21 +2027,51 @@ class DataUnit(object):
 
     @staticmethod
     def _group(
-        s, 
-        b, 
-        berr, 
-        ts, 
-        tb, 
-        ss, 
-        sb, 
-        min_sigma=None, 
-        min_evt=None, 
-        min_nevt=None, 
-        max_bin=None, 
-        stat=None, 
+        s,
+        b,
+        berr,
+        ts,
+        tb,
+        ss,
+        sb,
+        min_sigma=None,
+        min_evt=None,
+        min_nevt=None,
+        max_bin=None,
+        stat=None,
         ini_flag=None
         ):
-        
+        """Greedy channel-grouping using counts, significance, and width caps.
+
+        Walks channels left to right, starting a new bin on the first
+        allowed channel and extending it until the current bin meets every
+        threshold: total events, net events, significance, and maximum
+        width.
+
+        Args:
+            s: Source counts per channel.
+            b: Background counts per channel.
+            berr: Background errors per channel.
+            ts: Source exposure.
+            tb: Background exposure.
+            ss: Source backscale.
+            sb: Background backscale.
+            min_sigma: Minimum per-bin significance.
+            min_evt: Minimum per-bin total events.
+            min_nevt: Minimum per-bin net events.
+            max_bin: Maximum channels per bin.
+            stat: Statistic name driving the significance formula.
+            ini_flag: Per-channel gate: ``1`` means channel is allowed to
+                contribute, ``0`` excludes it.
+
+        Returns:
+            A numpy array of per-channel grouping flags: ``+1`` starts a
+            bin, ``-1`` continues one, ``0`` excludes the channel.
+
+        Raises:
+            AttributeError: If ``stat`` is not one of the known statistics.
+        """
+
         # grouping flag:
         # grpg = 0 if the channel is not allowed to group, including the not qualified noticed channels
         # grpg = +1 if the channel is the start of a new bin
@@ -1964,21 +2158,22 @@ class DataUnit(object):
 
     @staticmethod
     def _rebin(
-        s, 
-        b, 
-        berr, 
-        ts, 
-        tb, 
-        ss, 
-        sb, 
-        min_sigma=None, 
-        min_evt=None, 
-        min_nevt=None, 
-        max_bin=None, 
-        stat=None, 
+        s,
+        b,
+        berr,
+        ts,
+        tb,
+        ss,
+        sb,
+        min_sigma=None,
+        min_evt=None,
+        min_nevt=None,
+        max_bin=None,
+        stat=None,
         ini_flag=None
         ):
-        
+        """Alias for :meth:`_group` used for an independent rebinning pass."""
+
         return DataUnit._group(
             s, 
             b,
