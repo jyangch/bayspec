@@ -239,8 +239,6 @@ def clear_memoized(obj, *names):
                 delattr(obj, attr)
 
 
-_MISSING = object()
-
 def cached_property(dep_getter=None, *, verbose=False):
     """Cached-property decorator with optional dependency tracking.
 
@@ -261,9 +259,11 @@ def cached_property(dep_getter=None, *, verbose=False):
         dep_getter = lambda self: None
 
     def decorator(func):
+        
+        _MISSING = object()
 
-        cache_attr = f"__cached_{func.__name__}"
-        dep_attr = f"__cached_deps_{func.__name__}"
+        cache_attr = f"_cached_{func.__name__}"
+        dep_attr = f"_cached_deps_{func.__name__}"
 
         @property
         def wrapper(self):
@@ -298,12 +298,12 @@ def clear_cached_property(obj, *names):
 
     if names:
         for name in names:
-            for attr in (f"__cached_{name}", f"__cached_deps_{name}"):
+            for attr in (f"_cached_{name}", f"_cached_deps_{name}"):
                 if hasattr(obj, attr):
                     delattr(obj, attr)
     else:
         for attr in list(vars(obj).keys()):
-            if attr.startswith("__cached_"):
+            if attr.startswith("_cached_"):
                 delattr(obj, attr)
 
 
