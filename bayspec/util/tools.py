@@ -6,6 +6,7 @@ trapezoidal integrators used in model evaluation.
 """
 
 import json
+import hashlib
 import functools
 import collections
 import numpy as np
@@ -15,6 +16,7 @@ from pathlib import Path
 from itertools import islice
 from datetime import datetime, date
 from collections import OrderedDict
+
 
 
 class JsonEncoder(json.JSONEncoder):
@@ -96,19 +98,74 @@ class SuperDict(OrderedDict):
 
 
 _WITH_MEMOIZATION = True
-_CACHE_SIZE = 10
+_DEFAULT_CACHE_SIZE = 10
+_CACHE_ATTR_PREFIX = "_cache_"
 
-def memoized(dep_getter=None, *, verbose=False):
+def get_fingerprint(x):
+    """Recursively build a hashable fingerprint of ``x``.
+
+    Used as cache-key material for :func:`memoized`. The output is a
+    nested tuple containing only hashable leaves, so it can be used
+    directly as a ``dict`` key.
+
+    Handling by type:
+        - ``np.ndarray``: ``(tag, shape, dtype, blake2b(content))``.
+          Content hashing means identical buffers hit the cache and
+          in-place modifications correctly invalidate it.
+        - ``list`` / ``tuple``: recursed element-wise; the container
+          type is preserved in the tag so a list and a tuple with the
+          same items produce different fingerprints.
+        - ``dict``: recursed value-wise and sorted by key, so key
+          insertion order does not affect the fingerprint.
+        - Anything else: returned as-is. The caller is responsible for
+          ensuring it is hashable; unhashable values will raise when
+          the fingerprint is used as a key.
+
+    Args:
+        x: Any object to fingerprint.
+
+    Returns:
+        A hashable (possibly nested) structure uniquely identifying
+        ``x`` for caching purposes.
+    """
+    
+    if isinstance(x, np.ndarray):
+        return (
+            "ndarray",
+            x.shape,
+            x.dtype.str,
+            hashlib.blake2b(x.tobytes(), digest_size=16).digest()
+        )
+        
+    if isinstance(x, (list, tuple)):
+        return (
+            type(x).__name__, 
+            tuple(get_fingerprint(i) for i in x)
+        )
+        
+    if isinstance(x, dict):
+        return (
+            "dict",
+            tuple(sorted((k, get_fingerprint(v)) for k, v in x.items())),
+        )
+        
+    return x
+
+
+def memoized(dep_getter=None, *, cache_size=None, verbose=False):
     """Method-memoization decorator keyed on arguments and a dependency value.
 
     Each decorated method gets a per-instance bounded LRU cache keyed on
     a fingerprint of ``dep_getter(self)``, the positional arguments, and
-    the keyword arguments. Numpy arrays are fingerprinted by ``id``,
-    size, and min/max so identical buffers hit the cache.
+    the keyword arguments. Numpy arrays are fingerprinted by content hash
+    (BLAKE2b) along with shape and dtype, so identical contents hit the
+    cache and in-place modifications correctly invalidate it.
 
     Args:
         dep_getter: Callable mapping ``self`` to the dependency value.
             When ``None``, dependencies are ignored.
+        cache_size: Max entries per instance. ``None`` uses the global
+            default (``_DEFAULT_CACHE_SIZE``).
         verbose: When ``True``, print one line on every hit or miss.
 
     Returns:
@@ -117,58 +174,44 @@ def memoized(dep_getter=None, *, verbose=False):
 
     if dep_getter is None:
         dep_getter = lambda self: None
+        
+    max_cache_size = cache_size if cache_size is not None else _DEFAULT_CACHE_SIZE
 
     def decorator(func):
-
-        cache_attr = f"_cache_{func.__name__}"
+        
+        cache_attr = f"{_CACHE_ATTR_PREFIX}{func.__name__}"
 
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
 
             if not _WITH_MEMOIZATION:
                 return func(self, *args, **kwargs)
-
-            dep = dep_getter(self)
-            dep_fprint = []
-            if isinstance(dep, (list, tuple)):
-                for d in dep:
-                    if isinstance(d, np.ndarray):
-                        dep_fprint.append((id(d), d.size, d.min(), d.max()))
-                    else:
-                        dep_fprint.append(d)
-            elif isinstance(dep, np.ndarray):
-                dep_fprint.append((id(dep), dep.size, dep.min(), dep.max()))
-            else:
-                dep_fprint.append(dep)
-
-            arg_fprint = []
-            for a in args:
-                if isinstance(a, np.ndarray):
-                    arg_fprint.append((id(a), a.size, a.min(), a.max()))
-                else:
-                    arg_fprint.append(a)
-
-            fingerprint = hash((tuple(dep_fprint), tuple(arg_fprint), tuple(kwargs.items())))
-
-            if not hasattr(self, cache_attr):
-                setattr(self, cache_attr, collections.OrderedDict())
-            cache = getattr(self, cache_attr)
+            
+            fingerprint = (
+                get_fingerprint(dep_getter(self)),
+                tuple(get_fingerprint(a) for a in args),
+                tuple(sorted((k, get_fingerprint(v)) for k, v in kwargs.items())),
+            )
+            
+            cache = getattr(self, cache_attr, None)
+            if cache is None:
+                cache = collections.OrderedDict()
+                setattr(self, cache_attr, cache)
 
             if fingerprint in cache:
                 if verbose:
                     print(f"[{func.__name__}] hit")
-                val = cache.pop(fingerprint)
-                cache[fingerprint] = val
-                return val
-
+                cache.move_to_end(fingerprint)
+                return cache[fingerprint]
+            
             if verbose:
                 print(f"[{func.__name__}] recompute")
             result = func(self, *args, **kwargs)
-
+            
             cache[fingerprint] = result
-            if len(cache) > _CACHE_SIZE:
+            if len(cache) > max_cache_size:
                 cache.popitem(last=False)
-
+                
             return result
 
         return wrapper
@@ -187,12 +230,12 @@ def clear_memoized(obj, *names):
 
     if names:
         for name in names:
-            attr = f"_cache_{name}"
+            attr = f"{_CACHE_ATTR_PREFIX}{name}"
             if hasattr(obj, attr):
                 delattr(obj, attr)
     else:
         for attr in list(vars(obj).keys()):
-            if attr.startswith("_cache_"):
+            if attr.startswith(_CACHE_ATTR_PREFIX):
                 delattr(obj, attr)
 
 
