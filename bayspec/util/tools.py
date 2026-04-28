@@ -99,7 +99,7 @@ class SuperDict(OrderedDict):
 
 _WITH_MEMOIZATION = True
 _DEFAULT_CACHE_SIZE = 10
-_CACHE_ATTR_PREFIX = "_cache_"
+_CACHE_ATTR_PREFIX = "_memoized_"
 
 def get_fingerprint(x):
     """Recursively build a hashable fingerprint of ``x``.
@@ -240,45 +240,50 @@ def clear_memoized(obj, *names):
 
 
 def cached_property(dep_getter=None, *, verbose=False):
-    """Cached-property decorator with optional dependency tracking.
+    """Per-instance cached-property decorator with optional dependency tracking.
 
-    The wrapped method is evaluated once and the result is cached; when
-    ``dep_getter(self)`` returns a value that differs from the last
-    observed one, the cache is invalidated and the method is re-run.
+    On each access, ``dep_getter(self)`` is reduced to a fingerprint via
+    :func:`get_fingerprint` (numpy arrays are content-hashed by BLAKE2b
+    along with shape and dtype). When the fingerprint differs from the
+    last observed one, the cache is invalidated and the method is re-run.
+
+    Cache state lives on the instance as ``_cached_<name>`` and
+    ``_cached_dep_<name>``; drop it with :func:`clear_cached_property`.
 
     Args:
         dep_getter: Callable mapping ``self`` to the dependency value.
-            When ``None``, the property caches forever.
+            When ``None``, the property caches forever after the first
+            access.
         verbose: When ``True``, print one line on every hit or miss.
 
     Returns:
-        A ``property`` that memoizes the underlying method.
+        A ``property`` whose getter memoizes the underlying method.
     """
 
     if dep_getter is None:
         dep_getter = lambda self: None
-
+        
     def decorator(func):
         
         _MISSING = object()
-
+        
         cache_attr = f"_cached_{func.__name__}"
-        dep_attr = f"_cached_deps_{func.__name__}"
-
+        dep_attr = f"_cached_dep_{func.__name__}"
+        
         @property
+        @functools.wraps(func)
         def wrapper(self):
-            current_dep = dep_getter(self)
+            current_dep = get_fingerprint(dep_getter(self))
             last_dep = getattr(self, dep_attr, _MISSING)
-
+            
             if last_dep is _MISSING or last_dep != current_dep:
                 if verbose:
-                    print(f"[{func.__name__}] recompute (dep changed: {last_dep} -> {current_dep})")
+                    print(f"[{func.__name__}] recompute")
                 value = func(self)
                 setattr(self, cache_attr, value)
                 setattr(self, dep_attr, current_dep)
-            else:
-                if verbose:
-                    print(f"[{func.__name__}] cache hit (dep={current_dep})")
+            elif verbose:
+                print(f"[{func.__name__}] cache hit")
 
             return getattr(self, cache_attr)
 
@@ -298,7 +303,7 @@ def clear_cached_property(obj, *names):
 
     if names:
         for name in names:
-            for attr in (f"_cached_{name}", f"_cached_deps_{name}"):
+            for attr in (f"_cached_{name}", f"_cached_dep_{name}"):
                 if hasattr(obj, attr):
                     delattr(obj, attr)
     else:
