@@ -32,6 +32,3 @@ Module contents
 ---------------
 
 .. automodule:: bayspec.data
-   :members:
-   :undoc-members:
-   :show-inheritance:

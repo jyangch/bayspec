@@ -4,7 +4,7 @@
 and config dictionaries, convolution with detector responses, and
 posterior-aware evaluators. ``Additive``/``Multiplicative``/
 ``Mathematic`` are thin base classes that fix the ``type`` tag, and
-``CompositeModel`` implements the arithmetic (+, -, *, /) plus the
+``CompositeModel`` implements the arithmetic (``+``, ``-``, ``*``, ``/``) plus the
 convolution call operator (``conv(add)`` etc.) used to build
 multi-component expressions.
 """

@@ -1,12 +1,9 @@
 # Configuration file for the Sphinx documentation builder.
 
-import os
-import sys
-
-# -- Project information ---------------------------------------------------
+# -- Project information --
 
 _info_ = {}
-with open("../../bayspec/__info__.py", "r") as f:
+with open('../../bayspec/__info__.py') as f:
     exec(f.read(), _info_)
 
 project = 'bayspec'
@@ -14,7 +11,7 @@ copyright = '2024, Jun Yang'
 author = 'Jun Yang'
 release = _info_['__version__']
 
-# -- General configuration ---------------------------------------------------
+# -- General configuration --
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -26,9 +23,9 @@ extensions = [
     'myst_nb',
 ]
 
-autodoc_mock_imports = [
-    'xspec_models_cxc'
-]
+autodoc_mock_imports = ['xspec_models_cxc']
+
+napoleon_use_ivar = True
 
 source_suffix = {
     '.rst': 'restructuredtext',
@@ -38,9 +35,9 @@ source_suffix = {
 templates_path = ['_templates']
 exclude_patterns = []
 
-# -- Options for HTML output -------------------------------------------------
+# -- Options for HTML output --
 
-html_theme = 'alabaster'
+html_theme = 'furo'
 html_static_path = ['_static']
 html_extra_path = ['_static']
 html_css_files = ['custom.css']

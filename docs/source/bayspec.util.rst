@@ -72,6 +72,3 @@ Module contents
 ---------------
 
 .. automodule:: bayspec.util
-   :members:
-   :undoc-members:
-   :show-inheritance:

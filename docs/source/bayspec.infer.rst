@@ -20,10 +20,10 @@ bayspec.infer.pair module
    :undoc-members:
    :show-inheritance:
 
-bayspec.infer.posterior module
-------------------------------
+bayspec.infer.analyzer module
+-----------------------------
 
-.. automodule:: bayspec.infer.posterior
+.. automodule:: bayspec.infer.analyzer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -40,6 +40,3 @@ Module contents
 ---------------
 
 .. automodule:: bayspec.infer
-   :members:
-   :undoc-members:
-   :show-inheritance:
