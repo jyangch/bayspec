@@ -42,7 +42,7 @@ exclude_patterns = []
 # -- Options for HTML output --
 
 html_theme = 'furo'
-html_title = f'bayspec {release}'
+html_title = f'BaySpec {release}'
 html_static_path = ['_static']
 html_extra_path = ['_static']
 html_css_files = ['custom.css']
@@ -56,9 +56,11 @@ html_theme_options = {
     'light_css_variables': {
         'color-brand-primary': '#1a3a6e',
         'color-brand-content': '#1f5fb3',
+        'color-code-background': '#f5f5f5',
     },
     'dark_css_variables': {
         'color-brand-primary': '#7fb3ff',
         'color-brand-content': '#7fb3ff',
+        'color-code-background': '#1e1e1e',
     },
 }
