@@ -4,4 +4,4 @@ Attributes:
     __version__ (str): The bayspec distribution version.
 """
 
-__version__ = '0.3.10'
+__version__ = '0.3.11'

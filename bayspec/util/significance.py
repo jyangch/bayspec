@@ -8,10 +8,11 @@ Ma (1983) formulations. ``pgsig`` treats the background as Gaussian;
 based on the systematic-uncertainty inputs.
 """
 
-import numpy as np
 from math import log
-import scipy.optimize
+
+import numpy as np
 from numpy import sqrt, squeeze
+import scipy.optimize
 
 
 def xlogy(x, y):
@@ -29,11 +30,9 @@ def xlogy(x, y):
     """
 
     if x == 0.0:
-
         return 0.0
 
     else:
-
         return x * log(y)
 
 
@@ -54,7 +53,7 @@ def xlogyv(x, y):
 
     results = np.zeros_like(y)
 
-    idx = (x != 0)
+    idx = x != 0
 
     results[idx] = x[idx] * np.log(y[idx])
 
@@ -79,13 +78,12 @@ def size_one_or_n(value, other_array, name):
     value_ = np.array(value, dtype=float, ndmin=1)
 
     if value_.shape[0] == 1:
-
         value_ = np.zeros(other_array.shape[0], dtype=float) + value
 
     else:
-
-        assert value_.shape[0] == other_array.shape[0], \
-            f"The size of {name} must be either 1 or the same size of n"
+        assert value_.shape[0] == other_array.shape[0], (
+            f'The size of {name} must be either 1 or the same size of n'
+        )
 
     return value_
 
@@ -110,26 +108,32 @@ def pgsig(n, b, sigma):
     n_ = np.array(n, dtype=float, ndmin=1)
     b_ = np.array(b, dtype=float, ndmin=1)
 
-    sigma_ = size_one_or_n(sigma, n_, "sigma")
+    sigma_ = size_one_or_n(sigma, n_, 'sigma')
 
     sign = np.where(n_ >= b_, 1, -1)
 
-    B0_mle = 0.5 * (b_ - sigma_ ** 2 + sqrt(b_ ** 2 - 2 * b_ * sigma_ ** 2 + 4 * n_ * sigma_ ** 2 + sigma_ ** 4))
+    B0_mle = 0.5 * (
+        b_ - sigma_**2 + sqrt(b_**2 - 2 * b_ * sigma_**2 + 4 * n_ * sigma_**2 + sigma_**4)
+    )
 
     # Clip tiny negative values produced by finite-precision arithmetic to zero.
-    assert np.all(B0_mle > -0.01), "This is a bug. B0_mle cannot be negative."
+    assert np.all(B0_mle > -0.01), 'This is a bug. B0_mle cannot be negative.'
 
     B0_mle = np.clip(B0_mle, 0, None)
 
-    return squeeze(sqrt(2) * sqrt(xlogyv(n_, n_ / B0_mle) + (b_ - B0_mle)**2 / (2 * sigma_**2) + B0_mle - n_) * sign)
+    return squeeze(
+        sqrt(2)
+        * sqrt(xlogyv(n_, n_ / B0_mle) + (b_ - B0_mle) ** 2 / (2 * sigma_**2) + B0_mle - n_)
+        * sign
+    )
 
 
 def _li_and_ma(n_, b_, alpha):
     """Return the Li & Ma (1983) significance for array inputs."""
 
     # Nudge by 1e-25 to sidestep the 0 * log(0) singularity; negligible downstream.
-    n_ += 1E-25  # type: np.ndarray
-    b_ += 1E-25  # type: np.ndarray
+    n_ += 1e-25  # type: np.ndarray
+    b_ += 1e-25  # type: np.ndarray
 
     n_plus_b = n_ + b_
     ap1 = alpha + 1
@@ -154,7 +158,7 @@ def _likelihood_with_sys(o, b, a, s, k, B, M):
     Ba = B * a
     Bak = B * a * k
 
-    res = -Bak - Ba - B - M + xlogyv(b, B) - k ** 2 / (2 * s ** 2) + xlogyv(o, Bak + Ba + M)
+    res = -Bak - Ba - B - M + xlogyv(b, B) - k**2 / (2 * s**2) + xlogyv(o, Bak + Ba + M)
 
     return res
 
@@ -168,13 +172,12 @@ def _get_TS_by_numerical_optimization(n_, b_, alpha, sigma):
     """
 
     # minimize() minimizes, so the log-likelihood is negated.
-    wrapper = lambda kk: -1 * _likelihood_with_sys(n_, b_, alpha, sigma, kk,
-                                                   B=(b_ + n_) / (alpha * kk + alpha + 1),
-                                                   M=0)
+    def wrapper(kk):
+        return -1 * _likelihood_with_sys(
+            n_, b_, alpha, sigma, kk, B=(b_ + n_) / (alpha * kk + alpha + 1), M=0
+        )
 
-    res = scipy.optimize.minimize(wrapper,
-                                  [0.0],
-                                  tol=1e-3)
+    res = scipy.optimize.minimize(wrapper, [0.0], tol=1e-3)
 
     h0_mlike_value = res['fun']
 
@@ -216,11 +219,11 @@ def ppsig(n, b, alpha, sigma=0, k=0):
     n_ = np.array(n, dtype=float, ndmin=1)
     b_ = np.array(b, dtype=float, ndmin=1)
 
-    k_ = size_one_or_n(k, n_, "k")
+    k_ = size_one_or_n(k, n_, 'k')
 
-    sigma_ = size_one_or_n(sigma, n_, "sigma")
+    sigma_ = size_one_or_n(sigma, n_, 'sigma')
 
-    alpha_ = size_one_or_n(alpha, n_, "alpha")
+    alpha_ = size_one_or_n(alpha, n_, 'alpha')
 
     sign = np.where(n_ >= alpha_ * b_, 1, -1)
 
@@ -231,14 +234,15 @@ def ppsig(n, b, alpha, sigma=0, k=0):
     res[idx_lima] = _li_and_ma(n_[idx_lima], b_[idx_lima], alpha_[idx_lima])
 
     # Vianello 2018 eq. 7 reduces to Li & Ma with alpha -> alpha * (k + 1).
-    idx_eq7 = (k_ > 0)
+    idx_eq7 = k_ > 0
     res[idx_eq7] = _li_and_ma(n_[idx_eq7], b_[idx_eq7], alpha_[idx_eq7] * (k_[idx_eq7] + 1))
 
-    idx_eq9 = (sigma_ > 0)
+    idx_eq9 = sigma_ > 0
 
     if np.any(idx_eq9):
-
-        TS = _get_TS_by_numerical_optimization_v(n_[idx_eq9], b_[idx_eq9], alpha_[idx_eq9], sigma_[idx_eq9])
+        TS = _get_TS_by_numerical_optimization_v(
+            n_[idx_eq9], b_[idx_eq9], alpha_[idx_eq9], sigma_[idx_eq9]
+        )
 
         res[idx_eq9] = np.sqrt(TS)
 

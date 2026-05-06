@@ -16,13 +16,13 @@ statistic contribution.
 import numba as nb
 import numpy as np
 
-from ..util.significance import ppsig, pgsig
+from ..util.significance import pgsig, ppsig
 
 
 @nb.njit(cache=True, fastmath=True)
 def _gstat_core(S, B, m, ts, tb, sigma_S, sigma_B):
     """Numba kernel for ``Gstat``; returns ``(total_stat, signed_residual)``."""
-    
+
     n = S.shape[0]
     residual = np.empty(n, dtype=np.float64)
     stat = 0.0
@@ -118,10 +118,7 @@ def _ppstat_core(S, B, m, ts, tb):
         cc = -bi * mi
         dd = np.sqrt(bb * bb - 4.0 * aa * cc)
 
-        if bb >= 0.0:
-            b = -2.0 * cc / (bb + dd)
-        else:
-            b = -(bb - dd) / (2.0 * aa)
+        b = -2.0 * cc / (bb + dd) if bb >= 0.0 else -(bb - dd) / (2.0 * aa)
 
         mu_s = ts * (b + mi)
         mu_b = tb * b
@@ -202,7 +199,7 @@ def _pgstat_core(S, B, m, ts, tb, sigma_B):
         s_klogk = 0.0
         if si != 0.0:
             s_klogk = si * np.log(si)
-            
+
         pois_logli = s_klogmu - mu_s - s_klogk + si
 
         z = (bi - tb * b) / sigma
@@ -224,8 +221,7 @@ def _pgstat_core(S, B, m, ts, tb, sigma_B):
     return stat, residual
 
 
-
-class StatisticNB(object):
+class StatisticNB:
     """Numba-accelerated statistic dispatch table.
 
     Every method takes the standard keyword bundle (``S``, ``B``, ``m``,
@@ -245,40 +241,25 @@ class StatisticNB(object):
             kwargs['ts'],
             kwargs['tb'],
             kwargs['sigma_S'],
-            kwargs['sigma_B'])
-
+            kwargs['sigma_B'],
+        )
 
     @staticmethod
     def Pstat(**kwargs):
         """Pure-Poisson statistic (no background); delegates to :func:`_pstat_core`."""
-        return _pstat_core(
-            kwargs['S'],
-            kwargs['m'],
-            kwargs['ts'])
-
+        return _pstat_core(kwargs['S'], kwargs['m'], kwargs['ts'])
 
     @staticmethod
     def PPstat(**kwargs):
-        """Profile Poisson–Poisson statistic (``cstat``); uses :func:`_ppstat_core`."""
-        return _ppstat_core(
-            kwargs['S'],
-            kwargs['B'],
-            kwargs['m'],
-            kwargs['ts'],
-            kwargs['tb'])
-
+        """Profile Poisson-Poisson statistic (``cstat``); uses :func:`_ppstat_core`."""
+        return _ppstat_core(kwargs['S'], kwargs['B'], kwargs['m'], kwargs['ts'], kwargs['tb'])
 
     @staticmethod
     def PGstat(**kwargs):
-        """Profile Poisson–Gaussian statistic; uses :func:`_pgstat_core`."""
+        """Profile Poisson-Gaussian statistic; uses :func:`_pgstat_core`."""
         return _pgstat_core(
-            kwargs['S'],
-            kwargs['B'],
-            kwargs['m'],
-            kwargs['ts'],
-            kwargs['tb'],
-            kwargs['sigma_B'])
-
+            kwargs['S'], kwargs['B'], kwargs['m'], kwargs['ts'], kwargs['tb'], kwargs['sigma_B']
+        )
 
     @staticmethod
     def PPstat_UL(**kwargs):
@@ -301,7 +282,6 @@ class StatisticNB(object):
         residual = np.array([sigma - ul_sigma], dtype=np.float64)
 
         return stat, residual
-
 
     @staticmethod
     def PGstat_UL(**kwargs):
@@ -329,8 +309,7 @@ class StatisticNB(object):
         return stat, residual
 
 
-
-class Statistic(object):
+class Statistic:
     """Pure-numpy fallback mirror of :class:`StatisticNB`.
 
     Same ``(stat, residual)`` contract as the numba-accelerated class,
@@ -341,15 +320,14 @@ class Statistic(object):
 
     @staticmethod
     def xlogy(x, y):
-        """Return ``x * log(y)`` element-wise, treating ``0 * log(·)`` as 0."""
+        """Return ``x * log(y)`` element-wise, treating ``0 * log(y)`` as 0 for any ``y``."""
 
         res = np.zeros_like(x, dtype=np.float64)
 
-        zero = (x == 0)
+        zero = x == 0
         res[~zero] = x[~zero] * np.log(y[~zero])
 
         return res
-
 
     @staticmethod
     def xdivy(x, y):
@@ -362,7 +340,6 @@ class Statistic(object):
 
         return res
 
-
     @staticmethod
     def poisson_logpmf(k, mu):
         """Poisson log-PMF with Stirling's approximation for ``log(k!)``.
@@ -373,43 +350,40 @@ class Statistic(object):
 
         return Statistic.xlogy(k, mu) - mu - Statistic.xlogy(k, k) + k
 
-
     @staticmethod
     def gaussian_logpdf(x, loc, scale):
         """Gaussian log-PDF dropping the ``log(2π σ²)`` normalization constant."""
 
         return -0.5 * (Statistic.xdivy(x - loc, scale) ** 2)
 
-
     @staticmethod
     def Gstat(**kwargs):
-        """Gaussian source–background statistic (``Gstat``/``chi2``)."""
+        """Gaussian source-background statistic (``Gstat``/``chi2``)."""
 
         S = kwargs['S']
         B = kwargs['B']
         m = kwargs['m']
-        
+
         ts = kwargs['ts']
         tb = kwargs['tb']
-        
+
         sigma_S = kwargs['sigma_S']
         sigma_B = kwargs['sigma_B']
-        
+
         if tb != 0:
             B = B / tb * ts
             sigma_B = sigma_B / tb * ts
-        
-        sigma = np.sqrt(sigma_S ** 2 + sigma_B ** 2)
-        
+
+        sigma = np.sqrt(sigma_S**2 + sigma_B**2)
+
         sign = np.sign(S - B - m * ts)
         loglike = Statistic.gaussian_logpdf(S - B, m * ts, sigma)
-        
+
         stat = (-2 * loglike).sum()
         residual = sign * np.sqrt(-2 * loglike)
-        
+
         return stat, residual
-    
-    
+
     @staticmethod
     def Pstat(**kwargs):
         """Pure-Poisson statistic when the background is ignored."""
@@ -417,19 +391,18 @@ class Statistic(object):
         S = kwargs['S']
         m = kwargs['m']
         ts = kwargs['ts']
-        
+
         sign = np.sign(S - m * ts)
         loglike = Statistic.poisson_logpmf(S, m * ts)
-        
+
         stat = (-2 * loglike).sum()
         residual = sign * np.sqrt(-2 * loglike)
-        
-        return stat, residual
 
+        return stat, residual
 
     @staticmethod
     def PPstat(**kwargs):
-        """Profile Poisson–Poisson statistic (``cstat`` equivalent)."""
+        """Profile Poisson-Poisson statistic (``cstat`` equivalent)."""
 
         S = kwargs['S']
         B = kwargs['B']
@@ -442,24 +415,23 @@ class Statistic(object):
         bb = (ts + tb) * m - S - B
         cc = -B * m
         dd = np.sqrt(bb * bb - 4 * aa * cc)
-        
+
         po = bb >= 0
         b = np.empty_like(B, dtype=np.float64)
-        
+
         b[po] = -2 * cc[po] / (bb[po] + dd[po])
         b[~po] = -(bb[~po] - dd[~po]) / (2 * aa)
-        
+
         sign = np.sign(S / ts - B / tb - m)
         loglike = Statistic.poisson_logpmf(S, ts * (b + m)) + Statistic.poisson_logpmf(B, tb * b)
-        
+
         stat = (-2 * loglike).sum()
         residual = sign * np.sqrt(-2 * loglike)
-        
+
         return stat, residual
 
-
     def PGstat(**kwargs):
-        """Profile Poisson–Gaussian statistic (XSPEC-style ``pgstat``)."""
+        """Profile Poisson-Gaussian statistic (XSPEC-style ``pgstat``)."""
 
         S = kwargs['S']
         B = kwargs['B']
@@ -469,27 +441,28 @@ class Statistic(object):
         tb = kwargs['tb']
 
         sigma = kwargs['sigma_B']
-        
-        aa = tb ** 2
-        bb = ts * sigma ** 2 - tb * B + tb ** 2 * m
-        cc = ts * sigma ** 2 * m - S * sigma ** 2 - tb * B * m
-        dd = np.sqrt(bb ** 2 - 4 * aa * cc)
-        
+
+        aa = tb**2
+        bb = ts * sigma**2 - tb * B + tb**2 * m
+        cc = ts * sigma**2 * m - S * sigma**2 - tb * B * m
+        dd = np.sqrt(bb**2 - 4 * aa * cc)
+
         sign = np.where(bb >= 0, 1, -1)
         qq = -0.5 * (bb + sign * dd)
-        
+
         b1 = qq / aa
         b2 = cc / qq
         b = np.where(b1 > 0, b1, b2)
-        
+
         sign = np.sign(S / ts - B / tb - m)
-        loglike = Statistic.poisson_logpmf(S, ts * (b + m)) + Statistic.gaussian_logpdf(B, tb * b, sigma)
-        
+        loglike = Statistic.poisson_logpmf(S, ts * (b + m)) + Statistic.gaussian_logpdf(
+            B, tb * b, sigma
+        )
+
         stat = (-2 * loglike).sum()
         residual = sign * np.sqrt(-2 * loglike)
-        
-        return stat, residual
 
+        return stat, residual
 
     @staticmethod
     def PPstat_UL(**kwargs):
@@ -513,7 +486,6 @@ class Statistic(object):
 
         return stat, residual
 
-
     @staticmethod
     def PGstat_UL(**kwargs):
         """Upper-limit driver for ``PGstat``: minimize ``(sigma - 3)^2``."""
@@ -526,11 +498,11 @@ class Statistic(object):
         alpha = ts / tb
 
         sigma_B = kwargs['sigma_B']
-        
+
         bkg_cts = np.sum(B)
         mo_cts = np.sum(m * ts)
         bkg_err = np.sqrt(np.sum(sigma_B * sigma_B))
-        
+
         ul_sigma = 3.0
         sigma = pgsig(mo_cts + bkg_cts * alpha, bkg_cts * alpha, bkg_err * alpha)
 

@@ -3,8 +3,7 @@
 import numpy as np
 
 
-
-class Post(object):
+class Post:
     """Posterior sample and its summary statistics for one parameter.
 
     Holds a 1D array of posterior draws together with an optional matching
@@ -27,46 +26,40 @@ class Post(object):
 
         self._sample = sample
         self._logprob = logprob
-        
-        
+
     @property
     def sample(self):
-        
+
         return self._sample
-    
-    
+
     @sample.setter
     def sample(self, new_sample):
-        
+
         if not (np.ndim(new_sample) == 1):
             raise ValueError('sample must be 1D arrays')
-        
+
         else:
             self._sample = new_sample
-            
-            
+
     @property
     def logprob(self):
-        
+
         return self._logprob
-    
-    
+
     @logprob.setter
     def logprob(self, new_logprob):
-        
+
         if not (np.ndim(new_logprob) == 1):
             raise ValueError('logprob must be 1D arrays')
-        
+
         else:
             self._logprob = new_logprob
-            
-            
+
     @property
     def nsample(self):
         """Number of posterior draws."""
 
         return self.sample.shape[0]
-
 
     @property
     def mean(self):
@@ -74,13 +67,11 @@ class Post(object):
 
         return np.mean(self.sample)
 
-
     @property
     def median(self):
         """Sample median of the posterior draws."""
 
         return np.median(self.sample)
-
 
     @property
     def best(self):
@@ -91,32 +82,27 @@ class Post(object):
 
         else:
             return self.sample[np.argmax(self.logprob)]
-        
-        
+
     @property
     def best_ci(self):
-        
+
         return getattr(self, '_best_ci', None)
-    
-    
+
     @best_ci.setter
     def best_ci(self, new_best_ci):
-        
+
         self._best_ci = new_best_ci
-    
-    
+
     @property
     def truth(self):
-        
+
         return getattr(self, '_truth', None)
-    
-    
+
     @truth.setter
     def truth(self, new_truth):
-        
+
         self._truth = new_truth
-    
-    
+
     def quantile(self, q):
         """Return the ``q``-quantile of the sample.
 
@@ -128,7 +114,6 @@ class Post(object):
         """
 
         return np.quantile(self.sample, q)
-
 
     def interval(self, q):
         """Return the central credible interval containing probability ``q``.
@@ -142,13 +127,11 @@ class Post(object):
 
         return np.quantile(self.sample, [0.5 - q / 2, 0.5 + q / 2]).tolist()
 
-
     @property
     def Isigma(self):
         """One-sigma (68.27%) central credible interval."""
 
         return self.interval(68.27 / 100)
-
 
     @property
     def IIsigma(self):
@@ -156,13 +139,11 @@ class Post(object):
 
         return self.interval(95.45 / 100)
 
-
     @property
     def IIIsigma(self):
         """Three-sigma (99.73%) central credible interval."""
 
         return self.interval(99.73 / 100)
-
 
     def error(self, par, q=0.6827):
         """Return the asymmetric errors of ``par`` against the ``q``-interval.
@@ -172,7 +153,7 @@ class Post(object):
             q: Central credible level. Defaults to one sigma.
 
         Returns:
-            ``[lower_error, upper_error]`` — signed differences between
+            ``[lower_error, upper_error]`` -- signed differences between
             ``par`` and the interval endpoints.
         """
 
@@ -180,12 +161,15 @@ class Post(object):
 
         return np.diff([ci[0], par, ci[1]]).tolist()
 
-
     @property
     def info(self):
         """Dictionary of mean, median, best, and one-sigma interval."""
 
-        return dict([('mean', self.mean),
-                     ('median', self.median),
-                     ('best', self.best),
-                     ('Isigma', self.Isigma)])
+        return dict(
+            [
+                ('mean', self.mean),
+                ('median', self.median),
+                ('best', self.best),
+                ('Isigma', self.Isigma),
+            ]
+        )

@@ -4,7 +4,7 @@ Wraps ``scipy.stats`` frozen distributions behind a uniform interface so
 that the inference layer can query pdf, cdf, quantiles, and moments
 without caring about the underlying distribution family.
 
-Typical usage:
+Example:
     from bayspec.util.prior import unif, norm
     p = unif(0.0, 1.0)
     p.pdf(0.5)
@@ -13,7 +13,7 @@ Typical usage:
 from scipy import stats
 
 
-class Prior(object):
+class Prior:
     """Base wrapper around a ``scipy.stats`` frozen distribution.
 
     Subclasses pick a specific distribution family and expose it under a
@@ -38,36 +38,30 @@ class Prior(object):
         self.expr = 'stat'
         self.stat = stat(*args)
 
-
     def pdf(self, x):
         """Return the probability density evaluated at ``x``."""
 
         return self.stat.pdf(x)
-
 
     def logpdf(self, x):
         """Return the log-probability density evaluated at ``x``."""
 
         return self.stat.logpdf(x)
 
-
     def cdf(self, x):
         """Return the cumulative distribution evaluated at ``x``."""
 
         return self.stat.cdf(x)
-
 
     def logcdf(self, x):
         """Return the log of the cumulative distribution evaluated at ``x``."""
 
         return self.stat.logcdf(x)
 
-
     def ppf(self, q):
         """Return the quantile corresponding to lower-tail probability ``q``."""
 
         return self.stat.ppf(q)
-
 
     def interval(self, q):
         """Return the central interval that contains probability mass ``q``.
@@ -81,13 +75,11 @@ class Prior(object):
 
         return self.stat.interval(q)
 
-
     @property
     def median(self):
         """Median of the distribution."""
 
         return self.stat.median()
-
 
     @property
     def mean(self):
@@ -95,13 +87,11 @@ class Prior(object):
 
         return self.stat.mean()
 
-
     @property
     def var(self):
         """Variance of the distribution."""
 
         return self.stat.var()
-
 
     @property
     def std(self):
@@ -109,13 +99,11 @@ class Prior(object):
 
         return self.stat.std()
 
-
     @property
     def info(self):
         """Short description of the distribution family and its arguments."""
 
         return f'{self.expr}{self.args}'
-
 
 
 class unif(Prior):
@@ -132,7 +120,6 @@ class unif(Prior):
         self.args = (min, max)
         self.expr = 'unif'
         self.stat = stats.uniform(min, max - min)
-
 
 
 class logunif(Prior):
@@ -153,7 +140,6 @@ class logunif(Prior):
         self.stat = stats.loguniform(*self.args)
 
 
-
 class norm(Prior):
     """Gaussian prior."""
 
@@ -168,7 +154,6 @@ class norm(Prior):
         self.args = (loc, scale)
         self.expr = 'norm'
         self.stat = stats.norm(*self.args)
-
 
 
 class lognorm(Prior):
@@ -186,7 +171,6 @@ class lognorm(Prior):
         self.args = (s, loc, scale)
         self.expr = 'lognorm'
         self.stat = stats.lognorm(*self.args)
-
 
 
 class truncnorm(Prior):
@@ -207,7 +191,6 @@ class truncnorm(Prior):
         self.stat = stats.truncnorm(*self.args)
 
 
-
 class cauchy(Prior):
     """Cauchy (Lorentzian) prior."""
 
@@ -224,7 +207,6 @@ class cauchy(Prior):
         self.stat = stats.cauchy(*self.args)
 
 
-
 class cosine(Prior):
     """Cosine-shaped prior on a bounded interval."""
 
@@ -239,7 +221,6 @@ class cosine(Prior):
         self.args = (loc, scale)
         self.expr = 'cosine'
         self.stat = stats.cosine(*self.args)
-
 
 
 class beta(Prior):
@@ -260,7 +241,6 @@ class beta(Prior):
         self.stat = stats.beta(*self.args)
 
 
-
 class gamma(Prior):
     """Gamma prior."""
 
@@ -278,7 +258,6 @@ class gamma(Prior):
         self.stat = stats.gamma(*self.args)
 
 
-
 class expon(Prior):
     """Exponential prior."""
 
@@ -293,7 +272,6 @@ class expon(Prior):
         self.args = (loc, scale)
         self.expr = 'expon'
         self.stat = stats.expon(*self.args)
-
 
 
 class plaw(Prior):
@@ -313,10 +291,11 @@ class plaw(Prior):
         self.stat = stats.powerlaw(*self.args)
 
 
-all_priors = {name: cls for name, cls in globals().items()
-              if isinstance(cls, type)
-              and issubclass(cls, Prior)
-              and name != 'Prior'}
+all_priors = {
+    name: cls
+    for name, cls in globals().items()
+    if isinstance(cls, type) and issubclass(cls, Prior) and name != 'Prior'
+}
 
 
 def list_priors():
@@ -325,4 +304,4 @@ def list_priors():
     return list(all_priors.keys())
 
 
-__all__ = list(all_priors.keys()) + ['list_priors', 'all_priors']
+__all__ = [*list(all_priors.keys()), 'list_priors', 'all_priors']

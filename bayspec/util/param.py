@@ -4,8 +4,7 @@ from .post import Post
 from .prior import Prior
 
 
-
-class Par(object):
+class Par:
     """Model parameter carrying value, prior, posterior, and metadata.
 
     ``Par`` instances can be linked to share value, prior, and posterior
@@ -18,21 +17,15 @@ class Par(object):
         prior: Optional prior distribution.
         post: Optional posterior sample container.
         comment: Free-form description.
-        scale: ``'linear'`` or ``'log'`` — determines how ``value`` is built.
+        scale: ``'linear'`` or ``'log'`` -- determines how ``value`` is built.
         unit: Optional unit attached to ``val``.
         frozen: If ``True``, the parameter is held fixed during inference.
         mates: Set of other ``Par`` instances kept in sync via ``link``.
     """
 
-    def __init__(self,
-                 val,
-                 prior=None,
-                 post=None,
-                 comment=None,
-                 scale='linear',
-                 unit=None,
-                 frozen=False
-                 ):
+    def __init__(
+        self, val, prior=None, post=None, comment=None, scale='linear', unit=None, frozen=False
+    ):
         """Create a parameter with the given value and metadata.
 
         Args:
@@ -56,12 +49,10 @@ class Par(object):
         self.frozen = frozen
         self.mates = set()
 
-
     @property
     def val(self):
-        
-        return self._val
 
+        return self._val
 
     @val.setter
     def val(self, new_val):
@@ -75,11 +66,9 @@ class Par(object):
 
         self._bump_version()
 
-
     def _bump_version(self):
-        
+
         self._version += 1
-        
 
     @property
     def version(self):
@@ -89,14 +78,12 @@ class Par(object):
         """
 
         return self._version
-                
-                
+
     @property
     def prior(self):
 
         return self._prior
-        
-        
+
     @prior.setter
     def prior(self, new_prior):
         """Set ``prior`` and propagate it to every linked mate.
@@ -114,7 +101,6 @@ class Par(object):
             if mate.prior != self.prior:
                 mate.prior = self.prior
 
-
     @property
     def prior_info(self):
         """Short description of the prior, or ``None`` when unset."""
@@ -124,13 +110,11 @@ class Par(object):
         else:
             return None
 
-
     @property
     def post(self):
-        
+
         return self._post
-    
-    
+
     @post.setter
     def post(self, new_post):
         """Set ``post`` and propagate it to every linked mate.
@@ -147,8 +131,7 @@ class Par(object):
         for mate in self.mates:
             if mate.post != self.post:
                 mate.post = self.post
-                
-                
+
     @property
     def post_info(self):
         """Summary of the posterior, or ``None`` when unset."""
@@ -157,7 +140,6 @@ class Par(object):
             return self.post.info
         else:
             return None
-
 
     def link(self, other):
         """Link this parameter with ``other`` to keep them synchronized.
@@ -184,7 +166,6 @@ class Par(object):
         self.prior = self._prior
         self.post = self._post
 
-
     def unlink(self, other):
         """Break the link between this parameter and ``other``."""
 
@@ -193,13 +174,11 @@ class Par(object):
         self.mates.discard(other)
         other.mates.discard(self)
 
-
     def frozen_at(self, new_val):
         """Set the value to ``new_val`` and freeze the parameter."""
 
         self.val = new_val
         self.frozen = True
-
 
     @property
     def value(self):
@@ -219,12 +198,11 @@ class Par(object):
                 return self.val * self.unit
         elif self.scale == 'log':
             if self.unit is None:
-                return 10 ** self.val
+                return 10**self.val
             else:
-                return 10 ** self.val * self.unit
+                return 10**self.val * self.unit
         else:
             raise ValueError('invalid parameter scale')
-
 
     @property
     def range(self):
@@ -236,24 +214,24 @@ class Par(object):
         """
 
         if self.frozen:
-            return (self.val, ) * 2
+            return (self.val,) * 2
         elif self.prior.expr == 'unif':
             return self.prior.interval(1.0)
         else:
             return self.prior.interval(0.95)
 
-
     def todict(self):
         """Serialize the parameter into a plain-dict representation."""
 
-        return {'val': self.val,
-                'prior': self.prior_info,
-                'post': self.post,
-                'comment': self.comment,
-                'scale': self.scale,
-                'unit': self.unit,
-                'frozen': self.frozen}
-
+        return {
+            'val': self.val,
+            'prior': self.prior_info,
+            'post': self.post,
+            'comment': self.comment,
+            'scale': self.scale,
+            'unit': self.unit,
+            'frozen': self.frozen,
+        }
 
     @property
     def info(self):
@@ -269,7 +247,6 @@ class Par(object):
         return ''
 
 
-
 class Cfg(Par):
     """Configuration parameter: a ``Par`` permanently frozen with no prior.
 
@@ -280,15 +257,9 @@ class Cfg(Par):
     ``True``.
     """
 
-    def __init__(self,
-                 val,
-                 prior=None,
-                 post=None,
-                 comment=None,
-                 scale='linear',
-                 unit=None,
-                 frozen=False
-                 ):
+    def __init__(
+        self, val, prior=None, post=None, comment=None, scale='linear', unit=None, frozen=False
+    ):
         """Create a configuration parameter.
 
         Args:

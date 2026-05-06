@@ -1,7 +1,7 @@
 """Tabular ``Info`` wrapper used to format structured metadata.
 
-Normalizes between three equivalent shapes — a column-major ``dict`` of
-lists, a header-plus-rows ``list``, and a list of row dicts — and renders
+Normalizes between three equivalent shapes -- a column-major ``dict`` of
+lists, a header-plus-rows ``list``, and a list of row dicts -- and renders
 the result as text or HTML for CLI and notebook display.
 """
 
@@ -9,8 +9,7 @@ import pandas as pd
 from tabulate import tabulate
 
 
-
-class Info(object):
+class Info:
     """Tabular view over a column-major dictionary of metadata.
 
     Accepts scalar values by broadcasting them to single-element columns,
@@ -30,14 +29,12 @@ class Info(object):
         """
 
         self.data_dict = data_dict
-        
-        
+
     @property
     def data_dict(self):
-        
+
         return self._data_dict
-    
-    
+
     @data_dict.setter
     def data_dict(self, new_data_dict):
         """Store ``new_data_dict`` after wrapping scalar values into single-element lists.
@@ -57,14 +54,12 @@ class Info(object):
                 normalized_dict[key] = [value]
 
         self._data_dict = normalized_dict
-        
-        
+
     @property
     def data_list(self):
         """Header-plus-rows list representation of the table."""
 
         return Info.dict_to_list(self.data_dict)
-
 
     @property
     def data_list_dict(self):
@@ -72,13 +67,11 @@ class Info(object):
 
         return Info.dict_to_list_dict(self.data_dict)
 
-
     @property
     def data_frame(self):
         """Return the data as a ``pandas.DataFrame``."""
 
         return pd.DataFrame(self.data_dict)
-
 
     @property
     def sanitized_data_dict(self):
@@ -89,7 +82,7 @@ class Info(object):
         """
 
         sanitized_data_dict = {}
-        
+
         for key, values in self.data_dict.items():
             new_col = []
             for v in values:
@@ -104,12 +97,11 @@ class Info(object):
 
                 else:
                     new_col.append(str(v))
-            
+
             sanitized_data_dict[key] = new_col
-            
+
         return sanitized_data_dict
-        
-        
+
     @classmethod
     def from_dict(cls, data_dict):
         """Build an ``Info`` from a column-major dictionary.
@@ -122,7 +114,6 @@ class Info(object):
             raise TypeError('expected an instance of dict')
 
         return cls(data_dict)
-
 
     @classmethod
     def from_list(cls, data_list):
@@ -138,7 +129,6 @@ class Info(object):
         data_dict = Info.list_to_dict(data_list)
 
         return cls(data_dict)
-
 
     @classmethod
     def from_list_dict(cls, list_dict):
@@ -158,33 +148,32 @@ class Info(object):
 
         return cls(data_dict)
 
-
     @staticmethod
     def dict_to_list(data_dict):
         """Convert a column-major dict into a header-plus-rows list."""
 
         keys = list(data_dict.keys())
-        values = list(zip(*data_dict.values()))
+        values = list(zip(*data_dict.values(), strict=False))
 
         return [keys] + [list(item) for item in values]
-
 
     @staticmethod
     def dict_to_list_dict(data_dict):
         """Convert a column-major dict into a list of row dictionaries."""
 
-        return [dict(zip(data_dict.keys(), values)) for values in zip(*data_dict.values())]
-
+        return [
+            dict(zip(data_dict.keys(), values, strict=False))
+            for values in zip(*data_dict.values(), strict=False)
+        ]
 
     @staticmethod
     def list_to_dict(data_list):
         """Convert a header-plus-rows list into a column-major dict."""
 
         keys = data_list[0]
-        values = list(zip(*data_list[1:]))
+        values = list(zip(*data_list[1:], strict=False))
 
         return {keys[i]: list(values[i]) for i in range(len(keys))}
-
 
     @staticmethod
     def list_to_list_dict(data_list):
@@ -192,8 +181,7 @@ class Info(object):
 
         keys = data_list[0]
 
-        return [dict(zip(keys, item)) for item in data_list[1:]]
-
+        return [dict(zip(keys, item, strict=False)) for item in data_list[1:]]
 
     @staticmethod
     def list_dict_to_dict(list_dict):
@@ -202,8 +190,7 @@ class Info(object):
         keys = list(list_dict[0].keys())
         values = [[item[key] for item in list_dict] for key in keys]
 
-        return dict(zip(keys, values))
-
+        return dict(zip(keys, values, strict=False))
 
     @staticmethod
     def list_dict_to_list(list_dict):
@@ -213,21 +200,21 @@ class Info(object):
 
         values = [list(item.values()) for item in list_dict]
 
-        return [keys] + values
-
+        return [keys, *values]
 
     @property
     def text_table(self):
         """Fancy-grid text rendering of the table suitable for the CLI."""
 
-        return tabulate(self.sanitized_data_dict,
-                        headers='keys',
-                        tablefmt='fancy_grid',
-                        missingval='None',
-                        numalign='center',
-                        stralign='center',
-                        disable_numparse=True)
-
+        return tabulate(
+            self.sanitized_data_dict,
+            headers='keys',
+            tablefmt='fancy_grid',
+            missingval='None',
+            numalign='center',
+            stralign='center',
+            disable_numparse=True,
+        )
 
     @property
     def html_style(self):
@@ -245,38 +232,35 @@ class Info(object):
 
                 padding-top: 8px;
                 padding-bottom: 8px;
-                
-                text-align: center
+
+                text-align: center;
                 border: none;
             }
             </style>
             """
 
-
     @property
     def html_table(self):
         """HTML rendering of the table tagged with the ``my-table`` class."""
 
-        return tabulate(self.sanitized_data_dict,
-                        headers='keys', 
-                        tablefmt='html', 
-                        missingval='None', 
-                        numalign='center', 
-                        stralign='center', 
-                        disable_numparse=True
-                        ).replace('<table>', '<table class="my-table">')
-        
-        
+        return tabulate(
+            self.sanitized_data_dict,
+            headers='keys',
+            tablefmt='html',
+            missingval='None',
+            numalign='center',
+            stralign='center',
+            disable_numparse=True,
+        ).replace('<table>', '<table class="my-table">')
+
     def __str__(self):
-        
+
         return f'{self.text_table}'
-    
-    
+
     def __repr__(self):
-        
+
         return self.__str__()
-    
-    
+
     def _repr_html_(self):
-        
+
         return f'{self.html_table}'

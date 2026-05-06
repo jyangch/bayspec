@@ -1,0 +1,35 @@
+[tool.ruff]
+line-length = 100
+indent-width = 4
+target-version = "py312"
+extend-include = ["*.ipynb"]
+extend-exclude = [
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "migrations",
+    "__pycache__",
+]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501", "RUF001", "RUF002", "RUF003"]
+fixable = ["ALL"]
+unfixable = ["F841", "F601", "F811", "B006",  "RUF100"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "I001"]
+"tests/**/*.py" = ["B011"]
+"**/conftest.py" = ["F401"]
+"*.ipynb" = ["E402", "E501", "F401", "F403", "F405", "F811", "T201", "B018"]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-sort-within-sections = true

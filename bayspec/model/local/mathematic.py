@@ -2,10 +2,9 @@
 
 from collections import OrderedDict
 
-from ..model import Mathematic
 from ...util.param import Par
 from ...util.prior import unif
-
+from ..model import Mathematic
 
 
 class const(Mathematic):
@@ -22,8 +21,7 @@ class const(Mathematic):
         self.params = OrderedDict()
         self.params[r'$C$'] = Par(0, unif(-10, 10))
 
-
-    def func(self, E, T=None, O=None):
+    def func(self, E, T=None, O=None):  # noqa: E741
         """Return the current value of ``C`` regardless of ``E``, ``T``, ``O``."""
 
         C = self.params[r'$C$'].value

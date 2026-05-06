@@ -1,18 +1,18 @@
 """OGIP-style spectrum containers for source and background observations."""
 
-import inspect
-import numpy as np
-from io import BytesIO
-from copy import deepcopy
-import astropy.io.fits as fits
 from collections import OrderedDict
+from copy import deepcopy
+import inspect
+from io import BytesIO
+
+import astropy.io.fits as fits
+import numpy as np
 
 from ..util.info import Info
 from ..util.param import Par
 
 
-
-class Spectrum(object):
+class Spectrum:
     """Channel-binned spectrum with exposure, quality, and scaling metadata.
 
     The object holds raw per-channel counts and errors, the observing
@@ -37,8 +37,8 @@ class Spectrum(object):
         quality=None,
         grouping=None,
         backscale=1.0,
-        factor=Par(1, frozen=True)
-        ):
+        factor=None,
+    ):
         """Build a spectrum from raw channel arrays and metadata.
 
         Args:
@@ -55,79 +55,71 @@ class Spectrum(object):
                 not 1D, ``exposure`` is not numeric, or ``quality``/
                 ``grouping`` shapes disagree with ``counts``.
         """
-        
+
         if not (np.ndim(counts) == np.ndim(errors) == 1):
             raise ValueError('counts and errors must be 1D arrays')
-        
+
         if not (np.shape(counts) == np.shape(errors)):
             raise ValueError('counts and errors must have the same shape')
-        
+
         if not isinstance(exposure, (int, float, np.integer, np.floating)):
             raise ValueError('exposure must be int or float')
-        
+
         if quality is None:
             quality = np.zeros(len(counts)).astype(int)
         else:
             if not (np.shape(quality) == np.shape(counts)):
                 raise ValueError('quality must have the same shape with counts')
-            
+
         if grouping is None:
             grouping = np.ones(len(counts)).astype(int)
         else:
             if not (np.shape(grouping) == np.shape(counts)):
                 raise ValueError('grouping must have the same shape with counts')
-        
+
         self._counts = counts
         self._errors = errors
         self._exposure = exposure
         self._quality = quality
         self._grouping = grouping
         self._backscale = backscale
-        self._factor = factor
-
+        self._factor = factor if factor is not None else Par(1, frozen=True)
 
     @property
     def counts(self):
-        
+
         return self._counts
-    
-    
+
     @property
     def errors(self):
-        
-        return self._errors
 
+        return self._errors
 
     @property
     def exposure(self):
-        
+
         return self._exposure
-    
-    
+
     @property
     def quality(self):
-        
+
         return self._quality
-    
-    
+
     @property
     def grouping(self):
-        
+
         return self._grouping
-    
-    
+
     @property
     def backscale(self):
-        
+
         return self._backscale
-    
-    
+
     @property
     def factor(self):
-        
+
         return self._factor
-    
-    
+
     @factor.setter
     def factor(self, new_factor):
         """Set the multiplicative ``Par``; ``None`` resets to a frozen unit factor.
@@ -143,14 +135,12 @@ class Spectrum(object):
 
         if not isinstance(self._factor, Par):
             raise ValueError('<factor> parameter should be Param type')
-    
-    
+
     def set_zero(self):
         """Zero out both ``counts`` and ``errors`` in place."""
 
         self._counts = np.zeros_like(self._counts).astype(float)
         self._errors = np.zeros_like(self._errors).astype(float)
-
 
     @property
     def info(self):
@@ -158,21 +148,23 @@ class Spectrum(object):
 
         num_channel = len(self.counts)
         num_counts = sum(self.counts)
-        info_dict = OrderedDict([('Name', [self.name]),
-                                 ('Channels', [num_channel]),
-                                 ('Counts', [num_counts]),
-                                 ('Exposure', [self.exposure]),
-                                 ('Backscale', [self.backscale])])
+        info_dict = OrderedDict(
+            [
+                ('Name', [self.name]),
+                ('Channels', [num_channel]),
+                ('Counts', [num_counts]),
+                ('Exposure', [self.exposure]),
+                ('Backscale', [self.backscale]),
+            ]
+        )
 
         return Info.from_dict(info_dict)
-
 
     @property
     def name(self):
         """Best-effort identifier for this spectrum inferred from caller scope."""
 
         return self.get_obj_name()
-
 
     def get_obj_name(self):
         """Walk call frames and return the outermost local name bound to ``self``.
@@ -182,45 +174,38 @@ class Spectrum(object):
         """
 
         frame = inspect.currentframe()
-        
+
         possible_var_names = []
-        
+
         while frame:
             local_vars = frame.f_locals.items()
             var_names = [var_name for var_name, var_val in local_vars if var_val is self]
             if var_names:
                 possible_var_names.extend(var_names)
             frame = frame.f_back
-        
+
         if possible_var_names:
             return possible_var_names[-1]
-        
+
         return None
-    
-    
+
     def __str__(self):
-        
-        return (
-            f'*** Spectrum ***\n'
-            f'{self.info.text_table}'
-            )
-        
-        
+
+        return f'*** Spectrum ***\n{self.info.text_table}'
+
     def __repr__(self):
-        
+
         return self.__str__()
-    
-    
+
     def _repr_html_(self):
-        
+
         return (
             f'{self.info.html_style}'
             f'<details open>'
             f'<summary style="margin-bottom: 10px;"><b>Spectrum</b></summary>'
             f'{self.info.html_table}'
             f'</details>'
-            )
-
+        )
 
 
 class Source(Spectrum):
@@ -248,8 +233,8 @@ class Source(Spectrum):
         elif isinstance(src_file, str):
             pass
         else:
-            raise ValueError(f'unsupported src_file type')
-            
+            raise ValueError('unsupported src_file type')
+
         src_hdu = fits.open(src_file, ignore_missing_simple=True)
         specExt = src_hdu['SPECTRUM']
 
@@ -266,7 +251,7 @@ class Source(Spectrum):
                 Src_SysErr = specData['SYS_ERR'].astype(float)
             except KeyError:
                 Src_SysErr = 0
-            SrcErr = np.sqrt(Src_StatErr ** 2 + (SrcCounts * Src_SysErr) ** 2)
+            SrcErr = np.sqrt(Src_StatErr**2 + (SrcCounts * Src_SysErr) ** 2)
         except KeyError:
             SrcCounts = specData['RATE'].astype(float) * SrcExpo
             try:
@@ -277,7 +262,7 @@ class Source(Spectrum):
                 Src_SysErr = specData['SYS_ERR'].astype(float)
             except KeyError:
                 Src_SysErr = 0
-            SrcErr = np.sqrt(Src_StatErr ** 2 + (SrcCounts * Src_SysErr) ** 2)
+            SrcErr = np.sqrt(Src_StatErr**2 + (SrcCounts * Src_SysErr) ** 2)
 
         try:
             SrcQual = specData['QUALITY'].astype(int)
@@ -298,9 +283,8 @@ class Source(Spectrum):
                 SrcBackSc = 1.0
 
         src_hdu.close()
-        
-        return cls(SrcCounts, SrcErr, SrcExpo, SrcQual, SrcGrpg, SrcBackSc)
 
+        return cls(SrcCounts, SrcErr, SrcExpo, SrcQual, SrcGrpg, SrcBackSc)
 
     @classmethod
     def from_src2(cls, src_file, ii=None):
@@ -332,8 +316,8 @@ class Source(Spectrum):
             else:
                 assert isinstance(ii, int), 'ii should be int type'
         else:
-            raise ValueError(f'unsupported src_file type')
-            
+            raise ValueError('unsupported src_file type')
+
         src_hdu = fits.open(src_file, ignore_missing_simple=True)
         specExt = src_hdu['SPECTRUM']
 
@@ -350,7 +334,7 @@ class Source(Spectrum):
                 Src_SysErr = specData['SYS_ERR'][ii].astype(float)
             except KeyError:
                 Src_SysErr = 0
-            SrcErr = np.sqrt(Src_StatErr ** 2 + (SrcCounts * Src_SysErr) ** 2)
+            SrcErr = np.sqrt(Src_StatErr**2 + (SrcCounts * Src_SysErr) ** 2)
         except KeyError:
             SrcCounts = specData['RATE'][ii].astype(float) * SrcExpo
             try:
@@ -361,7 +345,7 @@ class Source(Spectrum):
                 Src_SysErr = specData['SYS_ERR'][ii].astype(float)
             except KeyError:
                 Src_SysErr = 0
-            SrcErr = np.sqrt(Src_StatErr ** 2 + (SrcCounts * Src_SysErr) ** 2)
+            SrcErr = np.sqrt(Src_StatErr**2 + (SrcCounts * Src_SysErr) ** 2)
 
         try:
             SrcQual = specData['QUALITY'][ii].astype(int)
@@ -382,10 +366,9 @@ class Source(Spectrum):
                 SrcBackSc = 1.0
 
         src_hdu.close()
-        
+
         return cls(SrcCounts, SrcErr, SrcExpo, SrcQual, SrcGrpg, SrcBackSc)
-    
-    
+
     @classmethod
     def from_plain(cls, src_file, ii=None):
         """Dispatch to ``from_src`` or ``from_src2`` based on ``src_file`` form.
@@ -405,7 +388,6 @@ class Source(Spectrum):
                 return cls.from_src2(src_file)
             else:
                 return cls.from_src(src_file)
-
 
 
 class Background(Spectrum):
@@ -432,8 +414,8 @@ class Background(Spectrum):
         elif isinstance(bkg_file, str):
             pass
         else:
-            raise ValueError(f'unsupported bkg_file type')
-            
+            raise ValueError('unsupported bkg_file type')
+
         bkg_hdu = fits.open(bkg_file, ignore_missing_simple=True)
         specExt = bkg_hdu['SPECTRUM']
 
@@ -450,7 +432,7 @@ class Background(Spectrum):
                 Bkg_SysErr = specData['SYS_ERR'].astype(float)
             except KeyError:
                 Bkg_SysErr = 0
-            BkgErr = np.sqrt(Bkg_StatErr ** 2 + (BkgCounts * Bkg_SysErr) ** 2)
+            BkgErr = np.sqrt(Bkg_StatErr**2 + (BkgCounts * Bkg_SysErr) ** 2)
         except KeyError:
             BkgCounts = specData['RATE'].astype(float) * BkgExpo
             try:
@@ -461,7 +443,7 @@ class Background(Spectrum):
                 Bkg_SysErr = specData['SYS_ERR'].astype(float)
             except KeyError:
                 Bkg_SysErr = 0
-            BkgErr = np.sqrt(Bkg_StatErr ** 2 + (BkgCounts * Bkg_SysErr) ** 2)
+            BkgErr = np.sqrt(Bkg_StatErr**2 + (BkgCounts * Bkg_SysErr) ** 2)
 
         try:
             BkgBackSc = specData['BACKSCAL'].astype(float)
@@ -472,10 +454,9 @@ class Background(Spectrum):
                 BkgBackSc = 1.0
 
         bkg_hdu.close()
-        
+
         return cls(BkgCounts, BkgErr, BkgExpo, None, None, BkgBackSc)
-    
-    
+
     @classmethod
     def from_bkg2(cls, bkg_file, ii=None):
         """Load row ``ii`` of a multi-row PHA2 background spectrum.
@@ -502,8 +483,8 @@ class Background(Spectrum):
             else:
                 assert isinstance(ii, int), 'ii should be int type'
         else:
-            raise ValueError(f'unsupported bkg_file type')
-            
+            raise ValueError('unsupported bkg_file type')
+
         bkg_hdu = fits.open(bkg_file, ignore_missing_simple=True)
         specExt = bkg_hdu['SPECTRUM']
 
@@ -520,7 +501,7 @@ class Background(Spectrum):
                 Bkg_SysErr = specData['SYS_ERR'][ii].astype(float)
             except KeyError:
                 Bkg_SysErr = 0
-            BkgErr = np.sqrt(Bkg_StatErr ** 2 + (BkgCounts * Bkg_SysErr) ** 2)
+            BkgErr = np.sqrt(Bkg_StatErr**2 + (BkgCounts * Bkg_SysErr) ** 2)
         except KeyError:
             BkgCounts = specData['RATE'][ii].astype(float) * BkgExpo
             try:
@@ -531,7 +512,7 @@ class Background(Spectrum):
                 Bkg_SysErr = specData['SYS_ERR'][ii].astype(float)
             except KeyError:
                 Bkg_SysErr = 0
-            BkgErr = np.sqrt(Bkg_StatErr ** 2 + (BkgCounts * Bkg_SysErr) ** 2)
+            BkgErr = np.sqrt(Bkg_StatErr**2 + (BkgCounts * Bkg_SysErr) ** 2)
 
         try:
             BkgBackSc = specData['BACKSCAL'][ii].astype(float)
@@ -542,9 +523,8 @@ class Background(Spectrum):
                 BkgBackSc = 1.0
 
         bkg_hdu.close()
-        
-        return cls(BkgCounts, BkgErr, BkgExpo, None, None, BkgBackSc)
 
+        return cls(BkgCounts, BkgErr, BkgExpo, None, None, BkgBackSc)
 
     @classmethod
     def from_plain(cls, bkg_file, ii=None):

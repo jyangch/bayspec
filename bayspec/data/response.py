@@ -7,12 +7,13 @@ Fermi/GBM localization-dependent responses. ``Redistribution * Auxiliary``
 composes into a full :class:`Response`.
 """
 
-import inspect
-import numpy as np
-from io import BytesIO
-from copy import deepcopy
-import astropy.io.fits as fits
 from collections import OrderedDict
+from copy import deepcopy
+import inspect
+from io import BytesIO
+
+import astropy.io.fits as fits
+import numpy as np
 
 from ..util.info import Info
 from ..util.param import Par
@@ -20,8 +21,7 @@ from ..util.prior import unif
 from ..util.tools import cached_property
 
 
-
-class Response(object):
+class Response:
     """Full detector response: channel bins, photon bins, and DRM.
 
     Attributes:
@@ -38,10 +38,10 @@ class Response(object):
         chbin,
         phbin,
         drm,
-        ra=Par(0, frozen=True),
-        dec=Par(0, frozen=True),
-        factor=Par(1, frozen=True)
-        ):
+        ra=None,
+        dec=None,
+        factor=None,
+    ):
         """Build a response from channel/photon bins and the response matrix.
 
         Args:
@@ -55,24 +55,23 @@ class Response(object):
         Raises:
             ValueError: If the shape invariants above are violated.
         """
-        
+
         if not (np.ndim(chbin) == np.ndim(phbin) == np.ndim(drm) == 2):
             raise ValueError('chbin, phbin and drm must be 2D arrays')
-        
+
         if not (chbin.shape[0] == drm.shape[1] and chbin.shape[1] == 2):
             raise ValueError('chbin is 2-col array with rows same with cols of drm')
-        
+
         if not (phbin.shape[0] == drm.shape[0] and phbin.shape[1] == 2):
             raise ValueError('phbin is 2-col array with rows same with rows of drm')
-        
+
         self._chbin = chbin
         self._phbin = phbin
         self._drm = drm
-        self._ra = ra
-        self._dec = dec
-        self._factor = factor
-        
-        
+        self._ra = ra if ra is not None else Par(0, frozen=True)
+        self._dec = dec if dec is not None else Par(0, frozen=True)
+        self._factor = factor if factor is not None else Par(1, frozen=True)
+
     @classmethod
     def from_rsp(cls, rsp_file):
         """Load a single-extension OGIP RSP/RMF file.
@@ -96,7 +95,7 @@ class Response(object):
         elif isinstance(rsp_file, str):
             pass
         else:
-            raise ValueError(f'unsupported rsp_file type')
+            raise ValueError('unsupported rsp_file type')
 
         rsp_hdu = fits.open(rsp_file, ignore_missing_simple=True)
 
@@ -116,49 +115,47 @@ class Response(object):
         ebouData = ebouExt.data
 
         rsp_hdu.close()
-        
-        ChanIndex = ebouData.field(0).astype(int)
-        ChanBins = np.array(list(zip(ebouData.field(1), ebouData.field(2))))
-        EnerBins = np.array(list(zip(matData.field(0), matData.field(1))))
+
+        ChanBins = np.array(list(zip(ebouData.field(1), ebouData.field(2), strict=False)))
+        EnerBins = np.array(list(zip(matData.field(0), matData.field(1), strict=False)))
 
         if matHeader['TFORM4'][0] == 'P':
             fchan = [fc for fc in matData.field(3)]
         else:
             fchan = [[fc] for fc in matData.field(3)]
-        
+
         if matHeader['TFORM5'][0] == 'P':
             nchan = [nc for nc in matData.field(4)]
         else:
             nchan = [[nc] for nc in matData.field(4)]
-            
+
         try:
             mchan = int(matHeader['TLMIN4'])
         except KeyError:
             mchan = 1
-            
+
         matrix = matData.field(5)
-        
+
         if matrix[0].ndim == 0:
             matrix = matrix.reshape(-1, 1)
-        
+
         drm = np.zeros([numEnerBins, numDetChans])
-        
-        for fc, nc, i in zip(fchan, nchan, range(numEnerBins)):
+
+        for fc, nc, i in zip(fchan, nchan, range(numEnerBins), strict=False):
             idx = []
-            for fc_i, nc_i in zip(fc, nc):
+            for fc_i, nc_i in zip(fc, nc, strict=False):
                 fc_i = int(fc_i)
                 nc_i = int(nc_i)
                 tc_i = fc_i + nc_i
-                
+
                 idx_i = np.arange(fc_i - mchan, tc_i - mchan).tolist()
                 idx = idx + idx_i
 
             drm[i, idx] = matrix[i][:]
         drm = np.array(drm).astype(float)
-        
+
         return cls(ChanBins, EnerBins, drm)
-    
-    
+
     @classmethod
     def from_rsp2(cls, rsp_file, ii=None):
         """Load extension ``ii`` of a multi-extension RSP2 file.
@@ -188,8 +185,8 @@ class Response(object):
             else:
                 assert isinstance(ii, int), 'ii should be int type'
         else:
-            raise ValueError(f'unsupported rsp_file type')
-        
+            raise ValueError('unsupported rsp_file type')
+
         rsp_hdu = fits.open(rsp_file, ignore_missing_simple=True)
 
         try:
@@ -208,48 +205,46 @@ class Response(object):
         ebouData = ebouExt.data
 
         rsp_hdu.close()
-        
-        ChanIndex = ebouData.field(0).astype(int)
-        ChanBins = np.array(list(zip(ebouData.field(1), ebouData.field(2))))
-        EnerBins = np.array(list(zip(matData.field(0), matData.field(1))))
+
+        ChanBins = np.array(list(zip(ebouData.field(1), ebouData.field(2), strict=False)))
+        EnerBins = np.array(list(zip(matData.field(0), matData.field(1), strict=False)))
 
         if matHeader['TFORM4'][0] == 'P':
             fchan = [fc for fc in matData.field(3)]
         else:
             fchan = [[fc] for fc in matData.field(3)]
-        
+
         if matHeader['TFORM5'][0] == 'P':
             nchan = [nc for nc in matData.field(4)]
         else:
             nchan = [[nc] for nc in matData.field(4)]
-            
+
         try:
             mchan = int(matHeader['TLMIN4'])
         except KeyError:
             mchan = 1
-            
+
         matrix = matData.field(5)
-        
+
         if matrix[0].ndim == 0:
             matrix = matrix.reshape(-1, 1)
-        
+
         drm = np.zeros([numEnerBins, numDetChans])
-        
-        for fc, nc, i in zip(fchan, nchan, range(numEnerBins)):
+
+        for fc, nc, i in zip(fchan, nchan, range(numEnerBins), strict=False):
             idx = []
-            for fc_i, nc_i in zip(fc, nc):
+            for fc_i, nc_i in zip(fc, nc, strict=False):
                 fc_i = int(fc_i)
                 nc_i = int(nc_i)
                 tc_i = fc_i + nc_i
-                
+
                 idx_i = np.arange(fc_i - mchan, tc_i - mchan).tolist()
                 idx = idx + idx_i
 
             drm[i, idx] = matrix[i][:]
         drm = np.array(drm).astype(float)
-        
-        return cls(ChanBins, EnerBins, drm)
 
+        return cls(ChanBins, EnerBins, drm)
 
     @classmethod
     def from_plain(cls, rsp_file, ii=None):
@@ -271,7 +266,6 @@ class Response(object):
             else:
                 return cls.from_rsp(rsp_file)
 
-
     @classmethod
     def from_rmf_arf(cls, rmf, arf):
         """Compose a full response from a redistribution matrix and ARF.
@@ -291,41 +285,36 @@ class Response(object):
         chbin = rmf._chbin
         phbin = rmf._phbin
         drm = rmf._drm
-        
+
         srp = arf._srp.reshape([-1, 1])
-        
+
         if not (drm.shape[0] == srp.shape[0]):
             raise ValueError('drm and srp should have same rows')
-        
+
         drm = drm * srp
-        
+
         return cls(chbin, phbin, drm)
-    
-    
+
     @property
     def chbin(self):
-        
+
         return self._chbin
-    
-    
+
     @property
     def phbin(self):
-        
+
         return self._phbin
-    
-    
+
     @property
     def drm(self):
 
         return self._drm
-    
-    
+
     @property
     def ra(self):
-        
+
         return self._ra
-    
-    
+
     @ra.setter
     def ra(self, new_ra):
         """Set the RA ``Par``; ``None`` installs a uniform prior on ``[0, 360)``.
@@ -342,12 +331,10 @@ class Response(object):
         if not isinstance(self._ra, Par):
             raise ValueError('<ra> parameter should be Param type')
 
-
     @property
     def dec(self):
 
         return self._dec
-
 
     @dec.setter
     def dec(self, new_dec):
@@ -365,13 +352,11 @@ class Response(object):
         if not isinstance(self._dec, Par):
             raise ValueError('<dec> parameter should be Param type')
 
-
     @property
     def factor(self):
-        
+
         return self._factor
-    
-    
+
     @factor.setter
     def factor(self, new_factor):
         """Set the multiplicative ``Par``; ``None`` resets to a frozen unit factor.
@@ -388,13 +373,11 @@ class Response(object):
         if not isinstance(self._factor, Par):
             raise ValueError('<factor> parameter should be Param type')
 
-
     @property
     def chbin_mean(self):
         """Per-channel midpoint energy, computed from ``chbin``."""
 
         return np.mean(self.chbin, axis=1)
-
 
     @property
     def chbin_width(self):
@@ -402,26 +385,23 @@ class Response(object):
 
         return np.diff(self.chbin, axis=1).reshape(1, -1)[0]
 
-
     @property
     def info(self):
         """Return a tabular :class:`Info` summary of bin counts."""
 
         num_chbin = len(self.chbin)
         num_phbin = len(self.phbin)
-        info_dict = OrderedDict([('Name', [self.name]),
-                                 ('Channel bins', [num_chbin]),
-                                 ('Photon bins', [num_phbin])])
+        info_dict = OrderedDict(
+            [('Name', [self.name]), ('Channel bins', [num_chbin]), ('Photon bins', [num_phbin])]
+        )
 
         return Info.from_dict(info_dict)
-
 
     @property
     def name(self):
         """Best-effort identifier inferred from the caller scope."""
 
         return self.get_obj_name()
-
 
     def get_obj_name(self):
         """Walk call frames and return the outermost local name bound to ``self``.
@@ -430,45 +410,38 @@ class Response(object):
         """
 
         frame = inspect.currentframe()
-        
+
         possible_var_names = []
-        
+
         while frame:
             local_vars = frame.f_locals.items()
             var_names = [var_name for var_name, var_val in local_vars if var_val is self]
             if var_names:
                 possible_var_names.extend(var_names)
             frame = frame.f_back
-        
+
         if possible_var_names:
             return possible_var_names[-1]
-        
+
         return None
 
-
     def __str__(self):
-        
-        return (
-            f'*** Response ***\n'
-            f'{self.info.text_table}'
-            )
-        
-        
+
+        return f'*** Response ***\n{self.info.text_table}'
+
     def __repr__(self):
-        
+
         return self.__str__()
-    
-    
+
     def _repr_html_(self):
-        
+
         return (
             f'{self.info.html_style}'
             f'<details open>'
             f'<summary style="margin-bottom: 10px;"><b>Response</b></summary>'
             f'{self.info.html_table}'
             f'</details>'
-            )
-
+        )
 
 
 class DisableMethodsMeta(type):
@@ -497,10 +470,11 @@ class DisableMethodsMeta(type):
         """Return a function that raises ``AttributeError`` for ``method_name``."""
 
         def method(*args, **kwargs):
-            raise AttributeError(f"'{args[0].__class__.__name__}' object has no attribute '{method_name}'")
+            raise AttributeError(
+                f"'{args[0].__class__.__name__}' object has no attribute '{method_name}'"
+            )
 
         return method
-
 
 
 class BalrogResponse(Response, metaclass=DisableMethodsMeta):
@@ -511,18 +485,15 @@ class BalrogResponse(Response, metaclass=DisableMethodsMeta):
     disabled since the DRM is produced by the balrog provider.
     """
 
-    methods_to_disable = ['from_rsp',
-                          'from_rsp2',
-                          'from_plain',
-                          'from_rmf_arf']
+    methods_to_disable = ('from_rsp', 'from_rsp2', 'from_plain', 'from_rmf_arf')
 
     def __init__(
         self,
         balrog_drm,
-        ra=Par(0, unif(0, 360)),
-        dec=Par(0, unif(-90, 90)),
-        factor=Par(1, frozen=True)
-        ):
+        ra=None,
+        dec=None,
+        factor=None,
+    ):
         """Store the balrog provider and the sky location parameters.
 
         Args:
@@ -534,61 +505,53 @@ class BalrogResponse(Response, metaclass=DisableMethodsMeta):
         """
 
         self._balrog_drm = balrog_drm
-        self._ra = ra
-        self._dec = dec
-        self._factor = factor
-
+        self._ra = ra if ra is not None else Par(0, unif(0, 360))
+        self._dec = dec if dec is not None else Par(0, unif(-90, 90))
+        self._factor = factor if factor is not None else Par(1, frozen=True)
 
     @property
     def balrog_drm(self):
 
         return self._balrog_drm
-    
-    
+
     @cached_property()
     def chbin(self):
         """Channel bins derived from the balrog ``ebounds`` array."""
 
-        return np.vstack([self.balrog_drm.ebounds[:-1],
-                          self.balrog_drm.ebounds[1:]]).T
-
+        return np.vstack([self.balrog_drm.ebounds[:-1], self.balrog_drm.ebounds[1:]]).T
 
     @cached_property()
     def phbin(self):
         """Photon bins derived from ``monte_carlo_energies``."""
 
-        return np.vstack([self.balrog_drm.monte_carlo_energies[:-1],
-                          self.balrog_drm.monte_carlo_energies[1:]]).T
-
+        return np.vstack(
+            [self.balrog_drm.monte_carlo_energies[:-1], self.balrog_drm.monte_carlo_energies[1:]]
+        ).T
 
     @cached_property(lambda self: (self.ra.value, self.dec.value))
     def drm(self):
         """Response matrix at the current ``(ra, dec)``; NaNs are coerced to 0."""
 
         self.balrog_drm.set_location(self.ra.value, self.dec.value)
-        
+
         drm = self.balrog_drm.matrix
 
         if not np.all(np.isfinite(drm)):
-
-            for i, j in zip(np.where(np.isnan(drm))[0], np.where(np.isnan(drm))[1]):
-
+            for i, j in zip(np.where(np.isnan(drm))[0], np.where(np.isnan(drm))[1], strict=False):
                 drm[i, j] = 0.0
 
         return drm.T
 
 
-
 class Redistribution(Response, metaclass=DisableMethodsMeta):
     """Pure redistribution matrix (RMF); combines with :class:`Auxiliary` via ``*``."""
 
-    methods_to_disable = ['from_rmf_arf']
+    methods_to_disable = ('from_rmf_arf',)
 
     def __init__(self, chbin, phbin, drm):
         """Build an RMF with the same shape invariants as :class:`Response`."""
 
         super().__init__(chbin, phbin, drm)
-
 
     @classmethod
     def from_rmf(cls, rmf_file):
@@ -596,13 +559,11 @@ class Redistribution(Response, metaclass=DisableMethodsMeta):
 
         return cls.from_rsp(rmf_file)
 
-
     @classmethod
     def from_rmf2(cls, rmf_file, ii=None):
         """Alias for :meth:`Response.from_rsp2` that returns an RMF."""
 
         return cls.from_rsp2(rmf_file, ii)
-
 
     @classmethod
     def from_plain(cls, rmf_file, ii=None):
@@ -616,19 +577,21 @@ class Redistribution(Response, metaclass=DisableMethodsMeta):
             else:
                 return cls.from_rmf(rmf_file)
 
-
     @property
     def info(self):
         """Return a tabular :class:`Info` summary labelled as a redistribution."""
 
         num_chbin = len(self.chbin)
         num_phbin = len(self.phbin)
-        info_dict = OrderedDict([('redistribution', [self.name]),
-                                 ('channel bins', [num_chbin]),
-                                 ('photon bins', [num_phbin])])
+        info_dict = OrderedDict(
+            [
+                ('redistribution', [self.name]),
+                ('channel bins', [num_chbin]),
+                ('photon bins', [num_phbin]),
+            ]
+        )
 
         return Info.from_dict(info_dict)
-
 
     def __mul__(self, arf):
         """Compose with an :class:`Auxiliary` to yield a full :class:`Response`."""
@@ -637,12 +600,10 @@ class Redistribution(Response, metaclass=DisableMethodsMeta):
             raise ValueError('it should be Redistribution * Auxiliary')
         return Response.from_rmf_arf(self, arf)
 
-
     def __rmul__(self, arf):
         """Right-side variant of :meth:`__mul__`."""
 
         return self.__mul__(arf)
-
 
 
 class Auxiliary(Response, metaclass=DisableMethodsMeta):
@@ -653,10 +614,7 @@ class Auxiliary(Response, metaclass=DisableMethodsMeta):
         srp: 1D array of effective-area values aligned with ``phbin``.
     """
 
-    methods_to_disable = ['from_rsp',
-                          'from_rsp2',
-                          'from_rmf_arf'
-                          ]
+    methods_to_disable = ('from_rsp', 'from_rsp2', 'from_rmf_arf')
 
     def __init__(self, phbin, srp):
         """Build an ARF from photon bins and the effective-area vector.
@@ -681,12 +639,10 @@ class Auxiliary(Response, metaclass=DisableMethodsMeta):
         self._phbin = phbin
         self._srp = srp
 
-
     @property
     def srp(self):
-        
-        return self._srp
 
+        return self._srp
 
     @classmethod
     def from_arf(cls, arf_file):
@@ -707,26 +663,25 @@ class Auxiliary(Response, metaclass=DisableMethodsMeta):
         elif isinstance(arf_file, str):
             pass
         else:
-            raise ValueError(f'unsupported arf_file type')
-            
+            raise ValueError('unsupported arf_file type')
+
         arf_hdu = fits.open(arf_file, ignore_missing_simple=True)
-        
+
         srpExt = arf_hdu['SPECRESP']
-        
+
         srpData = srpExt.data
-        
+
         arf_hdu.close()
-        
-        EnerBins = np.array(list(zip(srpData.field(0), srpData.field(1))))
-        
+
+        EnerBins = np.array(list(zip(srpData.field(0), srpData.field(1), strict=False)))
+
         try:
             specresp = np.array(srpData['SPECRESP']).astype(float)
         except KeyError:
             specresp = np.array(srpData.field(2)).astype(float)
-            
+
         return cls(EnerBins, specresp)
-    
-    
+
     @classmethod
     def from_arf2(cls, arf_file, ii=None):
         """Load extension ``ii`` of a multi-extension ARF2 file.
@@ -751,25 +706,24 @@ class Auxiliary(Response, metaclass=DisableMethodsMeta):
             else:
                 assert isinstance(ii, int), 'ii should be int type'
         else:
-            raise ValueError(f'unsupported arf_file type')
-        
+            raise ValueError('unsupported arf_file type')
+
         arf_hdu = fits.open(arf_file, ignore_missing_simple=True)
-        
+
         srpExt = arf_hdu['SPECRESP', ii]
-        
+
         srpData = srpExt.data
-        
+
         arf_hdu.close()
-        
-        EnerBins = np.array(list(zip(srpData.field(0), srpData.field(1))))
-        
+
+        EnerBins = np.array(list(zip(srpData.field(0), srpData.field(1), strict=False)))
+
         try:
             specresp = np.array(srpData['SPECRESP']).astype(float)
         except KeyError:
             specresp = np.array(srpData.field(2)).astype(float)
-            
-        return cls(EnerBins, specresp)
 
+        return cls(EnerBins, specresp)
 
     @classmethod
     def from_plain(cls, arf_file, ii=None):
@@ -783,17 +737,14 @@ class Auxiliary(Response, metaclass=DisableMethodsMeta):
             else:
                 return cls.from_arf(arf_file)
 
-
     @property
     def info(self):
         """Return a tabular :class:`Info` summary labelled as an auxiliary."""
 
         num_phbin = len(self.phbin)
-        info_dict = OrderedDict([('auxiliary', [self.name]),
-                                 ('photon bins', [num_phbin])])
+        info_dict = OrderedDict([('auxiliary', [self.name]), ('photon bins', [num_phbin])])
 
         return Info.from_dict(info_dict)
-
 
     def __mul__(self, rmf):
         """Compose with a :class:`Redistribution` to yield a full :class:`Response`."""
@@ -801,7 +752,6 @@ class Auxiliary(Response, metaclass=DisableMethodsMeta):
         if not isinstance(rmf, Redistribution):
             raise ValueError('it should be Redistribution * Auxiliary')
         return Response.from_rmf_arf(rmf, self)
-
 
     def __rmul__(self, rmf):
         """Right-side variant of :meth:`__mul__`."""

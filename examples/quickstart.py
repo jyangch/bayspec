@@ -1,25 +1,27 @@
 import numpy as np
-from bayspec.model.local import *
-from bayspec import DataUnit, Data, BayesInfer, Plot
 
+from bayspec import BayesInfer, Data, DataUnit, Plot
+from bayspec.model.local import cpl
 
 savepath = './quickstart'
 
 nai = DataUnit(
-    src='./ME/me.src', 
-    bkg='./ME/me.bkg', 
-    rsp='./ME/me.rsp', 
-    notc=[8, 900], 
-    stat='pgstat', 
-    rebn={'min_sigma': 2, 'max_bin': 10})
+    src='./ME/me.src',
+    bkg='./ME/me.bkg',
+    rsp='./ME/me.rsp',
+    notc=[8, 900],
+    stat='pgstat',
+    rebn={'min_sigma': 2, 'max_bin': 10},
+)
 
 bgo = DataUnit(
-    src='./HE/he.src', 
-    bkg='./HE/he.bkg', 
-    rsp='./HE/he.rsp', 
-    notc=[300, 38000], 
-    stat='pgstat', 
-    rebn={'min_sigma': 2, 'max_bin': 10})
+    src='./HE/he.src',
+    bkg='./HE/he.bkg',
+    rsp='./HE/he.rsp',
+    notc=[300, 38000],
+    stat='pgstat',
+    rebn={'min_sigma': 2, 'max_bin': 10},
+)
 
 data = Data([('nai', nai), ('bgo', bgo)])
 data.save(savepath)
