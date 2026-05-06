@@ -20,10 +20,14 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.autosummary',
     'sphinxcontrib.rawfiles',
+    'sphinx_copybutton',
     'myst_nb',
 ]
 
 autodoc_mock_imports = ['xspec_models_cxc']
+autodoc_member_order = 'bysource'
+autodoc_typehints = 'description'
+autodoc_typehints_format = 'short'
 
 napoleon_use_ivar = True
 
@@ -38,6 +42,23 @@ exclude_patterns = []
 # -- Options for HTML output --
 
 html_theme = 'furo'
+html_title = f'bayspec {release}'
 html_static_path = ['_static']
 html_extra_path = ['_static']
 html_css_files = ['custom.css']
+
+pygments_style = 'friendly'
+pygments_dark_style = 'monokai'
+
+html_theme_options = {
+    'navigation_with_keys': True,
+    'top_of_page_buttons': ['view', 'edit'],
+    'light_css_variables': {
+        'color-brand-primary': '#1a3a6e',
+        'color-brand-content': '#1f5fb3',
+    },
+    'dark_css_variables': {
+        'color-brand-primary': '#7fb3ff',
+        'color-brand-content': '#7fb3ff',
+    },
+}

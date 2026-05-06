@@ -2,4 +2,5 @@ sphinx
 nbsphinx
 myst-nb
 sphinxcontrib-rawfiles
+sphinx-copybutton
 furo
