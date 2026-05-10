@@ -1048,7 +1048,7 @@ class BayesInfer(Infer):
             sys.stderr.write(f'ERROR in loglikelihood: {e}\n')
             sys.exit(1)
 
-    def multinest(self, nlive=500, resume=True, verbose=False, savepath='./'):
+    def multinest(self, nlive=500, resume=True, verbose=False, savepath='./', random_seed=None):
         """Run MultiNest and return a :class:`Posterior` wrapping the result.
 
         Args:
@@ -1056,6 +1056,9 @@ class BayesInfer(Infer):
             resume: Resume from any chain already present under ``savepath``.
             verbose: Forward MultiNest's verbose flag.
             savepath: Directory for MultiNest outputs and cached samples.
+            random_seed: Seed forwarded to MultiNest for reproducible runs.
+                ``None`` (default) lets MultiNest pick a system-time seed,
+                so different runs differ.
 
         Returns:
             A :class:`~bayspec.infer.analyzer.Posterior`.
@@ -1085,6 +1088,7 @@ class BayesInfer(Infer):
             sampling_efficiency=0.8,
             importance_nested_sampling=True,
             multimodal=True,
+            seed=-1 if random_seed is None else int(random_seed),
         )
 
         multinest_analyzer = pymultinest.Analyzer(
@@ -1121,7 +1125,7 @@ class BayesInfer(Infer):
 
         return self.calc_logprob(theta)
 
-    def emcee(self, nstep=1000, discard=100, resume=True, savepath='./'):
+    def emcee(self, nstep=1000, discard=100, resume=True, savepath='./', random_seed=None):
         """Run emcee and return a :class:`Posterior` wrapping the flattened chain.
 
         Args:
@@ -1129,6 +1133,8 @@ class BayesInfer(Infer):
             discard: Burn-in steps discarded before flattening.
             resume: Reuse an existing chain cached under ``savepath``.
             savepath: Directory for chain outputs.
+            random_seed: Seed for reproducible runs. ``None`` (default)
+                lets emcee draw fresh entropy, so different runs differ.
 
         Returns:
             A :class:`~bayspec.infer.analyzer.Posterior`.
@@ -1147,12 +1153,15 @@ class BayesInfer(Infer):
         if not os.path.exists(savepath):
             os.makedirs(savepath)
 
-        np.random.seed(450001)
+        rng = np.random.default_rng(random_seed)
         ndim = self.free_nparams
         nwalkers = 32 if 2 * ndim < 32 else 2 * ndim
-        pos = self.free_pvalues + 1e-4 * np.random.randn(nwalkers, ndim)
+        pos = self.free_pvalues + 1e-4 * rng.standard_normal((nwalkers, ndim))
 
         if (not resume) or (not os.path.exists(savepath_prefix + '.npz')):
+            # emcee proposals draw from numpy's global RNG; seed it only on opt-in.
+            if random_seed is not None:
+                np.random.seed(int(random_seed))
             emcee_sampler = emcee.EnsembleSampler(nwalkers, ndim, self.emcee_calc_logprob)
             emcee_sampler.run_mcmc(pos, nstep, progress=True)
 
@@ -1209,7 +1218,7 @@ class MaxLikeFit(Infer):
         self.inference_type = 'Maximum Likelihood Estimation'
 
     def _make_bootstrap_sample(
-        self, values, covar=None, errors=None, nsample=1000, random_state=450001
+        self, values, covar=None, errors=None, nsample=1000, random_seed=450001
     ):
         """Draw a covariance-respecting bootstrap sample and score each draw.
 
@@ -1223,7 +1232,7 @@ class MaxLikeFit(Infer):
             errors: Optional per-parameter uncertainties, used for the
                 fallback diagonal covariance.
             nsample: Target number of valid draws.
-            random_state: Seed for reproducibility.
+            random_seed: Seed for reproducibility.
         """
 
         values = np.asarray(values, dtype=float)
@@ -1252,7 +1261,7 @@ class MaxLikeFit(Infer):
         lower = np.array([pr[0] for pr in self.free_pranges], dtype=float)
         upper = np.array([pr[1] for pr in self.free_pranges], dtype=float)
 
-        rng = np.random.default_rng(random_state)
+        rng = np.random.default_rng(random_seed)
 
         param_sample = [values.copy()]
         tries = 0
