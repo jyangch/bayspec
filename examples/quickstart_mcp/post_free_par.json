@@ -1,0 +1,38 @@
+[
+    {
+        "par#": "1",
+        "Class": "model",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "$\\alpha$",
+        "Mean": -1.562251144762548,
+        "Median": -1.5623460613343045,
+        "Best": -1.562781792356931,
+        "1sigma Best": -1.562781792356931,
+        "1sigma CI": "[-1.572, -1.552]"
+    },
+    {
+        "par#": "2",
+        "Class": "model",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "log$E_p$",
+        "Mean": 2.331190653033438,
+        "Median": 2.331495730879869,
+        "Best": 2.3310492318471856,
+        "1sigma Best": 2.3310492318471856,
+        "1sigma CI": "[2.321, 2.341]"
+    },
+    {
+        "par#": "3",
+        "Class": "model",
+        "Expression": "cpl",
+        "Component": "cpl",
+        "Parameter": "log$A$",
+        "Mean": 2.3535859184401478,
+        "Median": 2.353959945462895,
+        "Best": 2.3544468580682683,
+        "1sigma Best": 2.3544468580682683,
+        "1sigma CI": "[2.340, 2.367]"
+    }
+]

@@ -1208,8 +1208,9 @@ class Plot:
 
         Raises:
             TypeError: If ``cls`` is not a ``Posterior`` or ``Bootstrap``.
-            ValueError: If ``at_par`` is not recognized, or if
-                ``at_par='truth'`` but some parameters lack a truth value.
+            ValueError: If ``at_par`` is not recognized, if
+                ``at_par='truth'`` but some parameters lack a truth value,
+                or if ``ploter`` is not one of the supported backends.
         """
 
         if not isinstance(cls, (Posterior, Bootstrap)):
@@ -1385,6 +1386,9 @@ class Plot:
                     ax.axvline(truth[xi], color='r', lw=1, ls='-')
                     ax.axhline(truth[yi], color='r', lw=1, ls='-')
                     ax.scatter(truth[xi], truth[yi], marker='s', color='r', s=20, linewidths=0)
+
+        else:
+            raise ValueError(f'unsupported ploter: {ploter}')
 
         fig_data = None
 

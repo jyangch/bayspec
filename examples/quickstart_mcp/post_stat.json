@@ -1,0 +1,23 @@
+[
+    {
+        "Data": "me",
+        "Model": "cpl",
+        "Statistic": "pgstat",
+        "Value": 405.2982422093243,
+        "Bins": 119
+    },
+    {
+        "Data": "he",
+        "Model": "cpl",
+        "Statistic": "pgstat",
+        "Value": 149.44212966070785,
+        "Bins": 117
+    },
+    {
+        "Data": "Total",
+        "Model": "Total",
+        "Statistic": "stat/dof",
+        "Value": "554.740/233",
+        "Bins": 236
+    }
+]

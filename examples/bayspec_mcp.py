@@ -67,7 +67,7 @@ mcp = FastMCP('bayspec')
 StatName = Literal['pgstat', 'pstat', 'cstat', 'gstat', 'chi2']
 PlotStyle = Literal['CE', 'NE', 'Fv', 'vFv', 'CC', 'NoU']
 SpecPloter = Literal['plotly', 'matplotlib']
-CornerPloter = Literal['plotly', 'matplotlib', 'getdist']
+CornerPloter = Literal['plotly', 'getdist', 'cornerpy']
 SpecKind = Literal['phtspec', 'flxspec', 'ergspec', 'nouspec']
 AtPoint = Literal['best', 'median', 'mean']
 SamplerKind = Literal['nested', 'mcmc']
@@ -162,6 +162,15 @@ def _ensure_dir(savepath: str) -> None:
 
 
 def _to_jsonable(v: Any) -> Any:
+    """Recursively convert numpy / pandas values to plain Python types.
+
+    Pydantic in FastMCP rejects raw ``numpy.int64`` / ``numpy.float64``
+    even when nested inside dicts/lists, so we walk the structure.
+    """
+    if isinstance(v, dict):
+        return {k: _to_jsonable(val) for k, val in v.items()}
+    if isinstance(v, (list, tuple)):
+        return [_to_jsonable(x) for x in v]
     if hasattr(v, 'tolist'):
         return v.tolist()
     return v
@@ -189,7 +198,7 @@ def _posterior_summary(p: Any) -> dict[str, Any]:
     for table in ('free_par_info', 'stat_info', 'IC_info'):
         owner = getattr(p, table, None)
         if owner is not None:
-            summary[table] = getattr(owner, 'data_list_dict', None)
+            summary[table] = _to_jsonable(getattr(owner, 'data_list_dict', None))
     return summary
 
 
@@ -205,6 +214,13 @@ def _maybe_inline_image(figwrap: Any, basename: str) -> Image | None:
             figwrap.fig.write_image(png_path, format='png')
         elif figwrap.plotter == 'matplotlib':
             figwrap.fig.savefig(png_path, dpi=150, bbox_inches='tight')
+            # Defense-in-depth: bayspec's Figure.save() already closes the
+            # figure on PDF write, but we may have written the PNG first or
+            # the caller may skip save(); release the matplotlib resource
+            # immediately so the figure doesn't accumulate in pyplot state.
+            import matplotlib.pyplot as plt
+
+            plt.close(figwrap.fig)
         else:
             return None
         return Image(path=png_path)
@@ -212,52 +228,283 @@ def _maybe_inline_image(figwrap: Any, basename: str) -> Image | None:
         return None
 
 
-@mcp.tool()
-def cwd() -> str:
-    """Return the server's current working directory."""
-    return os.getcwd()
-
-
-@mcp.tool()
-def set_cwd(path: str) -> str:
-    """Change the server's working directory; returns the new cwd."""
-    os.chdir(path)
-    return os.getcwd()
-
-
-@mcp.tool()
-def list_models() -> list[str]:
-    """List spectral models available under bayspec.model.local."""
-    return sorted(_LOCAL_MODELS)
-
-
-@mcp.tool()
-def list_priors() -> list[str]:
-    """List prior distributions accepted by `set_param`."""
-    return sorted(_ALL_PRIORS)
-
-
-@mcp.tool()
-def list_state() -> dict[str, list[str]]:
-    """Return the names of all registered session objects, grouped by kind."""
+def _state_snapshot() -> dict[str, list[str]]:
     return {kind: sorted(reg) for kind, reg in STATE.items()}
 
 
+def _suggest_next(after: str) -> list[str]:
+    """Return tool names that make sense to call next, given current STATE."""
+    s = STATE
+    if after == 'cwd' or after == 'set_cwd':
+        return ['list_state', 'load_data_unit', 'run_quickstart']
+    if after == 'list_models' or after == 'list_priors':
+        return ['build_model', 'load_data_unit']
+    if after == 'list_state':
+        if not s['data_units']:
+            return ['load_data_unit', 'run_quickstart']
+        if not s['data']:
+            return ['build_data', 'load_data_unit']
+        if not s['models']:
+            return ['list_models', 'build_model']
+        if not s['infers']:
+            return ['setup_infer', 'compose_model', 'set_param']
+        if not s['posteriors']:
+            return ['describe_infer', 'suggest_sampler', 'run_multinest', 'run_emcee']
+        return ['summarize_posterior', 'plot_infer', 'plot_corner']
+    if after == 'reset_session' or after == 'delete_object':
+        return ['list_state']
+    if after == 'load_data_unit':
+        return ['load_data_unit', 'build_data']
+    if after == 'build_data':
+        if not s['models']:
+            return ['list_models', 'build_model']
+        return ['build_model', 'compose_model', 'setup_infer']
+    if after == 'build_model':
+        return ['describe_model', 'set_param', 'compose_model', 'build_model', 'setup_infer']
+    if after == 'compose_model':
+        return ['describe_model', 'set_param', 'setup_infer']
+    if after == 'describe_model':
+        return ['set_param', 'compose_model', 'setup_infer']
+    if after == 'set_param':
+        return ['describe_model', 'setup_infer']
+    if after == 'setup_infer':
+        return [
+            'describe_infer',
+            'set_infer_param',
+            'link_params',
+            'set_infer_cfg',
+            'suggest_sampler',
+        ]
+    if after == 'describe_infer':
+        return ['set_infer_param', 'link_params', 'set_infer_cfg', 'suggest_sampler']
+    if after in ('set_infer_param', 'set_infer_cfg', 'link_params', 'unlink_params'):
+        return ['describe_infer', 'suggest_sampler', 'run_multinest', 'run_emcee']
+    if after == 'suggest_sampler':
+        return ['run_multinest', 'run_emcee']
+    if after in ('run_multinest', 'run_emcee', 'load_posterior'):
+        return [
+            'summarize_posterior',
+            'plot_infer',
+            'plot_corner',
+            'plot_model',
+            'evaluate_model',
+        ]
+    if after == 'summarize_posterior':
+        return ['plot_infer', 'plot_corner', 'plot_model', 'evaluate_model']
+    if after == 'evaluate_model':
+        return ['plot_model', 'plot_models', 'summarize_posterior']
+    if after in ('plot_infer', 'plot_corner', 'plot_model', 'plot_models'):
+        return ['summarize_posterior', 'evaluate_model']
+    if after == 'run_quickstart':
+        return ['summarize_posterior', 'plot_infer', 'plot_corner', 'describe_infer']
+    return ['list_state']
+
+
+def _decorate(
+    result: dict[str, Any] | None,
+    after: str,
+    hint: str | None = None,
+    warnings: list[str] | None = None,
+) -> dict[str, Any]:
+    """Attach `state`, `ready_for`, optional `hint`/`warnings` to a tool's result dict.
+
+    Tool-specific fields stay at the top level; the meta keys make the
+    return self-describing for an LLM driver.
+    """
+    out: dict[str, Any] = {'ok': True}
+    if result:
+        out.update(result)
+    out['state'] = _state_snapshot()
+    out['ready_for'] = _suggest_next(after)
+    if hint:
+        out['hint'] = hint
+    if warnings:
+        out['warnings'] = warnings
+    return out
+
+
+# Hardcoded sanity rules keyed on lowercased parameter labels.
+# `physical`: hard outer bounds beyond which the prior is almost certainly wrong.
+# `typical`: looser-than-textbook range that covers >95% of real fits; outside
+#   this we warn but accept.
+# `positive`: parameter is physically positive — prior must not allow <=0.
+SANITY_CHECKS: dict[str, dict[str, Any]] = {
+    'alpha': {'physical': (-5.0, 5.0), 'typical': (-3.0, 3.0)},
+    'phoindex': {'physical': (-5.0, 5.0), 'typical': (-3.0, 3.0)},
+    'beta': {'physical': (-10.0, 5.0), 'typical': (-5.0, -1.0)},
+    'ec': {'physical': (1e-2, 1e8), 'typical': (1.0, 1e5), 'positive': True},
+    'epeak': {'physical': (1e-2, 1e8), 'typical': (1.0, 1e5), 'positive': True},
+    'ep': {'physical': (1e-2, 1e8), 'typical': (1.0, 1e5), 'positive': True},
+    'eb': {'physical': (1e-2, 1e8), 'typical': (1.0, 1e5), 'positive': True},
+    'kt': {'physical': (1e-3, 1e4), 'typical': (0.1, 100.0), 'positive': True},
+    'temperature': {'physical': (1e-3, 1e4), 'typical': (0.1, 100.0), 'positive': True},
+    'k': {'positive': True},
+    'norm': {'positive': True},
+    'flux': {'positive': True},
+    'nh': {'physical': (1e-4, 1e6), 'typical': (1e-3, 1e3), 'positive': True},
+    'z': {'physical': (0.0, 20.0), 'typical': (0.0, 10.0)},
+    'redshift': {'physical': (0.0, 20.0), 'typical': (0.0, 10.0)},
+}
+
+
+def _prior_bounds(spec: dict[str, Any]) -> tuple[float | None, float | None]:
+    """Best-effort (low, high) extraction from a prior spec for sanity checking."""
+    kind = spec.get('kind')
+    args = spec.get('args') or []
+    if kind in ('unif', 'logunif') and len(args) >= 2:
+        return float(args[0]), float(args[1])
+    if kind == 'truncnorm' and len(args) >= 4:
+        return float(args[2]), float(args[3])
+    if kind == 'beta' and len(args) >= 2:
+        return 0.0, 1.0
+    return None, None
+
+
+def _param_label(model_obj: Any, par_id: str) -> str | None:
+    """Find the textual label for a parameter id by scanning all_params."""
+    for row in getattr(model_obj, 'all_params', []):
+        if row.get('par#') == str(par_id):
+            return row.get('Parameter')
+    return None
+
+
+def _normalize_label(label: str | None) -> tuple[str | None, bool]:
+    """Strip LaTeX wrapping to get a SANITY_CHECKS key, plus a log-scale flag.
+
+    bayspec parameter labels look like ``$\\alpha$``, ``log$E_p$``, ``log$A$``.
+    A leading ``log`` means the parameter value is in log10 space — we
+    convert prior bounds to linear before comparing against SANITY rules.
+    """
+    if not label:
+        return None, False
+    s = label.lower()
+    for ch in ('$', '\\', '{', '}', '_', ' '):
+        s = s.replace(ch, '')
+    is_log = False
+    if s.startswith('log'):
+        is_log = True
+        s = s[3:]
+    return (s or None), is_log
+
+
+def _sanity_check_prior(label: str | None, spec: dict[str, Any]) -> list[str]:
+    """Return a list of warnings (possibly empty) for a prior on a labelled param."""
+    name, is_log = _normalize_label(label)
+    if not name:
+        return []
+    rules = SANITY_CHECKS.get(name)
+    if not rules:
+        return []
+    low, high = _prior_bounds(spec)
+    warnings: list[str] = []
+    # Convert log-space bounds to linear for comparison against physical rules.
+    if is_log and low is not None and high is not None:
+        low_lin: float | None = 10 ** low
+        high_lin: float | None = 10 ** high
+    else:
+        low_lin, high_lin = low, high
+    # Positivity check: in log space the linear value is always > 0, so skip.
+    if rules.get('positive') and not is_log and low_lin is not None and low_lin <= 0:
+        warnings.append(
+            f"prior on '{label}' allows non-positive values (low={low_lin}); this "
+            'parameter must be positive — consider logunif over a positive range.'
+        )
+    if low_lin is not None and high_lin is not None:
+        phys = rules.get('physical')
+        if phys and (low_lin < phys[0] or high_lin > phys[1]):
+            warnings.append(
+                f"prior on '{label}' (linear=[{low_lin:.3g}, {high_lin:.3g}]) "
+                f'is outside the physical range [{phys[0]:.3g}, {phys[1]:.3g}] — '
+                'confirm with the user before fitting.'
+            )
+        else:
+            typ = rules.get('typical')
+            if typ and (low_lin < typ[0] or high_lin > typ[1]):
+                warnings.append(
+                    f"prior on '{label}' (linear=[{low_lin:.3g}, {high_lin:.3g}]) "
+                    f'is wider than the typical range [{typ[0]:.3g}, {typ[1]:.3g}] — '
+                    'fit may explore unphysical regions.'
+                )
+    return warnings
+
+
 @mcp.tool()
-def reset_session() -> str:
+def cwd() -> dict[str, Any]:
+    """Return the server's current working directory."""
+    return _decorate(
+        {'cwd': os.getcwd()},
+        after='cwd',
+        hint='All file paths in subsequent tools are resolved relative to this directory.',
+    )
+
+
+@mcp.tool()
+def set_cwd(path: str) -> dict[str, Any]:
+    """Change the server's working directory; returns the new cwd."""
+    os.chdir(path)
+    return _decorate(
+        {'cwd': os.getcwd()},
+        after='set_cwd',
+        hint='Working directory updated. Subsequent file paths are now relative to this directory.',
+    )
+
+
+@mcp.tool()
+def list_models() -> dict[str, Any]:
+    """List spectral models available under bayspec.model.local."""
+    return _decorate(
+        {'models': sorted(_LOCAL_MODELS)},
+        after='list_models',
+        hint='Pass any of these as `kind` to build_model. Ask the user which model fits the source physics before picking.',
+    )
+
+
+@mcp.tool()
+def list_priors() -> dict[str, Any]:
+    """List prior distributions accepted by `set_param`."""
+    return _decorate(
+        {'priors': sorted(_ALL_PRIORS)},
+        after='list_priors',
+        hint='Use as {"kind": "<name>", "args": [...]} when calling set_param/set_infer_param.',
+    )
+
+
+@mcp.tool()
+def list_state() -> dict[str, Any]:
+    """Return the names of all registered session objects, grouped by kind."""
+    return _decorate(
+        None,
+        after='list_state',
+        hint='`state` reflects what is currently loaded; `ready_for` is the suggested next step.',
+    )
+
+
+@mcp.tool()
+def reset_session() -> dict[str, Any]:
     """Clear all session-scoped objects (data units, data, models, infers, posteriors)."""
     for reg in STATE.values():
         reg.clear()
-    return 'session cleared'
+    return _decorate(
+        {'cleared': True},
+        after='reset_session',
+        hint='Session is empty. Start by loading data with load_data_unit or run_quickstart.',
+    )
 
 
 @mcp.tool()
-def delete_object(kind: Literal['data_units', 'data', 'models', 'infers', 'posteriors'], name: str) -> str:
+def delete_object(
+    kind: Literal['data_units', 'data', 'models', 'infers', 'posteriors'],
+    name: str,
+) -> dict[str, Any]:
     """Remove a single registered object from the session."""
     if name not in STATE[kind]:
         raise ValueError(f"No {kind[:-1]} registered under name '{name}'.")
     del STATE[kind][name]
-    return f'deleted {kind[:-1]} {name!r}'
+    return _decorate(
+        {'deleted': {'kind': kind, 'name': name}},
+        after='delete_object',
+        hint='Downstream objects (e.g. infers built on a deleted model) may now be stale.',
+    )
 
 
 @mcp.tool()
@@ -292,7 +539,14 @@ def load_data_unit(
         grpg=grpg,
     )
     _register('data_units', name, unit, overwrite)
-    return {'name': name, 'src': src, 'stat': stat, 'notc': notc}
+    return _decorate(
+        {'name': name, 'src': src, 'stat': stat, 'notc': notc},
+        after='load_data_unit',
+        hint=(
+            'Repeat for each detector, then combine them with build_data. '
+            'Confirm the energy notice (`notc`) matches the detector + source physics.'
+        ),
+    )
 
 
 @mcp.tool()
@@ -318,11 +572,15 @@ def build_data(
         _ensure_dir(savepath)
         data.save(savepath)
         saved = savepath
-    return {
-        'name': name,
-        'labels': [u['label'] for u in units],
-        'saved_to': saved,
-    }
+    return _decorate(
+        {
+            'name': name,
+            'labels': [u['label'] for u in units],
+            'saved_to': saved,
+        },
+        after='build_data',
+        hint='Data ready. Next: build_model (or compose_model) and then setup_infer.',
+    )
 
 
 @mcp.tool()
@@ -352,7 +610,14 @@ def build_model(
         _ensure_dir(savepath)
         model.save(savepath)
         saved = savepath
-    return {'name': name, 'kind': kind, 'alias': alias, 'saved_to': saved}
+    return _decorate(
+        {'name': name, 'kind': kind, 'alias': alias, 'saved_to': saved},
+        after='build_model',
+        hint=(
+            'Call describe_model to see the parameter table; ask the user for '
+            'prior bounds on each free parameter before fitting.'
+        ),
+    )
 
 
 @mcp.tool()
@@ -400,12 +665,20 @@ def compose_model(
             f"bayspec rejects this combination of component types; check the operators."
         ) from None
     _register('models', name, composite, overwrite)
-    return {
-        'name': name,
-        'expr': composite.expr,
-        'type': composite_type,
-        'components': sorted(referenced),
-    }
+    return _decorate(
+        {
+            'name': name,
+            'expr': composite.expr,
+            'type': composite_type,
+            'components': sorted(referenced),
+        },
+        after='compose_model',
+        hint=(
+            'Composite registered. Components shared by multiple composites '
+            'remain the same instance — their parameters stay tied. Use '
+            'describe_model on the new name to see the merged parameter table.'
+        ),
+    )
 
 
 @mcp.tool()
@@ -416,24 +689,34 @@ def describe_model(name: str) -> dict[str, Any]:
     or freeze/thaw individual parameters.
     """
     m = _get('models', name)
-    return {
-        'name': name,
-        'type': getattr(m, 'type', None),
-        'expr': getattr(m, 'expr', None),
-        'params': [
-            {
-                'par_id': row['par#'],
-                'component': row['Component'],
-                'label': row['Parameter'],
-                'val': row['Value'],
-                'prior': row['Prior'],
-                'frozen': row['Frozen'],
-                'posterior': row['Posterior'],
-            }
-            for row in m.all_params
-        ],
-        'configs': list(m.all_config),
-    }
+    params = [
+        {
+            'par_id': row['par#'],
+            'component': row['Component'],
+            'label': row['Parameter'],
+            'val': row['Value'],
+            'prior': row['Prior'],
+            'frozen': row['Frozen'],
+            'posterior': row['Posterior'],
+        }
+        for row in m.all_params
+    ]
+    free_count = sum(1 for row in params if not row['frozen'])
+    return _decorate(
+        {
+            'name': name,
+            'type': getattr(m, 'type', None),
+            'expr': getattr(m, 'expr', None),
+            'params': params,
+            'configs': list(m.all_config),
+            'free_param_count': free_count,
+        },
+        after='describe_model',
+        hint=(
+            f'{free_count} free parameter(s). Use set_param(model, par_id, ...) '
+            'to set priors or freeze values; ask the user for prior bounds.'
+        ),
+    )
 
 
 def _apply_param_changes(
@@ -474,14 +757,27 @@ def set_param(
     if par_id not in m.par:
         raise ValueError(f"par_id '{par_id}' not in model '{model}'. Available: {list(m.par)}")
     par = m.par[par_id]
+    label = _param_label(m, par_id)
+    warnings = _sanity_check_prior(label, prior) if prior is not None else []
     _apply_param_changes(par, val, frozen, prior)
-    return {
-        'model': model,
-        'par_id': par_id,
-        'val': par.val,
-        'frozen': par.frozen,
-        'prior': par.prior_info,
-    }
+    return _decorate(
+        {
+            'model': model,
+            'par_id': par_id,
+            'label': label,
+            'val': par.val,
+            'frozen': par.frozen,
+            'prior': par.prior_info,
+        },
+        after='set_param',
+        hint=(
+            'Surface any warnings to the user before continuing — bad priors '
+            'are the most common cause of failed fits.'
+        )
+        if warnings
+        else None,
+        warnings=warnings or None,
+    )
 
 
 @mcp.tool()
@@ -494,38 +790,46 @@ def describe_infer(name: str) -> dict[str, Any]:
     """
     inf = _get('infers', name)
     inf._you_free()
-    return {
-        'name': name,
-        'configs': [
-            {
-                'cfg_id': row['cfg#'],
-                'class': row['Class'],
-                'expression': row['Expression'],
-                'component': row['Component'],
-                'parameter': row['Parameter'],
-                'value': row['Value'],
-            }
-            for row in inf.all_config
-        ],
-        'params': [
-            {
-                'par_id': row['par#'],
-                'class': row['Class'],
-                'expression': row['Expression'],
-                'component': row['Component'],
-                'parameter': row['Parameter'],
-                'val': row['Value'],
-                'prior': row['Prior'],
-                'frozen': row['Frozen'],
-                'mates': sorted(row['Mates']),
-                'posterior': row['Posterior'],
-            }
-            for row in inf.all_params
-        ],
-        'free_params': list(inf.free_par.keys()),
-        'free_nparams': inf.free_nparams,
-        'free_plabels': inf.free_plabels,
-    }
+    n_free = inf.free_nparams
+    return _decorate(
+        {
+            'name': name,
+            'configs': [
+                {
+                    'cfg_id': row['cfg#'],
+                    'class': row['Class'],
+                    'expression': row['Expression'],
+                    'component': row['Component'],
+                    'parameter': row['Parameter'],
+                    'value': row['Value'],
+                }
+                for row in inf.all_config
+            ],
+            'params': [
+                {
+                    'par_id': row['par#'],
+                    'class': row['Class'],
+                    'expression': row['Expression'],
+                    'component': row['Component'],
+                    'parameter': row['Parameter'],
+                    'val': row['Value'],
+                    'prior': row['Prior'],
+                    'frozen': row['Frozen'],
+                    'mates': sorted(row['Mates']),
+                    'posterior': row['Posterior'],
+                }
+                for row in inf.all_params
+            ],
+            'free_params': list(inf.free_par.keys()),
+            'free_nparams': n_free,
+            'free_plabels': inf.free_plabels,
+        },
+        after='describe_infer',
+        hint=(
+            f'{n_free} free parameter(s). Confirm this matches what the user '
+            'expects, then call suggest_sampler before running a sampler.'
+        ),
+    )
 
 
 @mcp.tool()
@@ -548,16 +852,29 @@ def set_infer_param(
     if par_id not in inf.par:
         raise ValueError(f"par_id '{par_id}' not in infer '{infer}'. Available: {list(inf.par)}")
     par = inf.par[par_id]
+    label = _param_label(inf, par_id)
+    warnings = _sanity_check_prior(label, prior) if prior is not None else []
     _apply_param_changes(par, val, frozen, prior)
     inf._you_free()
-    return {
-        'infer': infer,
-        'par_id': par_id,
-        'val': par.val,
-        'frozen': par.frozen,
-        'prior': par.prior_info,
-        'free_nparams': inf.free_nparams,
-    }
+    return _decorate(
+        {
+            'infer': infer,
+            'par_id': par_id,
+            'label': label,
+            'val': par.val,
+            'frozen': par.frozen,
+            'prior': par.prior_info,
+            'free_nparams': inf.free_nparams,
+        },
+        after='set_infer_param',
+        hint=(
+            'Surface any warnings to the user before continuing — bad priors '
+            'are the most common cause of failed fits.'
+        )
+        if warnings
+        else None,
+        warnings=warnings or None,
+    )
 
 
 @mcp.tool()
@@ -576,7 +893,10 @@ def set_infer_cfg(
     if cfg_id not in inf.cfg:
         raise ValueError(f"cfg_id '{cfg_id}' not in infer '{infer}'. Available: {list(inf.cfg)}")
     inf.cfg[cfg_id].val = val
-    return {'infer': infer, 'cfg_id': cfg_id, 'val': inf.cfg[cfg_id].val}
+    return _decorate(
+        {'infer': infer, 'cfg_id': cfg_id, 'val': inf.cfg[cfg_id].val},
+        after='set_infer_cfg',
+    )
 
 
 @mcp.tool()
@@ -587,7 +907,11 @@ def link_params(infer: str, par_ids: list[str]) -> dict[str, Any]:
         if str(pid) not in inf.par:
             raise ValueError(f"par_id '{pid}' not in infer '{infer}'.")
     inf.link([str(p) for p in par_ids])
-    return {'infer': infer, 'linked': [str(p) for p in par_ids], 'free_nparams': inf.free_nparams}
+    return _decorate(
+        {'infer': infer, 'linked': [str(p) for p in par_ids], 'free_nparams': inf.free_nparams},
+        after='link_params',
+        hint='Linked params share value/prior/posterior. Re-check free_nparams before sampling.',
+    )
 
 
 @mcp.tool()
@@ -598,7 +922,10 @@ def unlink_params(infer: str, par_ids: list[str]) -> dict[str, Any]:
         if str(pid) not in inf.par:
             raise ValueError(f"par_id '{pid}' not in infer '{infer}'.")
     inf.unlink([str(p) for p in par_ids])
-    return {'infer': infer, 'unlinked': [str(p) for p in par_ids], 'free_nparams': inf.free_nparams}
+    return _decorate(
+        {'infer': infer, 'unlinked': [str(p) for p in par_ids], 'free_nparams': inf.free_nparams},
+        after='unlink_params',
+    )
 
 
 @mcp.tool()
@@ -621,7 +948,83 @@ def setup_infer(
         _ensure_dir(savepath)
         infer.save(savepath)
         saved = savepath
-    return {'name': name, 'pairs': pairs, 'saved_to': saved}
+    return _decorate(
+        {
+            'name': name,
+            'pairs': pairs,
+            'saved_to': saved,
+            'free_nparams': infer.free_nparams,
+        },
+        after='setup_infer',
+        hint=(
+            'Call describe_infer to confirm the free-parameter set, then '
+            'suggest_sampler before running.'
+        ),
+    )
+
+
+@mcp.tool()
+def suggest_sampler(
+    n_free_params: int,
+    expect_multimodal: bool = False,
+    need_evidence: bool = False,
+) -> dict[str, Any]:
+    """Recommend `run_multinest` vs `run_emcee` for the current problem shape.
+
+    Decision tree:
+      - need_evidence (Bayes factor / model selection)         -> multinest (only path to lnZ)
+      - expect_multimodal=True OR n_free_params > 10           -> multinest
+      - otherwise                                              -> emcee (faster, well-tested)
+
+    Returns a recommendation plus a sampler-specific config hint
+    (`nlive` for multinest, `nstep`/`discard`/`walkers_default` for emcee).
+    The caller (LLM) should confirm with the user before invoking the
+    sampler — we don't pick silently.
+    """
+    if need_evidence:
+        return _decorate(
+            {
+                'recommendation': 'multinest',
+                'reason': (
+                    'Only nested sampling produces a marginal-likelihood (lnZ) '
+                    'estimate suitable for Bayes-factor model comparison.'
+                ),
+                'config_hint': {'nlive': max(400, 50 * n_free_params)},
+            },
+            after='suggest_sampler',
+            hint='Confirm with the user, then call run_multinest with the suggested nlive.',
+        )
+    if expect_multimodal or n_free_params > 10:
+        return _decorate(
+            {
+                'recommendation': 'multinest',
+                'reason': (
+                    f'Multinest handles multimodal / high-dim posteriors '
+                    f'({n_free_params} free params, multimodal={expect_multimodal}) '
+                    'more reliably than emcee, at ~5-10x the wallclock cost.'
+                ),
+                'config_hint': {'nlive': max(400, 50 * n_free_params)},
+            },
+            after='suggest_sampler',
+            hint='Confirm with the user, then call run_multinest with the suggested nlive.',
+        )
+    return _decorate(
+        {
+            'recommendation': 'emcee',
+            'reason': (
+                f'emcee is fast and well-suited to {n_free_params}-D unimodal '
+                'posteriors. Switch to multinest if you suspect multimodality '
+                'or care about lnZ.'
+            ),
+            'config_hint': {
+                'nstep': 5000,
+                'discard': 500,
+                'walkers_default': max(2 * n_free_params, 32),
+            },
+        },
+        after='suggest_sampler',
+        hint='Confirm with the user, then call run_emcee with the suggested nstep.',
+    )
 
 
 @mcp.tool()
@@ -648,7 +1051,15 @@ def run_multinest(
     summary = _posterior_summary(posterior)
     summary['post'] = post
     summary['savepath'] = savepath
-    return summary
+    return _decorate(
+        summary,
+        after='run_multinest',
+        hint=(
+            'Sampling done. Inspect par_best/par_Isigma and lnZ; if anything '
+            'looks off, report diagnostics to the user before re-running. '
+            'Then plot_infer + plot_corner for the user.'
+        ),
+    )
 
 
 @mcp.tool()
@@ -681,7 +1092,15 @@ def run_emcee(
     summary = _posterior_summary(posterior)
     summary['post'] = post
     summary['savepath'] = savepath
-    return summary
+    return _decorate(
+        summary,
+        after='run_emcee',
+        hint=(
+            'Sampling done. Inspect par_best/par_Isigma; if walkers do not look '
+            'mixed (or autocorr time is large), report to the user before '
+            're-running. Then plot_infer + plot_corner.'
+        ),
+    )
 
 
 @mcp.tool()
@@ -719,13 +1138,23 @@ def load_posterior(
     summary = _posterior_summary(posterior)
     summary['post'] = post
     summary['loaded_from'] = str(sample_path)
-    return summary
+    return _decorate(
+        summary,
+        after='load_posterior',
+        hint='Posterior reconstructed without re-sampling. Plot or evaluate as usual.',
+    )
 
 
 @mcp.tool()
 def summarize_posterior(post: str) -> dict[str, Any]:
     """Return best-fit params, credible intervals, and information criteria."""
-    return _posterior_summary(_get('posteriors', post))
+    summary = _posterior_summary(_get('posteriors', post))
+    summary['post'] = post
+    return _decorate(
+        summary,
+        after='summarize_posterior',
+        hint='Report par_best/par_Isigma and the IC tables to the user before plotting.',
+    )
 
 
 @mcp.tool()
@@ -763,14 +1192,18 @@ def evaluate_model(
     if spec_fn is None:
         raise ValueError(f"Model has no '{kind}' method.")
     y = spec_fn(earr)
-    return {
-        'model': model,
-        'kind': kind,
-        'at': at if post is not None else None,
-        'post': post,
-        'E': earr.tolist(),
-        'Y': np.asarray(y).tolist(),
-    }
+    return _decorate(
+        {
+            'model': model,
+            'kind': kind,
+            'at': at if post is not None else None,
+            'post': post,
+            'E': earr.tolist(),
+            'Y': np.asarray(y).tolist(),
+        },
+        after='evaluate_model',
+        hint='Numeric arrays only — call plot_model / plot_models to visualise.',
+    )
 
 
 @mcp.tool()
@@ -780,7 +1213,7 @@ def plot_infer(
     style: PlotStyle = 'CE',
     ploter: SpecPloter = 'plotly',
     inline: bool = False,
-) -> list[Any] | dict[str, str]:
+) -> list[Any] | dict[str, Any]:
     """Plot data + best-fit + residuals from a posterior.
 
     `style`: 'CE' counts, 'NE' photon, 'Fv' flux, 'vFv' nuFnu, plus 'CC'
@@ -788,12 +1221,22 @@ def plot_infer(
     the extension (plotly emits .html and .pdf; matplotlib emits .pdf).
     When `inline=True`, also writes a PNG and returns it as MCP Image
     content (best-effort: needs kaleido for plotly).
+
+    **Naming convention** (matches examples/quickstart.py): pass
+    `save='{savepath}/ctsspec'` for style='CE',  '/phtspec' for 'NE',
+    '/flxspec' for 'Fv', '/ergspec' for 'vFv'. Do NOT invent custom names
+    like 'fit_CE' — the canonical basenames keep results comparable across
+    runs and consistent with the example notebooks.
     """
     p = _get('posteriors', post)
     fig = Plot.infer(p, style=style, ploter=ploter)
     img = _maybe_inline_image(fig, save) if inline else None
     fig.save(save)
-    meta = {'saved': save, 'style': style, 'ploter': ploter}
+    meta = _decorate(
+        {'saved': save, 'style': style, 'ploter': ploter, 'post': post},
+        after='plot_infer',
+        hint='Show the saved file path to the user; mention the style (CE/NE/Fv/vFv).',
+    )
     return [meta, img] if img is not None else meta
 
 
@@ -803,13 +1246,21 @@ def plot_corner(
     save: str,
     ploter: CornerPloter = 'plotly',
     inline: bool = False,
-) -> list[Any] | dict[str, str]:
-    """Corner plot of posterior samples. `ploter` is 'plotly', 'matplotlib', or 'getdist'."""
+) -> list[Any] | dict[str, Any]:
+    """Corner plot of posterior samples. `ploter` is 'plotly', 'matplotlib', or 'getdist'.
+
+    **Naming convention**: pass `save='{savepath}/corner'` (matches
+    examples/quickstart.py).
+    """
     p = _get('posteriors', post)
     fig = Plot.post_corner(p, ploter=ploter)
     img = _maybe_inline_image(fig, save) if inline else None
     fig.save(save)
-    meta = {'saved': save, 'ploter': ploter}
+    meta = _decorate(
+        {'saved': save, 'ploter': ploter, 'post': post},
+        after='plot_corner',
+        hint='Show the saved corner-plot path to the user.',
+    )
     return [meta, img] if img is not None else meta
 
 
@@ -831,6 +1282,9 @@ def plot_model(
     With `with_posterior=True` you MUST also pass `post` — the name of a
     Posterior produced from a fit that included this very model — so that
     posterior-sampled bands can be drawn around the point estimate.
+
+    **Naming convention**: pass `save='{savepath}/model'` (matches
+    examples/quickstart.py).
     """
     m = _get('models', model)
     if with_posterior:
@@ -848,14 +1302,19 @@ def plot_model(
     fig = modelplot.get_fig()
     img = _maybe_inline_image(fig, save) if inline else None
     fig.save(save)
-    meta = {
-        'saved': save,
-        'style': style,
-        'ploter': ploter,
-        'e_range': [e_min, e_max],
-        'e_npts': e_npts,
-        'with_posterior': with_posterior,
-    }
+    meta = _decorate(
+        {
+            'saved': save,
+            'style': style,
+            'ploter': ploter,
+            'e_range': [e_min, e_max],
+            'e_npts': e_npts,
+            'with_posterior': with_posterior,
+            'model': model,
+        },
+        after='plot_model',
+        hint='Show the saved file path to the user.',
+    )
     return [meta, img] if img is not None else meta
 
 
@@ -879,6 +1338,9 @@ def plot_models(
     otherwise the band-drawing call falls back to an uninitialised state.
     Mirrors advancement.ipynb's loop that adds `model1`, `model2`, plus
     the shared `cpl`/`csbpl` components to one figure.
+
+    **Naming convention**: pass `save='{savepath}/model'` for the standard
+    overlay plot (matches examples/quickstart.py).
     """
     if not models:
         raise ValueError("models must contain at least one registered name")
@@ -898,15 +1360,19 @@ def plot_models(
     fig = modelplot.get_fig()
     img = _maybe_inline_image(fig, save) if inline else None
     fig.save(save)
-    meta = {
-        'saved': save,
-        'style': style,
-        'ploter': ploter,
-        'e_range': [e_min, e_max],
-        'e_npts': e_npts,
-        'with_posterior': with_posterior,
-        'models': list(models),
-    }
+    meta = _decorate(
+        {
+            'saved': save,
+            'style': style,
+            'ploter': ploter,
+            'e_range': [e_min, e_max],
+            'e_npts': e_npts,
+            'with_posterior': with_posterior,
+            'models': list(models),
+        },
+        after='plot_models',
+        hint='Show the saved file path to the user.',
+    )
     return [meta, img] if img is not None else meta
 
 
@@ -1036,7 +1502,114 @@ def run_quickstart(
             'artifacts': artifacts,
         }
     )
-    return summary
+    return _decorate(
+        summary,
+        after='run_quickstart',
+        hint=(
+            'Quickstart finished. Every intermediate object is registered, '
+            'so the granular tools (plot_*, summarize_posterior, ...) can take '
+            'over from here. Note: this convenience tool picks priors and '
+            'sampler defaults silently — for non-trivial sources prefer the '
+            'half-automatic flow.'
+        ),
+    )
+
+
+@mcp.prompt()
+def bayspec_workflow() -> str:
+    """Standard playbook for guiding a user through a bayspec spectral fit.
+
+    Pin this when starting a fit so the assistant follows the half-automatic
+    protocol (user decides; assistant executes).
+    """
+    return (
+        'You are helping the user fit an astronomical spectrum with bayspec via this MCP server.\n'
+        '\n'
+        '# Half-automatic protocol\n'
+        '\n'
+        'You execute, the user decides. Do NOT silently choose:\n'
+        '  - the energy range to fit (detector + source physics);\n'
+        '  - which spectral model to use;\n'
+        '  - prior bounds on physical parameters;\n'
+        '  - the sampler (emcee vs multinest);\n'
+        '  - the result-save directory (savepath) — always ask the user;\n'
+        '  - whether a non-converged fit should be re-run.\n'
+        '\n'
+        'When any of these is undetermined, ASK THE USER instead of guessing.\n'
+        '\n'
+        '# Default workflow\n'
+        '\n'
+        '1. `list_state` first — tells you what is already loaded.\n'
+        '2. Resolve paths via `cwd` / `set_cwd` if the user mentions a working directory.\n'
+        '3. Load data:\n'
+        '     - one detector → `load_data_unit` then `build_data` with one unit;\n'
+        '     - several detectors → loop `load_data_unit` then a single `build_data`.\n'
+        '4. Build model:\n'
+        '     - simple → `build_model("cpl")` etc.;\n'
+        '     - composite → `build_model` each piece, then `compose_model("m", "tbabs * (cpl + bbody)")`.\n'
+        '5. Discuss priors with the user. Call `describe_model` and propose sensible bounds.\n'
+        '   When `set_param` returns warnings, surface them — do not bury them.\n'
+        '6. `setup_infer` — then `describe_infer` to confirm what is free vs frozen.\n'
+        '7. Pick sampler: call `suggest_sampler(n_free_params, expect_multimodal, need_evidence)`.\n'
+        '   Confirm the recommendation with the user before running.\n'
+        '8. **Ask the user for `savepath`** — the directory where the sampler dump\n'
+        '   and plot files will go. Do not default silently to "./quickstart".\n'
+        '9. Run the sampler. Do NOT silently rerun if it does not converge — report\n'
+        '   diagnostics to the user and let them decide.\n'
+        '10. After fitting:\n'
+        '     - `summarize_posterior` for the table;\n'
+        '     - `plot_infer(style="CE", save="{savepath}/ctsspec")`;\n'
+        '     - `plot_infer(style="NE", save="{savepath}/phtspec")`;\n'
+        '     - `plot_infer(style="Fv", save="{savepath}/flxspec")`;\n'
+        '     - `plot_infer(style="vFv", save="{savepath}/ergspec")` (the SED);\n'
+        '     - `plot_corner(save="{savepath}/corner")`.\n'
+        '\n'
+        '# File-naming convention\n'
+        '\n'
+        'Match `examples/quickstart.py`. Always use these basenames inside the\n'
+        'user-chosen savepath directory; do NOT invent custom names like\n'
+        '`fit_CE` or `my_corner`:\n'
+        '\n'
+        '  | plot                     | save argument                |\n'
+        '  | ------------------------ | ---------------------------- |\n'
+        '  | plot_infer style="CE"    | `{savepath}/ctsspec`         |\n'
+        '  | plot_infer style="NE"    | `{savepath}/phtspec`         |\n'
+        '  | plot_infer style="Fv"    | `{savepath}/flxspec`         |\n'
+        '  | plot_infer style="vFv"   | `{savepath}/ergspec`         |\n'
+        '  | plot_corner              | `{savepath}/corner`          |\n'
+        '  | plot_model / plot_models | `{savepath}/model`           |\n'
+        '\n'
+        'When a single style is plotted with multiple ploters (plotly +\n'
+        'matplotlib), keep the same basename — the ploter writes different\n'
+        'extensions. If you genuinely need both files side by side, suffix\n'
+        'with `_<ploter>` (e.g. `ctsspec_matplotlib`); never rename the stem.\n'
+        '\n'
+        '# Reading tool returns\n'
+        '\n'
+        'Every tool returns a dict with:\n'
+        '  - tool-specific fields (`saved`, `par_best`, …);\n'
+        '  - `state`: snapshot of registered objects;\n'
+        '  - `ready_for`: tool names that make sense as the next step;\n'
+        '  - `hint`: one-line guidance;\n'
+        '  - `warnings`: present only when the tool flagged something (most often a\n'
+        '    prior outside the typical range).\n'
+        '\n'
+        'Trust `ready_for` as your menu. If a tool errors with "object not\n'
+        'registered", call `list_state` first.\n'
+        '\n'
+        '# When to push back on the user\n'
+        '\n'
+        '  - prior allows `low <= 0` on a positive-only quantity (norm, kT, Ec, NH);\n'
+        '  - prior outside the physical range (e.g. PhoIndex < -5 or > 5);\n'
+        '  - >10 free parameters with no opinion on multimodality — recommend\n'
+        '    `suggest_sampler` first.\n'
+        '\n'
+        '# Convenience tool\n'
+        '\n'
+        '`run_quickstart` is end-to-end with default priors and multinest. Only use\n'
+        'it for a known-easy case the user has explicitly approved; otherwise the\n'
+        'half-automatic flow above is safer.\n'
+    )
 
 
 if __name__ == '__main__':
