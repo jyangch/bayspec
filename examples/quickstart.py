@@ -66,7 +66,7 @@ fig.save(f'{savepath}/ergspec')
 fig = Plot.post_corner(post, ploter='plotly')
 fig.save(f'{savepath}/corner')
 
-fig = Plot.post_corner(post, ploter='getdist')
+fig = Plot.post_corner(post, ploter='cornerpy')
 fig.save(f'{savepath}/corner')
 
 earr = np.logspace(1, 3, 100)

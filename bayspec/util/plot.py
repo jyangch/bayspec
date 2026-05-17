@@ -1750,7 +1750,7 @@ class Figure:
 
         if self.plotter == 'plotly':
             self.fig.write_html(f'{fname}.html', include_plotlyjs='cdn')
-            self.fig.write_image(f'{fname}.pdf')
+            # self.fig.write_image(f'{fname}.pdf')
         elif self.plotter == 'matplotlib' or self.plotter == 'cornerpy':
             self.fig.savefig(f'{fname}.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
             plt.close(self.fig)
