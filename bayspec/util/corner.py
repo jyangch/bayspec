@@ -241,21 +241,6 @@ def plot_hist2d(
         ]
     )
 
-    max_z = float(H2.max()) or 1.0
-    low_frac = float(min(V)) / max_z
-    colorscale = [
-        [0.0, 'rgba(255,255,255,0)'],
-        [max(low_frac * 0.999, 1e-6), 'rgba(255,255,255,0)'],
-        [low_frac, 'rgb(222,235,247)'],
-        [low_frac + (1 - low_frac) * 0.125, 'rgb(198,219,239)'],
-        [low_frac + (1 - low_frac) * 0.250, 'rgb(158,202,225)'],
-        [low_frac + (1 - low_frac) * 0.375, 'rgb(107,174,214)'],
-        [low_frac + (1 - low_frac) * 0.500, 'rgb(66,146,198)'],
-        [low_frac + (1 - low_frac) * 0.625, 'rgb(33,113,181)'],
-        [low_frac + (1 - low_frac) * 0.750, 'rgb(8,81,156)'],
-        [1.0, 'rgb(8,48,107)'],
-    ]
-
     fig.add_trace(
         go.Contour(
             z=H2.T,
@@ -265,7 +250,7 @@ def plot_hist2d(
             showlegend=False,
             contours=dict(start=min(V), end=max(V), size=max(V) - min(V) if max(V) > min(V) else 1),
             ncontours=len(V),
-            colorscale=colorscale,
+            colorscale='Blues',
             line=dict(width=2),
             showscale=False,
         ),
