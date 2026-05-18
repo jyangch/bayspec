@@ -7,6 +7,8 @@ control how the model participates in composition and fitting.
 
 from collections import OrderedDict
 
+import numpy as np
+
 from ...util.param import Cfg, Par
 from ...util.prior import unif
 from ..model import Model
@@ -25,7 +27,7 @@ class user(Model):
 
         # +++++++editable area+++++++
         self.expr = 'model'
-        self.type = 'add'  # 'add' | 'mul' | 'tinv' | 'math'
+        self.type = 'add'  # 'add' | 'mul' | 'math'
         self.comment = 'user-defined model'
         # +++++++editable area+++++++
 
@@ -36,7 +38,8 @@ class user(Model):
 
         self.params = OrderedDict()
         # +++++++editable area+++++++
-        self.params['p1'] = Par(1, unif(0, 2))
+        self.params['norm'] = Par(1.0, unif(-5, 5))
+        self.params['index'] = Par(-2.0, unif(-5, 0))
         # +++++++editable area+++++++
 
     def func(self, E, T=None, O=None):  # noqa: E741
@@ -57,14 +60,20 @@ class user(Model):
         # +++++++editable area+++++++
 
         # +++++++editable area+++++++
-        p1 = self.params['p1'].value
+        norm = self.params['norm'].value
+        index = self.params['index'].value
         # +++++++editable area+++++++
+
+        E = np.asarray(E)
+        scalar = E.ndim == 0
+        if scalar:
+            E = E[np.newaxis]
 
         zi = 1 + redshift
         E = E * zi
 
         # +++++++editable area+++++++
-        phtspec = E**p1 + T
+        phtspec = 10**norm * E**index
         # +++++++editable area+++++++
 
-        return phtspec
+        return phtspec[0] if scalar else phtspec
