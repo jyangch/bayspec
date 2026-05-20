@@ -35,9 +35,9 @@ To utilize models from [`Xspec`](https://heasarc.gsfc.nasa.gov/xanadu/xspec/manu
 
 ## BaySpec App
 
-[_BaySpec App_](https://github.com/jyangch/bayspec_app) provides an easy-to-use web application implemented using [`streamlit`](https://streamlit.io/).
+[_BaySpec App_](https://github.com/jyangch/bayspec_app) is a browser front-end for this library — a FastAPI + HTMX web workbench for loading OGIP spectra, composing models, and running Bayesian inference without notebook glue.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://bayspec.streamlit.app)
+[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-sm.svg)](https://huggingface.co/spaces/jyangch/bayspec)
 
 
 ## Documentation
