@@ -21,8 +21,14 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinxcontrib.rawfiles',
     'sphinx_copybutton',
+    'sphinx_reredirects',
     'myst_nb',
 ]
+
+# Page redirects for URLs that used to exist but were removed.
+redirects = {
+    'tutorials.videodemo': 'tutorials.html',
+}
 
 autodoc_mock_imports = ['xspec_models_cxc']
 autodoc_member_order = 'bysource'

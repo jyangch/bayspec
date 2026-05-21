@@ -3,4 +3,5 @@ nbsphinx
 myst-nb
 sphinxcontrib-rawfiles
 sphinx-copybutton
+sphinx-reredirects
 furo
