@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 52" role="img" aria-label="bayspec">
+  <defs>
+    <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+    <linearGradient id="logo-wordmark" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4F46E5"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="2" y="2" width="48" height="48" rx="12" fill="url(#logo-grad)"/>
+
+  <g transform="rotate(-18, 33, 14)">
+    <ellipse cx="33" cy="14" rx="10" ry="8"   fill="#FFF" opacity="0.18"/>
+    <ellipse cx="33" cy="14" rx="7"  ry="5.5" fill="#FFF" opacity="0.32"/>
+    <ellipse cx="33" cy="14" rx="4"  ry="3"   fill="#FFF" opacity="0.58"/>
+  </g>
+  <circle cx="33" cy="14" r="1.7" fill="#FFF"/>
+
+  <path d="M 24 44 L 24 41 C 28 39, 30 31, 32 31
+           C 35 31, 37 37, 40 40 L 40 44 Z"
+        fill="#FFF" opacity="0.10"/>
+
+  <path d="M 5 44 L 5 41 C 8 39, 13 29, 17 29
+           C 22 28, 30 37, 44 40 L 44 44 Z"
+        fill="#FFF" opacity="0.18"/>
+
+  <path d="M 5 41 C 8 39, 13 29, 17 29 C 22 28, 30 37, 44 40"
+        stroke="#FFF" stroke-width="1.4" fill="none"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <circle cx="10" cy="36" r="1.1" fill="#FFF"/>
+  <circle cx="17" cy="29" r="1.5" fill="#FFF"/>
+  <circle cx="32" cy="36" r="1.1" fill="#FFF"/>
+
+  <line x1="3"  y1="44" x2="5"  y2="44"
+        stroke="#FFF" stroke-opacity="0.22" stroke-width="0.7"
+        stroke-linecap="round"/>
+  <line x1="44" y1="44" x2="47" y2="44"
+        stroke="#FFF" stroke-opacity="0.22" stroke-width="0.7"
+        stroke-linecap="round"/>
+
+  <text x="62" y="35"
+        font-family="Inter, system-ui, sans-serif"
+        font-size="26" font-weight="800"
+        fill="url(#logo-wordmark)" letter-spacing="-0.8">BaySpec</text>
+</svg>
