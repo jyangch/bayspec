@@ -17,7 +17,7 @@
 
 ---
 
-`bayspec` is a Python library for Bayesian inference on high-energy
+`BaySpec` is a Python library for Bayesian inference on high-energy
 astrophysical spectra. It pairs MCMC and nested-sampling backends with
 multi-spectrum, multi-model fitting machinery, reads OGIP FITS data out
 of the box, and bridges to local, [`astromodels`](https://astromodels.readthedocs.io/),
@@ -55,7 +55,7 @@ model libraries.
 
 ## Installation
 
-`bayspec` is available on PyPI:
+`BaySpec` is available on PyPI:
 
 ```bash
 pip install bayspec
@@ -106,5 +106,5 @@ for typical workflows end to end.
 
 ## License
 
-`bayspec` is distributed under the
+`BaySpec` is distributed under the
 [GPL-3.0](https://www.gnu.org/licenses/gpl-3.0-standalone.html) license.
