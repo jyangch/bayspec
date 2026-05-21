@@ -1,8 +1,7 @@
 Tutorials
-==================
+=========
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
 
-   tutorials.quickstart.rst
-   tutorials.videodemo.rst
+   tutorials.quickstart

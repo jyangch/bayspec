@@ -1,14 +1,13 @@
-A Quick Start Tutorial
-======================
+Quickstart
+==========
 
-This tutorial offers a quick-start guide for using *BaySpec* to fit a
-spectral model to gamma-ray data. It can be broadly divided into the
-following three sections:
+A short walk-through of fitting a gamma-ray spectrum with *BaySpec*.
+It covers the three stages of a typical session:
 
-- Data: The spectra from Fermi/GBM’s NaI detector and BGO detector.
-- Model: A simple cutoff power-law function.
-- Fitting: Bayesian inference implemented using *multinest* (or
-  *emcee*).
+- **Data** — joint spectra from Fermi/GBM's NaI and BGO detectors.
+- **Model** — a cutoff power-law (``cpl``).
+- **Inference** — Bayesian posterior sampling via ``multinest``
+  (``emcee`` works as a drop-in replacement).
 
 .. code:: ipython3
 
@@ -21,6 +20,7 @@ following three sections:
     savepath = 'quickstart'
 
 1. Load spectra and response data.
+
 
 .. code:: ipython3
 
@@ -96,7 +96,7 @@ following three sections:
 
 
 
-2.Define spectral model.
+2. Define the spectral model.
 
 .. code:: ipython3
 
@@ -148,7 +148,7 @@ following three sections:
 
 
 
-3.Run Bayesian inference.
+3. Run Bayesian inference.
 
 .. code:: ipython3
 

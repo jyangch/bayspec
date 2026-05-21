@@ -49,3 +49,29 @@ table.my-table tbody tr:nth-child(odd) td {
 table.my-table tbody tr:hover td {
     background: var(--color-background-hover, rgba(127, 127, 127, 0.12));
 }
+
+
+/* Brand-gradient H1 — mirrors the BaySpec logo wordmark. */
+.content h1 {
+    background: linear-gradient(90deg, #4F46E5 0%, #06B6D4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+}
+
+
+/* Announcement banner — readable on the dark Furo announcement strip. */
+.announcement {
+    background: linear-gradient(90deg, #4F46E5 0%, #06B6D4 100%);
+    color: #fff;
+}
+.announcement a {
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.announcement a:hover {
+    color: #fff;
+    text-decoration-thickness: 2px;
+}

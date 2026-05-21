@@ -43,6 +43,7 @@ exclude_patterns = []
 
 html_theme = 'furo'
 html_title = f'BaySpec {release}'
+html_logo = '_static/logo.svg'
 html_static_path = ['_static']
 html_extra_path = ['_static']
 html_css_files = ['custom.css']
@@ -53,14 +54,20 @@ pygments_dark_style = 'monokai'
 html_theme_options = {
     'navigation_with_keys': True,
     'top_of_page_buttons': ['view', 'edit'],
+    'sidebar_hide_name': True,
+    'announcement': (
+        '<a href="https://huggingface.co/spaces/jyangch/bayspec">'
+        'BaySpec App is live on Hugging Face Spaces &mdash; try it in your browser'
+        '</a>'
+    ),
     'light_css_variables': {
-        'color-brand-primary': '#1a3a6e',
-        'color-brand-content': '#1f5fb3',
+        'color-brand-primary': '#4F46E5',
+        'color-brand-content': '#06B6D4',
         'color-code-background': '#f5f5f5',
     },
     'dark_css_variables': {
-        'color-brand-primary': '#7fb3ff',
-        'color-brand-content': '#7fb3ff',
+        'color-brand-primary': '#818CF8',
+        'color-brand-content': '#22D3EE',
         'color-code-background': '#1e1e1e',
     },
 }
