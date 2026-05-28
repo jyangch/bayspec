@@ -145,6 +145,12 @@ class Post:
 
         return self.interval(99.73 / 100)
 
+    @property
+    def ninety_percent(self):
+        """90% central credible interval."""
+
+        return self.interval(0.9)
+
     def error(self, par, q=0.6827):
         """Return the asymmetric errors of ``par`` against the ``q``-interval.
 
@@ -171,5 +177,8 @@ class Post:
                 ('median', self.median),
                 ('best', self.best),
                 ('Isigma', self.Isigma),
+                ('IIsigma', self.IIsigma),
+                ('IIIsigma', self.IIIsigma),
+                ('90%', self.ninety_percent),
             ]
         )

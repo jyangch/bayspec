@@ -1077,6 +1077,9 @@ class Model:
         q = 99.73 / 100
         IIIsigma = np.quantile(sample, [0.5 - q / 2, 0.5 + q / 2], axis=0)
 
+        q = 90 / 100
+        ninety_percent = np.quantile(sample, [0.5 - q / 2, 0.5 + q / 2], axis=0)
+
         return dict(
             [
                 ('mean', mean),
@@ -1084,6 +1087,7 @@ class Model:
                 ('Isigma', Isigma),
                 ('IIsigma', IIsigma),
                 ('IIIsigma', IIIsigma),
+                ('90%', ninety_percent),
             ]
         )
 

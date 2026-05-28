@@ -147,6 +147,9 @@ class SampleAnalyzer(Infer):
         q = 99.73 / 100
         IIIsigma = np.quantile(self.param_sample, [0.5 - q / 2, 0.5 + q / 2], axis=0)
 
+        q = 90 / 100
+        ninety_percent = np.quantile(self.param_sample, [0.5 - q / 2, 0.5 + q / 2], axis=0)
+
         return dict(
             [
                 ('mean', mean),
@@ -154,6 +157,7 @@ class SampleAnalyzer(Infer):
                 ('Isigma', Isigma),
                 ('IIsigma', IIsigma),
                 ('IIIsigma', IIIsigma),
+                ('90%', ninety_percent),
             ]
         )
 
@@ -218,6 +222,12 @@ class SampleAnalyzer(Infer):
         """Per-parameter three-sigma credible interval."""
 
         return [par.post.IIIsigma for par in self.free_par.values()]
+
+    @property
+    def par_ninety_percent(self):
+        """Per-parameter 90% credible interval."""
+
+        return [par.post.ninety_percent for par in self.free_par.values()]
 
     def par_error(self, par, q=0.6827):
         """Per-parameter asymmetric errors of ``par`` against the ``q``-interval.
@@ -293,6 +303,9 @@ class SampleAnalyzer(Infer):
         free_params['Best'] = [par for par in self.par_best]
         free_params['1sigma Best'] = [par for par in self.par_best_ci]
         free_params['1sigma CI'] = ['[{:.3f}, {:.3f}]'.format(*tuple(ci)) for ci in self.par_Isigma]
+        free_params['90% CI'] = [
+            '[{:.3f}, {:.3f}]'.format(*tuple(ci)) for ci in self.par_ninety_percent
+        ]
 
         return Info.from_dict(free_params)
 
