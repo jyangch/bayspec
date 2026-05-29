@@ -1257,7 +1257,12 @@ class bb(Additive):
         zi = 1 + redshift
         E = E * zi
 
-        phtspec = Amp * 8.0525 * E**2 / (kT**4 * (np.exp(E / kT) - 1))
+        # Use the identity 1/(exp(x) - 1) = exp(-x)/(1 - exp(-x)) so the
+        # exponential only ever sees a non-positive argument: exp(-x) safely
+        # underflows to 0 for large x instead of overflowing, while -expm1(-x)
+        # keeps the small-x limit numerically stable.
+        x = E / kT
+        phtspec = Amp * 8.0525 * E**2 / kT**4 * np.exp(-x) / (-np.expm1(-x))
 
         return phtspec[0] if scalar else phtspec
 

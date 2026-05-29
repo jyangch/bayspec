@@ -1048,13 +1048,21 @@ class BayesInfer(Infer):
             sys.stderr.write(f'ERROR in loglikelihood: {e}\n')
             sys.exit(1)
 
-    def multinest(self, nlive=500, resume=True, verbose=False, savepath='./', random_seed=None):
+    def multinest(
+        self, nlive=500, resume=True, verbose=False, max_iter=None, savepath='./', random_seed=None
+    ):
         """Run MultiNest and return a :class:`Posterior` wrapping the result.
 
         Args:
             nlive: Number of live points.
             resume: Resume from any chain already present under ``savepath``.
             verbose: Forward MultiNest's verbose flag.
+            max_iter: Hard cap on nested-sampling iterations, a backstop
+                against runs that never reach the evidence tolerance (e.g.
+                likelihood plateaus). ``None`` (default) caps at
+                ``nlive * 200``, well above the ``~nlive * H`` a normal run
+                needs, so it never clips genuine convergence. A run that hits
+                this cap has not converged; its result is unreliable.
             savepath: Directory for MultiNest outputs and cached samples.
             random_seed: Seed forwarded to MultiNest for reproducible runs.
                 ``None`` (default) lets MultiNest pick a system-time seed,
@@ -1072,6 +1080,8 @@ class BayesInfer(Infer):
 
         self._you_free()
 
+        max_iter = nlive * 200 if max_iter is None else int(max_iter)
+
         savepath_prefix = savepath + '/1-'
 
         if not os.path.exists(savepath):
@@ -1085,9 +1095,10 @@ class BayesInfer(Infer):
             verbose=verbose,
             n_live_points=nlive,
             outputfiles_basename=savepath_prefix,
-            sampling_efficiency=0.8,
+            sampling_efficiency=0.3,
             importance_nested_sampling=True,
-            multimodal=True,
+            multimodal=False,
+            max_iter=max_iter,
             seed=-1 if random_seed is None else int(random_seed),
         )
 
