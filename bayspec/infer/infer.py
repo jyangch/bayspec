@@ -1102,6 +1102,18 @@ class BayesInfer(Infer):
             seed=-1 if random_seed is None else int(random_seed),
         )
 
+        if os.path.exists(savepath_prefix + 'ev.dat'):
+            with open(savepath_prefix + 'ev.dat') as f:
+                niter = sum(1 for _ in f)
+            if niter >= max_iter:
+                msg = f'MultiNest stopped at the max_iter cap ({max_iter} iterations) \
+                    without reaching the evidence tolerance: the posterior and evidence \
+                    are unreliable. Check for likelihood plateaus or overly wide priors, \
+                    or rerun with a larger max_iter.'
+                warnings.warn(msg, stacklevel=2)
+                with open(savepath_prefix + 'max_iter_warning.txt', 'w') as f:
+                    f.write(msg + '\n')
+
         multinest_analyzer = pymultinest.Analyzer(
             outputfiles_basename=savepath_prefix, n_params=self.free_nparams
         )
