@@ -1060,7 +1060,7 @@ class BayesInfer(Infer):
             max_iter: Hard cap on nested-sampling iterations, a backstop
                 against runs that never reach the evidence tolerance (e.g.
                 likelihood plateaus). ``None`` (default) caps at
-                ``nlive * 200``, well above the ``~nlive * H`` a normal run
+                ``nlive * 50``, well above the ``~nlive * H`` a normal run
                 needs, so it never clips genuine convergence. A run that hits
                 this cap has not converged; its result is unreliable.
             savepath: Directory for MultiNest outputs and cached samples.
@@ -1080,7 +1080,7 @@ class BayesInfer(Infer):
 
         self._you_free()
 
-        max_iter = nlive * 200 if max_iter is None else int(max_iter)
+        max_iter = nlive * 50 if max_iter is None else int(max_iter)
 
         savepath_prefix = savepath + '/1-'
 
