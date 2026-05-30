@@ -1034,13 +1034,13 @@ class BayesInfer(Infer):
             sys.exit(1)
 
     def multinest_safe_calc_loglike(self, cube, ndim, nparams, lnew):
-        """MultiNest C-callback log-likelihood; returns ``-1e100`` when non-finite."""
+        """MultiNest C-callback log-likelihood; returns ``-2e100`` when non-finite."""
 
         try:
             cube_arr = np.array([cube[i] for i in range(ndim)])
             ll = float(self.multinest_calc_loglike(cube_arr))
             if not np.isfinite(ll):
-                return -1e100
+                return -2e100
             return ll
         except Exception as e:
             import sys
@@ -1049,7 +1049,14 @@ class BayesInfer(Infer):
             sys.exit(1)
 
     def multinest(
-        self, nlive=500, resume=True, verbose=False, max_iter=None, savepath='./', random_seed=None
+        self,
+        nlive=500,
+        resume=True,
+        verbose=False,
+        max_iter=None,
+        ins=True,
+        savepath='./',
+        random_seed=None,
     ):
         """Run MultiNest and return a :class:`Posterior` wrapping the result.
 
@@ -1063,6 +1070,12 @@ class BayesInfer(Infer):
                 ``nlive * 50``, well above the ``~nlive * H`` a normal run
                 needs, so it never clips genuine convergence. A run that hits
                 this cap has not converged; its result is unreliable.
+            ins: Enable INS for a more accurate evidence. ``True``
+                (default) suits most fits, but INS weights can underflow
+                when the posterior rails against a hard prior boundary,
+                yielding a NaN/subnormal evidence that corrupts
+                ``stats.dat``. Set ``False`` for such boundary-pinned fits
+                to fall back to the robust plain nested-sampling evidence.
             savepath: Directory for MultiNest outputs and cached samples.
             random_seed: Seed forwarded to MultiNest for reproducible runs.
                 ``None`` (default) lets MultiNest pick a system-time seed,
@@ -1096,20 +1109,24 @@ class BayesInfer(Infer):
             n_live_points=nlive,
             outputfiles_basename=savepath_prefix,
             sampling_efficiency=0.3,
-            importance_nested_sampling=True,
+            importance_nested_sampling=ins,
             multimodal=False,
             max_iter=max_iter,
             seed=-1 if random_seed is None else int(random_seed),
         )
 
+        capped = False
         if os.path.exists(savepath_prefix + 'ev.dat'):
             with open(savepath_prefix + 'ev.dat') as f:
                 niter = sum(1 for _ in f)
             if niter >= max_iter:
-                msg = f'MultiNest stopped at the max_iter cap ({max_iter} iterations) \
-                    without reaching the evidence tolerance: the posterior and evidence \
-                    are unreliable. Check for likelihood plateaus or overly wide priors, \
-                    or rerun with a larger max_iter.'
+                capped = True
+                msg = (
+                    f'MultiNest stopped at the max_iter cap ({max_iter} iterations) '
+                    'without reaching the evidence tolerance: the posterior and '
+                    'evidence are unreliable. Check for likelihood plateaus or overly '
+                    'wide priors, or rerun with a larger max_iter.'
+                )
                 warnings.warn(msg, stacklevel=2)
                 with open(savepath_prefix + 'max_iter_warning.txt', 'w') as f:
                     f.write(msg + '\n')
@@ -1118,7 +1135,16 @@ class BayesInfer(Infer):
             outputfiles_basename=savepath_prefix, n_params=self.free_nparams
         )
 
-        posterior_stats = multinest_analyzer.get_stats()
+        try:
+            posterior_stats = multinest_analyzer.get_stats()
+        except ValueError as e:
+            raise RuntimeError(
+                f'pymultinest could not parse the MultiNest stats file ({e}). This '
+                f'usually means the run did not converge and the posterior collapsed '
+                f'onto a prior boundary. '
+                + (f'The max_iter cap ({max_iter}) was also hit. ' if capped else '')
+                + 'Inspect the model and priors for this dataset.'
+            ) from e
 
         if (not resume) or (not os.path.exists(savepath_prefix + 'posterior_sample.txt')):
             self.posterior_sample = multinest_analyzer.get_equal_weighted_posterior()
@@ -1129,7 +1155,10 @@ class BayesInfer(Infer):
         else:
             self.posterior_sample = np.loadtxt(savepath_prefix + 'posterior_sample.txt')
 
-        self.logevidence = posterior_stats['nested importance sampling global log-evidence']
+        if ins:
+            self.logevidence = posterior_stats['nested importance sampling global log-evidence']
+        else:
+            self.logevidence = posterior_stats['nested sampling global log-evidence']
 
         with open(savepath_prefix + 'nlive.json', 'w') as f:
             json.dump(nlive, f, indent=4, cls=JsonEncoder)
