@@ -1048,6 +1048,27 @@ class BayesInfer(Infer):
             sys.stderr.write(f'ERROR in loglikelihood: {e}\n')
             sys.exit(1)
 
+    @staticmethod
+    def _read_ns_global_evidence(stats_file):
+        """Parse the plain NS global log-evidence value from a MultiNest stats file.
+
+        Args:
+            stats_file: Path to MultiNest's ``stats.dat``.
+
+        Returns:
+            The nested-sampling global log-evidence as a float, or ``None`` if the
+            line cannot be read. Used as a fallback when INS writes an unparseable
+            subnormal evidence that breaks ``get_stats``.
+        """
+
+        try:
+            with open(stats_file) as f:
+                line = f.readline()
+            value = line.split(':', 1)[1].split('+/-')[0]
+            return float(value)
+        except (OSError, IndexError, ValueError):
+            return None
+
     def multinest(
         self,
         nlive=500,
@@ -1138,13 +1159,34 @@ class BayesInfer(Infer):
         try:
             posterior_stats = multinest_analyzer.get_stats()
         except ValueError as e:
-            raise RuntimeError(
-                f'pymultinest could not parse the MultiNest stats file ({e}). This '
-                f'usually means the run did not converge and the posterior collapsed '
-                f'onto a prior boundary. '
-                + (f'The max_iter cap ({max_iter}) was also hit. ' if capped else '')
-                + 'Inspect the model and priors for this dataset.'
-            ) from e
+            # get_stats() chokes when INS writes a subnormal evidence without an
+            # exponent marker (e.g. ``0.19...-322``) into stats.dat: a sign the INS
+            # evidence is garbage from a posterior pinned to a prior boundary. The
+            # plain NS evidence is on a separate, well-formed line, so recover that
+            # and carry on rather than failing the whole run.
+            posterior_stats = None
+            self.logevidence = self._read_ns_global_evidence(savepath_prefix + 'stats.dat')
+            if self.logevidence is None:
+                raise RuntimeError(
+                    f'pymultinest could not parse the MultiNest stats file ({e}), and '
+                    f'the plain nested-sampling evidence was also unreadable. This '
+                    f'usually means the run did not converge and the posterior '
+                    f'collapsed onto a prior boundary. '
+                    + (f'The max_iter cap ({max_iter}) was also hit. ' if capped else '')
+                    + 'Inspect the model and priors for this dataset.'
+                ) from e
+            warnings.warn(
+                'INS evidence in stats.dat was unparseable (likely a boundary-pinned, '
+                'non-converged posterior); falling back to the plain nested-sampling '
+                'log-evidence.',
+                stacklevel=2,
+            )
+        else:
+            ins_logevidence = posterior_stats.get('nested importance sampling global log-evidence')
+            if ins and ins_logevidence is not None and np.isfinite(ins_logevidence):
+                self.logevidence = ins_logevidence
+            else:
+                self.logevidence = posterior_stats['nested sampling global log-evidence']
 
         if (not resume) or (not os.path.exists(savepath_prefix + 'posterior_sample.txt')):
             self.posterior_sample = multinest_analyzer.get_equal_weighted_posterior()
@@ -1155,20 +1197,16 @@ class BayesInfer(Infer):
         else:
             self.posterior_sample = np.loadtxt(savepath_prefix + 'posterior_sample.txt')
 
-        if ins:
-            self.logevidence = posterior_stats['nested importance sampling global log-evidence']
-        else:
-            self.logevidence = posterior_stats['nested sampling global log-evidence']
-
         with open(savepath_prefix + 'nlive.json', 'w') as f:
             json.dump(nlive, f, indent=4, cls=JsonEncoder)
-        with open(savepath_prefix + 'posterior_stats.json', 'w') as f:
-            json.dump(
-                posterior_stats,
-                f,
-                indent=4,
-                cls=JsonEncoder,
-            )
+        if posterior_stats is not None:
+            with open(savepath_prefix + 'posterior_stats.json', 'w') as f:
+                json.dump(
+                    posterior_stats,
+                    f,
+                    indent=4,
+                    cls=JsonEncoder,
+                )
 
         return Posterior(self)
 
