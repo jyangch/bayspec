@@ -11,6 +11,7 @@ returns a :class:`Figure`.
 
 from itertools import chain
 import sys
+import warnings
 
 import corner
 from getdist import MCSamples, plots
@@ -1218,6 +1219,25 @@ class Plot:
 
         data = cls.param_sample
         weights = np.ones(data.shape[0], dtype=float) / data.shape[0]
+
+        # A non-converged, boundary-pinned posterior can collapse to a near-delta
+        # cloud with fewer (distinct) samples than parameters, which corner/getdist
+        # cannot plot (they assert n_samples >= n_dims). Skip with a placeholder so
+        # a batch loop survives the bad fit instead of crashing on the plot.
+        nsample, ndim = data.shape
+        if nsample <= ndim or np.ptp(data, axis=0).max() == 0:
+            warnings.warn(
+                f'Posterior too degenerate to corner-plot ({nsample} samples for '
+                f'{ndim} parameters); the run likely did not converge. Returning a '
+                f'placeholder figure.',
+                stacklevel=2,
+            )
+            fig = plt.figure(figsize=(4, 4))
+            fig.text(0.5, 0.5, 'degenerate posterior\nno corner plot', ha='center', va='center')
+            # Tag as matplotlib (not the requested backend) so Figure.save uses
+            # fig.savefig: the placeholder is a plain matplotlib figure and has no
+            # plotly/getdist export method.
+            return Figure(fig, None, 'matplotlib')
 
         title_fmt = '$%.2f_{-%.2f}^{+%.2f}~(%.2f)$'
         plabels = cls.free_indexed_plabels
