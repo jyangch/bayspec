@@ -1334,8 +1334,10 @@ class MaxLikeFit(Infer):
             covar = np.asarray(covar, dtype=float)
 
         if covar is None or covar.shape != (ndim, ndim) or (not np.isfinite(covar).all()):
-            msg = 'Covariance matrix is not provided or invalid. \
-                Using diagonal covariance with variances from errors or zeros.'
+            msg = (
+                'Covariance matrix is not provided or invalid. '
+                'Using diagonal covariance with variances from errors or zeros.'
+            )
             warnings.warn(msg, stacklevel=2)
             err = np.zeros(ndim, dtype=float) if errors is None else np.asarray(errors, dtype=float)
             err = np.where(np.isfinite(err), np.abs(err), 0.0)
