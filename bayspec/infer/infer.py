@@ -767,7 +767,7 @@ class Infer:
     def loglike(self):
         """Summed log-likelihood across every pair."""
 
-        return np.sum([[pair.loglike for pair in self.Pair]])
+        return np.sum([pair.loglike for pair in self.Pair])
 
     @property
     def npoint_list(self):
@@ -779,7 +779,7 @@ class Infer:
     def npoint(self):
         """Total number of fitted data points across every pair."""
 
-        return np.sum([[pair.npoint for pair in self.Pair]])
+        return np.sum([pair.npoint for pair in self.Pair])
 
     @property
     def dof(self):
