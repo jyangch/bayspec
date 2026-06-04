@@ -152,16 +152,16 @@ class Infer:
         self._you_free()
 
     @property
+    def cdicts(self):
+        """Mapping from every model expression to its ``cdicts`` dictionary."""
+
+        return OrderedDict([(md.expr, md.cdicts) for md in self.Model + self.Data])
+
+    @property
     def pdicts(self):
         """Mapping from every model/data expression to its ``pdicts`` dictionary."""
 
         return OrderedDict([(md.expr, md.pdicts) for md in (self.Model + self.Data)])
-
-    @property
-    def cdicts(self):
-        """Mapping from every model expression to its ``cdicts`` dictionary."""
-
-        return OrderedDict([(mo.expr, mo.cdicts) for mo in self.Model])
 
     @property
     def cfg(self):
@@ -170,8 +170,8 @@ class Infer:
         cid = 0
         cfg = SuperDict()
 
-        for mo in self.Model:
-            for config in mo.cdicts.values():
+        for md in self.Model + self.Data:
+            for config in md.cdicts.values():
                 for cg in config.values():
                     cid += 1
                     cfg[str(cid)] = cg
