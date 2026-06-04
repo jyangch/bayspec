@@ -155,7 +155,7 @@ class Infer:
     def cdicts(self):
         """Mapping from every model expression to its ``cdicts`` dictionary."""
 
-        return OrderedDict([(md.expr, md.cdicts) for md in self.Model + self.Data])
+        return OrderedDict([(md.expr, md.cdicts) for md in (self.Model + self.Data)])
 
     @property
     def pdicts(self):
