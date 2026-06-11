@@ -967,9 +967,6 @@ class Plot:
             else:
                 raise ValueError(f'unsupported at_par argument: {at_par}')
 
-        if isinstance(cls, Bootstrap):
-            cls.at_par(cls.par_truth)
-
         if ploter == 'plotly':
             fig = make_subplots(
                 rows=2,
