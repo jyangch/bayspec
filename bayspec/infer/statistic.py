@@ -41,8 +41,13 @@ def _gstat_core(S, B, m, ts, tb, sigma_S, sigma_B):
         sigma = np.sqrt(sigma_S[i] * sigma_S[i] + sigma_bi * sigma_bi)
         di = S[i] - bi
         mi = m[i] * ts
-        z = (di - mi) / sigma
-        logli = -0.5 * z * z
+        delta = di - mi
+
+        if sigma != 0.0:
+            z = delta / sigma
+            logli = -0.5 * z * z
+        else:
+            logli = 0.0 if delta == 0.0 else -np.inf
 
         stati = -2.0 * logli
         stat += stati
@@ -118,7 +123,10 @@ def _ppstat_core(S, B, m, ts, tb):
         cc = -bi * mi
         dd = np.sqrt(bb * bb - 4.0 * aa * cc)
 
-        b = -2.0 * cc / (bb + dd) if bb >= 0.0 else -(bb - dd) / (2.0 * aa)
+        if bb >= 0.0:
+            b = 0.0 if (bb + dd) == 0.0 else -2.0 * cc / (bb + dd)
+        else:
+            b = -(bb - dd) / (2.0 * aa)
 
         mu_s = ts * (b + mi)
         mu_b = tb * b
@@ -187,7 +195,7 @@ def _pgstat_core(S, B, m, ts, tb, sigma_B):
         qq = -0.5 * (bb + sgn * dd)
 
         b1 = qq / aa
-        b2 = cc / qq
+        b2 = cc / qq if qq != 0.0 else 0.0
         b = b1 if b1 > 0.0 else b2
 
         mu_s = ts * (b + mi)
@@ -202,8 +210,10 @@ def _pgstat_core(S, B, m, ts, tb, sigma_B):
 
         pois_logli = s_klogmu - mu_s - s_klogk + si
 
-        z = (bi - tb * b) / sigma
-        gauss_logli = -0.5 * z * z
+        gauss_logli = 0.0
+        if sigma != 0.0:
+            z = (bi - tb * b) / sigma
+            gauss_logli = -0.5 * z * z
 
         logli = pois_logli + gauss_logli
         stati = -2.0 * logli
@@ -419,7 +429,11 @@ class Statistic:
         po = bb >= 0
         b = np.empty_like(B, dtype=np.float64)
 
-        b[po] = -2 * cc[po] / (bb[po] + dd[po])
+        denom = bb + dd
+        zero_denom = po & (denom == 0)
+        safe_po = po & ~zero_denom
+        b[zero_denom] = 0.0
+        b[safe_po] = -2 * cc[safe_po] / denom[safe_po]
         b[~po] = -(bb[~po] - dd[~po]) / (2 * aa)
 
         sign = np.sign(S / ts - B / tb - m)
@@ -451,7 +465,9 @@ class Statistic:
         qq = -0.5 * (bb + sign * dd)
 
         b1 = qq / aa
-        b2 = cc / qq
+        b2 = np.zeros_like(B, dtype=np.float64)
+        nonzero_qq = qq != 0
+        b2[nonzero_qq] = cc[nonzero_qq] / qq[nonzero_qq]
         b = np.where(b1 > 0, b1, b2)
 
         sign = np.sign(S / ts - B / tb - m)
