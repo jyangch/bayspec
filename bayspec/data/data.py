@@ -381,7 +381,7 @@ class Data:
     @cached_property()
     def src_counts_f64(self):
 
-        return [np.float64(unit.src_counts) for unit in self.data.values()]
+        return [np.asarray(unit.src_counts, dtype=np.float64) for unit in self.data.values()]
 
     @cached_property()
     def src_re_counts(self):
@@ -396,7 +396,7 @@ class Data:
     @cached_property()
     def src_errors_f64(self):
 
-        return [np.float64(unit.src_errors) for unit in self.data.values()]
+        return [np.asarray(unit.src_errors, dtype=np.float64) for unit in self.data.values()]
 
     @cached_property()
     def src_re_errors(self):
@@ -411,7 +411,7 @@ class Data:
     @cached_property()
     def bkg_counts_f64(self):
 
-        return [np.float64(unit.bkg_counts) for unit in self.data.values()]
+        return [np.asarray(unit.bkg_counts, dtype=np.float64) for unit in self.data.values()]
 
     @cached_property()
     def bkg_re_counts(self):
@@ -426,7 +426,7 @@ class Data:
     @cached_property()
     def bkg_errors_f64(self):
 
-        return [np.float64(unit.bkg_errors) for unit in self.data.values()]
+        return [np.asarray(unit.bkg_errors, dtype=np.float64) for unit in self.data.values()]
 
     @cached_property()
     def bkg_re_errors(self):
@@ -501,7 +501,9 @@ class Data:
     @cached_property(lambda self: self.pvalues)
     def corr_src_efficiency_f64(self):
 
-        return [np.float64(unit.corr_src_efficiency) for unit in self.data.values()]
+        return [
+            np.asarray(unit.corr_src_efficiency, dtype=np.float64) for unit in self.data.values()
+        ]
 
     @cached_property(lambda self: self.pvalues)
     def corr_bkg_efficiency(self):
@@ -511,7 +513,9 @@ class Data:
     @cached_property(lambda self: self.pvalues)
     def corr_bkg_efficiency_f64(self):
 
-        return [np.float64(unit.corr_bkg_efficiency) for unit in self.data.values()]
+        return [
+            np.asarray(unit.corr_bkg_efficiency, dtype=np.float64) for unit in self.data.values()
+        ]
 
     @cached_property(lambda self: self.pvalues)
     def src_ctsrate(self):
@@ -1198,6 +1202,12 @@ class DataUnit:
 
         if self._grpg is not None and not isinstance(self._grpg, dict):
             raise ValueError('<grpg> parameter should be dict')
+
+        if not np.any(np.array(self.qualifying) & np.array(self.noticing)):
+            raise ValueError(
+                f'no channel is both quality-good and noticed for notc={self._notc}; '
+                "check the <notc> energy range against this unit's response/PHA quality flags"
+            )
 
         if self._grpg is None:
             self.grouping = self.src_ins.grouping

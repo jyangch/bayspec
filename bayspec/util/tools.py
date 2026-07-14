@@ -15,8 +15,20 @@ from itertools import islice
 import json
 from pathlib import Path
 
+from matplotlib import rcParams
 import numba as nb
 import numpy as np
+
+
+def apply_plt_rcparams():
+    """Apply the shared BaySpec matplotlib style (STIX serif fonts, PDF/PS-safe fonttype)."""
+
+    rcParams['font.family'] = 'serif'
+    rcParams['font.serif'] = ['STIX Two Text']
+    rcParams['mathtext.fontset'] = 'stix'
+    rcParams['font.size'] = 12
+    rcParams['pdf.fonttype'] = 42
+    rcParams['ps.fonttype'] = 42
 
 
 class JsonEncoder(json.JSONEncoder):

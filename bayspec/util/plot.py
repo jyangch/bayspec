@@ -16,7 +16,6 @@ import warnings
 import corner
 from getdist import MCSamples, plots
 import matplotlib as mpl
-from matplotlib import rcParams
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.express as px
@@ -31,7 +30,7 @@ from ..infer.infer import BayesInfer, Infer
 from ..infer.pair import Pair
 from ..model.model import Model
 from .corner import corner_plotly
-from .tools import json_dump
+from .tools import apply_plt_rcparams, json_dump
 
 
 class Plot:
@@ -99,10 +98,7 @@ class Plot:
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
 
         elif ploter == 'matplotlib':
-            rcParams['font.family'] = 'sans-serif'
-            rcParams['font.size'] = 12
-            rcParams['pdf.fonttype'] = 42
-
+            apply_plt_rcparams()
             fig = plt.figure(figsize=(7, 6))
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
@@ -164,6 +160,7 @@ class Plot:
         x = ch_mean[ch_idx].astype(float)
         y = ph_mean[ph_idx].astype(float)
         z = cls.drm[ph_idx, :][:, ch_idx].astype(float)
+        X, Y = np.meshgrid(x, y)
 
         if ploter == 'plotly':
             fig = go.Figure()
@@ -176,12 +173,7 @@ class Plot:
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
 
         elif ploter == 'matplotlib':
-            rcParams['font.family'] = 'sans-serif'
-            rcParams['font.size'] = 12
-            rcParams['pdf.fonttype'] = 42
-
-            X, Y = np.meshgrid(x, y)
-
+            apply_plt_rcparams()
             fig = plt.figure(figsize=(7, 6))
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
@@ -248,10 +240,7 @@ class Plot:
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
 
         elif ploter == 'matplotlib':
-            rcParams['font.family'] = 'sans-serif'
-            rcParams['font.size'] = 12
-            rcParams['pdf.fonttype'] = 42
-
+            apply_plt_rcparams()
             fig = plt.figure(figsize=(7, 6))
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
@@ -315,10 +304,7 @@ class Plot:
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
 
         elif ploter == 'matplotlib':
-            rcParams['font.family'] = 'sans-serif'
-            rcParams['font.size'] = 12
-            rcParams['pdf.fonttype'] = 42
-
+            apply_plt_rcparams()
             fig = plt.figure(figsize=(7, 6))
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
@@ -460,10 +446,7 @@ class Plot:
             fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
 
         elif ploter == 'matplotlib':
-            rcParams['font.family'] = 'sans-serif'
-            rcParams['font.size'] = 12
-            rcParams['pdf.fonttype'] = 42
-
+            apply_plt_rcparams()
             fig = plt.figure(figsize=(7, 6))
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
@@ -545,9 +528,7 @@ class Plot:
             fig = go.Figure()
 
         elif ploter == 'matplotlib':
-            rcParams['font.family'] = 'sans-serif'
-            rcParams['font.size'] = 12
-            rcParams['pdf.fonttype'] = 42
+            apply_plt_rcparams()
             fig = plt.figure(figsize=(7, 6))
             gs = fig.add_gridspec(1, 1, wspace=0, hspace=0)
             ax = fig.add_subplot(gs[0, 0])
@@ -696,10 +677,8 @@ class Plot:
             )
 
         elif ploter == 'matplotlib':
-            rcParams['font.family'] = 'sans-serif'
-            rcParams['font.size'] = 12
-            rcParams['pdf.fonttype'] = 42
-            fig = plt.figure(figsize=(6, 8))
+            apply_plt_rcparams()
+            fig = plt.figure(figsize=(6, 7))
             gs = fig.add_gridspec(4, 1, wspace=0, hspace=0)
             ax1 = fig.add_subplot(gs[0:3, 0])
             ax2 = fig.add_subplot(gs[3, 0], sharex=ax1)
@@ -978,10 +957,8 @@ class Plot:
             )
 
         elif ploter == 'matplotlib':
-            rcParams['font.family'] = 'sans-serif'
-            rcParams['font.size'] = 12
-            rcParams['pdf.fonttype'] = 42
-            fig = plt.figure(figsize=(6, 8))
+            apply_plt_rcparams()
+            fig = plt.figure(figsize=(6, 7))
             gs = fig.add_gridspec(4, 1, wspace=0, hspace=0)
             ax1 = fig.add_subplot(gs[0:3, 0])
             ax2 = fig.add_subplot(gs[3, 0], sharex=ax1)
@@ -1264,9 +1241,9 @@ class Plot:
         median = cls.par_median
         error = cls.par_error(median)
 
-        if ploter == 'plotly':
-            levels = 1.0 - np.exp(-0.5 * np.array([1, 2]) ** 2)
+        levels = 1.0 - np.exp(-0.5 * np.array([1, 2]) ** 2)
 
+        if ploter == 'plotly':
             fig = corner_plotly(
                 data, bins=30, weights=weights, smooth1d=2, smooth=2, labels=plabels, levels=levels
             )
@@ -1355,12 +1332,7 @@ class Plot:
                     ax.tick_params(axis='both', which='both', zorder=10)
 
         elif ploter == 'cornerpy':
-            levels = 1.0 - np.exp(-0.5 * np.array([1, 2]) ** 2)
-
-            rcParams['font.family'] = 'sans-serif'
-            rcParams['font.size'] = 12
-            rcParams['pdf.fonttype'] = 42
-
+            apply_plt_rcparams()
             fig = corner.corner(
                 data,
                 bins=30,
@@ -1479,10 +1451,7 @@ class ModelPlot:
             self.fig.update_layout(legend=dict(x=1, y=1, xanchor='right', yanchor='bottom'))
 
         elif self.ploter == 'matplotlib':
-            rcParams['font.family'] = 'sans-serif'
-            rcParams['font.size'] = 12
-            rcParams['pdf.fonttype'] = 42
-
+            apply_plt_rcparams()
             self.fig = plt.figure(figsize=(7, 6))
             gs = self.fig.add_gridspec(1, 1, wspace=0, hspace=0)
             self.ax = self.fig.add_subplot(gs[0, 0])
