@@ -30,7 +30,7 @@ from ..infer.infer import BayesInfer, Infer
 from ..infer.pair import Pair
 from ..model.model import Model
 from .corner import corner_plotly
-from .tools import apply_plt_rcparams, json_dump
+from .tools import apply_plt_legend, apply_plt_rcparams, json_dump
 
 
 class Plot:
@@ -495,7 +495,7 @@ class Plot:
             ax.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
             ax.tick_params(axis='x', which='both', labeltop=False, labelbottom=True)
             ax.tick_params(axis='y', which='both', labelleft=True, labelright=False)
-            ax.legend()
+            apply_plt_legend(ax)
 
         fig_data = {
             'src': {'x': x, 'y': src_y, 'x_le': x_le, 'x_he': x_he, 'y_e': src_y_e},
@@ -618,7 +618,7 @@ class Plot:
             ax.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
             ax.tick_params(axis='x', which='both', labeltop=False, labelbottom=True)
             ax.tick_params(axis='y', which='both', labelleft=True, labelright=False)
-            ax.legend()
+            apply_plt_legend(ax)
 
         return Figure(fig, fig_data, ploter)
 
@@ -841,7 +841,7 @@ class Plot:
             ax1.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
             ax1.tick_params(axis='x', which='both', labeltop=False, labelbottom=False)
             ax1.tick_params(axis='y', which='both', labelleft=True, labelright=False)
-            ax1.legend()
+            apply_plt_legend(ax1)
             ax2.axhline(0, c='grey', lw=1, ls='--')
             ax2.set_xlabel('Energy (keV)')
             ax2.set_ylabel('Sigma')
@@ -1149,7 +1149,7 @@ class Plot:
             ax1.tick_params(axis='y', which='both', direction='in', labelcolor='k', colors='k')
             ax1.tick_params(axis='x', which='both', labeltop=False, labelbottom=False)
             ax1.tick_params(axis='y', which='both', labelleft=True, labelright=False)
-            ax1.legend()
+            apply_plt_legend(ax1)
             ax2.axhline(0, c='grey', lw=1, ls='--')
             ax2.set_xlabel('Energy (keV)')
             ax2.set_ylabel('Sigma')
@@ -1669,7 +1669,7 @@ class ModelPlot:
                     alpha=0.5,
                     label=f'{model.expr} CI',
                 )
-            self.ax.legend()
+            apply_plt_legend(self.ax)
 
         if post:
             self.fig_data[model.expr] = {'x': x, 'y': y, 'y_ci': y_ci}

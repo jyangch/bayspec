@@ -31,6 +31,39 @@ def apply_plt_rcparams():
     rcParams['ps.fonttype'] = 42
 
 
+def apply_plt_legend(ax, inline_max=8, max_rows=20):
+    """Keep the default in-axes legend when entries fit; once they exceed
+    ``inline_max``, move the legend outside the right edge and wrap into
+    extra columns (at most ``max_rows`` entries per column) so it never
+    overflows onto the plot itself.
+    """
+
+    handles, labels = ax.get_legend_handles_labels()
+    if not labels:
+        return
+
+    if len(labels) <= inline_max:
+        ax.legend()
+        return
+
+    ncol = -(-len(labels) // max_rows)
+    fontsize = 'small' if ncol == 1 else 'x-small'
+
+    ax.legend(
+        handles,
+        labels,
+        loc='upper left',
+        bbox_to_anchor=(1.01, 1.0),
+        ncol=ncol,
+        fontsize=fontsize,
+        columnspacing=0.8,
+        handletextpad=0.4,
+        labelspacing=0.3,
+        borderaxespad=0.0,
+        frameon=False,
+    )
+
+
 class JsonEncoder(json.JSONEncoder):
     """JSON encoder that understands numpy, set, datetime, and ``todict``-ables.
 
