@@ -31,7 +31,7 @@ def apply_plt_rcparams():
     rcParams['ps.fonttype'] = 42
 
 
-def apply_plt_legend(ax, inline_max=8, max_rows=20):
+def apply_plt_legend(ax, inline_max=8, max_rows=40):
     """Keep the default in-axes legend when entries fit; once they exceed
     ``inline_max``, move the legend outside the right edge and wrap into
     extra columns (at most ``max_rows`` entries per column) so it never
@@ -47,15 +47,13 @@ def apply_plt_legend(ax, inline_max=8, max_rows=20):
         return
 
     ncol = -(-len(labels) // max_rows)
-    fontsize = 'small' if ncol == 1 else 'x-small'
-
     ax.legend(
         handles,
         labels,
         loc='upper left',
         bbox_to_anchor=(1.01, 1.0),
         ncol=ncol,
-        fontsize=fontsize,
+        fontsize='x-small',
         columnspacing=0.8,
         handletextpad=0.4,
         labelspacing=0.3,
