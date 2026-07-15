@@ -1252,6 +1252,27 @@ class DataUnit:
 
         self.grouping_slice = np.array(self.grouping_slice, dtype=int)
 
+    def _validate(self):
+        """Post-construction data-quality guards for this unit.
+
+        Runs once at the end of :meth:`_update`, after grouping, rebinning,
+        config, and params are all finalised. Add future guards here rather
+        than scattering them through the individual ``_update_*`` steps.
+        """
+
+        if self.stat in ('chi2', 'gstat') and len(self.grouping_slice) > 0:
+            zero_sigma = np.where((self.src_errors == 0) & (self.bkg_errors == 0))[0]
+            if len(zero_sigma) > 0:
+                raise ValueError(
+                    f"stat='{self.stat}' (Gaussian statistic) requires nonzero error "
+                    f'in every noticed bin, but bin(s) {zero_sigma.tolist()} have zero '
+                    'source and background counts/error after grouping (energy range '
+                    f'{self.rsp_chbin[zero_sigma].tolist()}). Adjust <notc> to exclude '
+                    'these empty bins, or supply <grpg> to merge them with a '
+                    'neighbouring bin, or use a Poisson-based stat (e.g. pgstat) '
+                    'instead.'
+                )
+
     @property
     def rebn(self):
 
@@ -1378,6 +1399,7 @@ class DataUnit:
             self._update_rebn()
             self._update_config()
             self._update_params()
+            self._validate()
         else:
             self.qualifying = None
             self.noticing = None
