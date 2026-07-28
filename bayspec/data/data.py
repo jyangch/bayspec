@@ -1247,7 +1247,7 @@ class DataUnit:
                     self.grouping_slice.append([i, i + 1])
                 elif gr == -1:
                     if len(self.grouping_slice) == 0:
-                        self.grouping_slice.append([i, i + 1])
+                        pass
                     else:
                         self.grouping_slice[-1][1] = i + 1
 
@@ -1327,7 +1327,7 @@ class DataUnit:
                     self.rebining_slice.append([i, i + 1])
                 elif rb == -1:
                     if len(self.rebining_slice) == 0:
-                        self.rebining_slice.append([i, i + 1])
+                        pass
                     else:
                         self.rebining_slice[-1][1] = i + 1
 
