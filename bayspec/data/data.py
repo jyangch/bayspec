@@ -1234,24 +1234,9 @@ class DataUnit:
                 ini_flag=ini_flag,
             )
 
-        self.grouping_slice = []
-        for i, (ql, nt, gr) in enumerate(
-            zip(self.qualifying, self.noticing, self.grouping, strict=False)
-        ):
-            if not (ql and nt):
-                continue
-            else:
-                if gr == 0:
-                    continue
-                elif gr == 1:
-                    self.grouping_slice.append([i, i + 1])
-                elif gr == -1:
-                    if len(self.grouping_slice) == 0:
-                        pass
-                    else:
-                        self.grouping_slice[-1][1] = i + 1
-
-        self.grouping_slice = np.array(self.grouping_slice, dtype=int)
+        self.grouping_slice = self._get_grouping_slice(
+            self.qualifying, self.noticing, self.grouping
+        )
 
     def _validate(self):
         """Post-construction data-quality guards for this unit.
@@ -1314,24 +1299,9 @@ class DataUnit:
                 ini_flag=ini_flag,
             )
 
-        self.rebining_slice = []
-        for i, (ql, nt, rb) in enumerate(
-            zip(self.qualifying, self.noticing, self.rebining, strict=False)
-        ):
-            if not (ql and nt):
-                continue
-            else:
-                if rb == 0:
-                    continue
-                elif rb == 1:
-                    self.rebining_slice.append([i, i + 1])
-                elif rb == -1:
-                    if len(self.rebining_slice) == 0:
-                        pass
-                    else:
-                        self.rebining_slice[-1][1] = i + 1
-
-        self.rebining_slice = np.array(self.rebining_slice, dtype=int)
+        self.rebining_slice = self._get_rebining_slice(
+            self.qualifying, self.noticing, self.rebining
+        )
 
     @property
     def time(self):
@@ -1495,68 +1465,63 @@ class DataUnit:
             src_file = src_file.strip()
             src_ii = int(src_ii.strip())
 
-        SrcGrpg = np.asarray(self.grouping, dtype=int)
+        src_grpg = np.asarray(self.grouping, dtype=int)
 
         with fits.open(src_file, mode='update', ignore_missing_simple=True) as src_hdu:
             spec_index = src_hdu.index_of('SPECTRUM')
-            specExt = src_hdu[spec_index]
-            specData = specExt.data
+            spec_ext = src_hdu[spec_index]
+            spec_data = spec_ext.data
 
-            if specData is None:
+            if spec_data is None:
                 raise ValueError('SPECTRUM extension has no table data')
 
-            SrcGrpg = self._grouping_column_array(specData, SrcGrpg, src_ii)
-            SrcGrpgForm = 'J' if SrcGrpg.ndim == 1 else f'{SrcGrpg.shape[1]}J'
-            SrcGrpgCol = fits.Column(
+            if len(spec_data) != len(src_grpg):
+                row_index = src_ii if src_ii is not None else getattr(self, 'src_ii', None)
+                if row_index is None and len(spec_data) == 1:
+                    row_index = 0
+
+                if row_index is None:
+                    raise ValueError(
+                        'ii is required when writing grouping to a multi-row SPECTRUM table'
+                    )
+
+                if 'GROUPING' in spec_data.names:
+                    src_grpg_array = np.asarray(spec_data['GROUPING'], dtype=int)
+                else:
+                    src_grpg_array = np.ones((len(spec_data), len(src_grpg)), dtype=int)
+
+                if src_grpg_array.ndim != 2 or src_grpg_array.shape[1] != len(src_grpg):
+                    raise ValueError('GROUPING column shape does not match self.grouping')
+
+                src_grpg_array = src_grpg_array.copy()
+                src_grpg_array[row_index] = src_grpg
+                src_grpg = src_grpg_array
+
+            src_grpg_form = 'J' if src_grpg.ndim == 1 else f'{src_grpg.shape[1]}J'
+            src_grpg_col = fits.Column(
                 name='GROUPING',
-                array=SrcGrpg,
-                format=SrcGrpgForm,
+                array=src_grpg,
+                format=src_grpg_form,
             )
 
-            specCols = []
-            hasGrpgCol = False
-            for col in specExt.columns:
+            spec_cols = []
+            has_grpg_col = False
+            for col in spec_ext.columns:
                 if col.name.upper() == 'GROUPING':
-                    specCols.append(SrcGrpgCol)
-                    hasGrpgCol = True
+                    spec_cols.append(src_grpg_col)
+                    has_grpg_col = True
                 else:
-                    specCols.append(col)
+                    spec_cols.append(col)
 
-            if not hasGrpgCol:
-                specCols.append(SrcGrpgCol)
+            if not has_grpg_col:
+                spec_cols.append(src_grpg_col)
 
             src_hdu[spec_index] = fits.BinTableHDU.from_columns(
-                fits.ColDefs(specCols),
-                header=specExt.header,
-                name=specExt.name,
+                fits.ColDefs(spec_cols),
+                header=spec_ext.header,
+                name=spec_ext.name,
             )
             src_hdu.flush()
-
-    def _grouping_column_array(self, specData, SrcGrpg, src_ii):
-        """Build a scalar or vector ``GROUPING`` column for a SPECTRUM table."""
-
-        if len(specData) == len(SrcGrpg):
-            return SrcGrpg
-
-        row_index = src_ii if src_ii is not None else getattr(self, 'src_ii', None)
-        if row_index is None and len(specData) == 1:
-            row_index = 0
-
-        if row_index is None:
-            raise ValueError('ii is required when writing grouping to a multi-row SPECTRUM table')
-
-        if 'GROUPING' in specData.names:
-            SrcGrpgArray = np.asarray(specData['GROUPING'], dtype=int)
-        else:
-            SrcGrpgArray = np.ones((len(specData), len(SrcGrpg)), dtype=int)
-
-        if SrcGrpgArray.ndim != 2 or SrcGrpgArray.shape[1] != len(SrcGrpg):
-            raise ValueError('GROUPING column shape does not match self.grouping')
-
-        SrcGrpgArray = SrcGrpgArray.copy()
-        SrcGrpgArray[row_index] = SrcGrpg
-
-        return SrcGrpgArray
 
     @cached_property()
     def ebin(self):
@@ -2178,3 +2143,52 @@ class DataUnit:
         return DataUnit._group(
             s, b, berr, ts, tb, ss, sb, min_sigma, min_evt, min_nevt, max_bin, stat, ini_flag
         )
+
+    @staticmethod
+    def _get_grouping_slice(qualifying, noticing, grouping):
+        """Get the slice of the grouping array that are qualifying and noticing.
+
+        Args:
+            qualifying: Per-channel qualifying flags.
+            noticing: Per-channel noticing flags.
+            grouping: Per-channel grouping flags.
+
+        Returns:
+            A numpy array of ``[start, stop]`` pair of the grouping array that are qualifying and noticing.
+        """
+
+        valid = np.array(qualifying) & np.array(noticing)
+        grouping_slice = []
+
+        i = 0
+        while i < len(grouping):
+            if grouping[i] != 1:
+                i += 1
+                continue
+
+            start = i
+            stop = i + 1
+            while stop < len(grouping) and grouping[stop] == -1:
+                stop += 1
+
+            if np.all(valid[start:stop]):
+                grouping_slice.append([start, stop])
+
+            i = stop
+
+        return np.array(grouping_slice, dtype=int).reshape(-1, 2)
+
+    @staticmethod
+    def _get_rebining_slice(qualifying, noticing, rebining):
+        """Get the slice of the rebining array that are qualifying and noticing.
+
+        Args:
+            qualifying: Per-channel qualifying flags.
+            noticing: Per-channel noticing flags.
+            rebining: Per-channel rebining flags.
+
+        Returns:
+            A numpy array of ``[start, stop]`` pair of the rebining array that are qualifying and noticing.
+        """
+
+        return DataUnit._get_grouping_slice(qualifying, noticing, rebining)

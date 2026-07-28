@@ -55,7 +55,6 @@ dist/
 
 # beta version
 bayspec_beta/
-tests/
 
 # private models
 bayspec/docs/katu/
