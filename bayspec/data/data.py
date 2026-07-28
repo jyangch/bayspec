@@ -2158,7 +2158,7 @@ class DataUnit:
         """
 
         valid = np.array(qualifying) & np.array(noticing)
-        grouping_slice = []
+        slice = []
 
         i = 0
         while i < len(grouping):
@@ -2172,11 +2172,11 @@ class DataUnit:
                 stop += 1
 
             if np.all(valid[start:stop]):
-                grouping_slice.append([start, stop])
+                slice.append([start, stop])
 
             i = stop
 
-        return np.array(grouping_slice, dtype=int).reshape(-1, 2)
+        return np.array(slice, dtype=int).reshape(-1, 2)
 
     @staticmethod
     def _get_rebining_slice(qualifying, noticing, rebining):
