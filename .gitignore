@@ -64,6 +64,3 @@ bayspec/docs/zxhsync/
 # Local-only docs and Claude Code project config
 docs/
 CLAUDE.md
-
-# Ignore test files
-test/

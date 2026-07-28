@@ -19,6 +19,7 @@ from io import BytesIO
 import os
 import warnings
 
+import astropy.io.fits as fits
 import numpy as np
 from scipy import special
 
@@ -1473,6 +1474,89 @@ class DataUnit:
             os.makedirs(savepath)
 
         json_dump(self.info.data_list_dict, savepath + '/dataunit.json')
+
+    def write_grouping(self):
+        """Write this unit's grouping flags back into its source FITS file.
+
+        Adds or replaces the ``GROUPING`` column with integer FITS format
+        ``J``. Only units created from a source file path can write grouping.
+        """
+
+        if self.grouping is None:
+            raise ValueError('grouping is unavailable for incomplete data unit')
+
+        if not isinstance(getattr(self, 'src_file', None), str):
+            raise ValueError('write_grouping requires DataUnit created from a src file path')
+
+        src_file = self.src_file
+        src_ii = self.src_ii
+        if ':' in src_file:
+            src_file, src_ii = src_file.split(':')
+            src_file = src_file.strip()
+            src_ii = int(src_ii.strip())
+
+        SrcGrpg = np.asarray(self.grouping, dtype=int)
+
+        with fits.open(src_file, mode='update', ignore_missing_simple=True) as src_hdu:
+            spec_index = src_hdu.index_of('SPECTRUM')
+            specExt = src_hdu[spec_index]
+            specData = specExt.data
+
+            if specData is None:
+                raise ValueError('SPECTRUM extension has no table data')
+
+            SrcGrpg = self._grouping_column_array(specData, SrcGrpg, src_ii)
+            SrcGrpgForm = 'J' if SrcGrpg.ndim == 1 else f'{SrcGrpg.shape[1]}J'
+            SrcGrpgCol = fits.Column(
+                name='GROUPING',
+                array=SrcGrpg,
+                format=SrcGrpgForm,
+            )
+
+            specCols = []
+            hasGrpgCol = False
+            for col in specExt.columns:
+                if col.name.upper() == 'GROUPING':
+                    specCols.append(SrcGrpgCol)
+                    hasGrpgCol = True
+                else:
+                    specCols.append(col)
+
+            if not hasGrpgCol:
+                specCols.append(SrcGrpgCol)
+
+            src_hdu[spec_index] = fits.BinTableHDU.from_columns(
+                fits.ColDefs(specCols),
+                header=specExt.header,
+                name=specExt.name,
+            )
+            src_hdu.flush()
+
+    def _grouping_column_array(self, specData, SrcGrpg, src_ii):
+        """Build a scalar or vector ``GROUPING`` column for a SPECTRUM table."""
+
+        if len(specData) == len(SrcGrpg):
+            return SrcGrpg
+
+        row_index = src_ii if src_ii is not None else getattr(self, 'src_ii', None)
+        if row_index is None and len(specData) == 1:
+            row_index = 0
+
+        if row_index is None:
+            raise ValueError('ii is required when writing grouping to a multi-row SPECTRUM table')
+
+        if 'GROUPING' in specData.names:
+            SrcGrpgArray = np.asarray(specData['GROUPING'], dtype=int)
+        else:
+            SrcGrpgArray = np.ones((len(specData), len(SrcGrpg)), dtype=int)
+
+        if SrcGrpgArray.ndim != 2 or SrcGrpgArray.shape[1] != len(SrcGrpg):
+            raise ValueError('GROUPING column shape does not match self.grouping')
+
+        SrcGrpgArray = SrcGrpgArray.copy()
+        SrcGrpgArray[row_index] = SrcGrpg
+
+        return SrcGrpgArray
 
     @cached_property()
     def ebin(self):
