@@ -862,25 +862,40 @@ class Plot:
 
         Args:
             cls: ``BayesInfer`` or ``Posterior`` exposing
-                ``posterior_sample`` and ``free_nparams``.
+                ``mcmc_chain`` with shape ``(nstep, nwalkers, nparams)``.
 
         Returns:
             A :class:`Figure` wrapping the matplotlib walker plot.
 
         Raises:
             TypeError: If ``cls`` is not a ``BayesInfer`` or ``Posterior``.
+            AttributeError: If ``mcmc_chain`` is missing.
+            ValueError: If ``mcmc_chain`` is not 3D.
         """
 
         if not isinstance(cls, (BayesInfer, Posterior)):
             raise TypeError('cls is not BayesInfer or Posterior type, cannot call walker method')
 
-        params_sample = cls.posterior_sample[:, : cls.free_nparams].copy()
+        params_sample = getattr(cls, 'mcmc_chain', None)
+        if params_sample is None:
+            raise AttributeError(
+                'mcmc_chain is missing; emcee_walker needs the unflattened chain '
+                '(nstep, nwalkers, nparams). Re-run infer.emcee(...) after the library update.'
+            )
+        params_sample = np.asarray(params_sample)
+        if params_sample.ndim != 3:
+            raise ValueError(
+                f'mcmc_chain must be 3D (nstep, nwalkers, nparams), got shape {params_sample.shape}'
+            )
 
-        fig, axes = plt.subplots(cls.free_nparams, figsize=(10, 2 * cls.free_nparams), sharex='all')
-        for i in range(cls.free_nparams):
+        nparams = params_sample.shape[2]
+        fig, axes = plt.subplots(nparams, figsize=(10, 2 * nparams), sharex='all')
+        if nparams == 1:
+            axes = [axes]
+        for i in range(nparams):
             ax = axes[i]
             ax.plot(params_sample[:, :, i], 'k', alpha=0.3)
-            ax.set_xlim(0, len(params_sample))
+            ax.set_xlim(0, params_sample.shape[0])
             ax.set_ylabel(cls.free_plabels[i])
             ax.yaxis.set_label_coords(-0.1, 0.5)
             ax.minorticks_on()

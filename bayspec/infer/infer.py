@@ -1276,6 +1276,8 @@ class BayesInfer(Infer):
         params_sample = np.load(savepath_prefix + '.npz')['sample']
         logprob_sample = np.loadtxt(savepath_prefix + 'logprob.dat')
 
+        self.mcmc_chain = params_sample
+
         flat_params_sample = params_sample[discard:, :, :].reshape(-1, ndim)
         flat_logprob_sample = logprob_sample[discard:, :].reshape(-1)
 
