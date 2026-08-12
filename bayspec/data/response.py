@@ -99,10 +99,13 @@ class Response:
 
         rsp_hdu = fits.open(rsp_file, ignore_missing_simple=True)
 
-        try:
-            matExt = rsp_hdu['SPECRESP MATRIX']
-        except KeyError:
-            matExt = rsp_hdu['MATRIX']
+        for key in ['SPECRESP MATRIX', 'MATRIX', 'SPECRESP_MATRIX']:
+            if key in rsp_hdu:
+                matExt = rsp_hdu[key]
+                break
+        else:
+            raise ValueError('no SPECRESP MATRIX, MATRIX, or SPECRESP_MATRIX extension found')
+
         ebouExt = rsp_hdu['EBOUNDS']
 
         matHeader = matExt.header
@@ -189,10 +192,13 @@ class Response:
 
         rsp_hdu = fits.open(rsp_file, ignore_missing_simple=True)
 
-        try:
-            matExt = rsp_hdu['SPECRESP MATRIX', ii]
-        except KeyError:
-            matExt = rsp_hdu['MATRIX', ii]
+        for key in ['SPECRESP MATRIX', 'MATRIX', 'SPECRESP_MATRIX']:
+            if key in rsp_hdu:
+                matExt = rsp_hdu[key, ii]
+                break
+        else:
+            raise ValueError('no SPECRESP MATRIX, MATRIX, or SPECRESP_MATRIX extension found')
+
         ebouExt = rsp_hdu['EBOUNDS']
 
         matHeader = matExt.header
