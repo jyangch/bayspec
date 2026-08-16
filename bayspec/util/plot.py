@@ -1214,7 +1214,7 @@ class Plot:
         # cannot plot (they assert n_samples >= n_dims). Skip with a placeholder so
         # a batch loop survives the bad fit instead of crashing on the plot.
         nsample, ndim = data.shape
-        if nsample <= ndim or np.ptp(data, axis=0).max() == 0:
+        if nsample <= ndim or np.any(np.ptp(data, axis=0) == 0):
             warnings.warn(
                 f'Posterior too degenerate to corner-plot ({nsample} samples for '
                 f'{ndim} parameters); the run likely did not converge. Returning a '
