@@ -1069,6 +1069,16 @@ class BayesInfer(Infer):
         except (OSError, IndexError, ValueError):
             return None
 
+    @staticmethod
+    def _multinest_ev_niter(savepath_prefix):
+        """Return the number of rejected points recorded in ``ev.dat``."""
+
+        ev_path = savepath_prefix + 'ev.dat'
+        if not os.path.exists(ev_path):
+            return 0
+        with open(ev_path) as f:
+            return sum(1 for _ in f)
+
     def multinest(
         self,
         nlive=500,
@@ -1090,7 +1100,11 @@ class BayesInfer(Infer):
                 likelihood plateaus). ``None`` (default) caps at
                 ``nlive * 50``, well above the ``~nlive * H`` a normal run
                 needs, so it never clips genuine convergence. A run that hits
-                this cap has not converged; its result is unreliable.
+                this cap has not converged; its result is unreliable. When
+                ``resume=True`` and ``1-max_iter_warning.txt`` already exists
+                under ``savepath``, sampling is skipped and the saved outputs
+                are reused. Delete that file or pass ``resume=False`` to
+                force a fresh run (optionally with a larger ``max_iter``).
             ins: Enable INS for a more accurate evidence. ``True``
                 (default) suits most fits, but INS weights can underflow
                 when the posterior rails against a hard prior boundary,
@@ -1117,40 +1131,51 @@ class BayesInfer(Infer):
         max_iter = nlive * 50 if max_iter is None else int(max_iter)
 
         savepath_prefix = savepath + '/1-'
+        max_iter_warning_path = savepath_prefix + 'max_iter_warning.txt'
 
         if not os.path.exists(savepath):
             os.makedirs(savepath)
 
-        pymultinest.run(
-            LogLikelihood=self.multinest_safe_calc_loglike,
-            Prior=self.multinest_safe_prior_transform,
-            n_dims=self.free_nparams,
-            resume=resume,
-            verbose=verbose,
-            n_live_points=nlive,
-            outputfiles_basename=savepath_prefix,
-            sampling_efficiency=0.3,
-            importance_nested_sampling=ins,
-            multimodal=False,
-            max_iter=max_iter,
-            seed=-1 if random_seed is None else int(random_seed),
-        )
+        prev_niter = self._multinest_ev_niter(savepath_prefix) if resume else 0
+        capped = resume and os.path.exists(max_iter_warning_path)
 
-        capped = False
-        if os.path.exists(savepath_prefix + 'ev.dat'):
-            with open(savepath_prefix + 'ev.dat') as f:
-                niter = sum(1 for _ in f)
-            if niter >= max_iter:
-                capped = True
-                msg = (
-                    f'MultiNest stopped at the max_iter cap ({max_iter} iterations) '
-                    'without reaching the evidence tolerance: the posterior and '
-                    'evidence are unreliable. Check for likelihood plateaus or overly '
-                    'wide priors, or rerun with a larger max_iter.'
-                )
-                warnings.warn(msg, stacklevel=2)
-                with open(savepath_prefix + 'max_iter_warning.txt', 'w') as f:
-                    f.write(msg + '\n')
+        if capped:
+            warnings.warn(
+                'Previous MultiNest run hit max_iter without converging; '
+                'reusing saved outputs (no further sampling). '
+                'Delete 1-max_iter_warning.txt or set resume=False to rerun.',
+                stacklevel=2,
+            )
+        else:
+            if os.path.exists(max_iter_warning_path):
+                os.remove(max_iter_warning_path)
+            pymultinest.run(
+                LogLikelihood=self.multinest_safe_calc_loglike,
+                Prior=self.multinest_safe_prior_transform,
+                n_dims=self.free_nparams,
+                resume=resume,
+                verbose=verbose,
+                n_live_points=nlive,
+                outputfiles_basename=savepath_prefix,
+                sampling_efficiency=0.3,
+                importance_nested_sampling=ins,
+                multimodal=False,
+                max_iter=max_iter,
+                seed=-1 if random_seed is None else int(random_seed),
+            )
+
+        niter = self._multinest_ev_niter(savepath_prefix)
+        if not capped and niter >= max_iter:
+            capped = True
+            msg = (
+                f'MultiNest stopped at the max_iter cap ({max_iter} iterations) '
+                'without reaching the evidence tolerance: the posterior and '
+                'evidence are unreliable. Check for likelihood plateaus or overly '
+                'wide priors, or rerun with a larger max_iter.'
+            )
+            warnings.warn(msg, stacklevel=2)
+            with open(max_iter_warning_path, 'w') as f:
+                f.write(msg + '\n')
 
         multinest_analyzer = pymultinest.Analyzer(
             outputfiles_basename=savepath_prefix, n_params=self.free_nparams
@@ -1188,14 +1213,16 @@ class BayesInfer(Infer):
             else:
                 self.logevidence = posterior_stats['nested sampling global log-evidence']
 
-        if (not resume) or (not os.path.exists(savepath_prefix + 'posterior_sample.txt')):
+        posterior_sample_path = savepath_prefix + 'posterior_sample.txt'
+        sampling_progressed = niter > prev_niter
+        if (not resume) or (not os.path.exists(posterior_sample_path)) or sampling_progressed:
             self.posterior_sample = multinest_analyzer.get_equal_weighted_posterior()
             self.posterior_sample[:, -1] = self.posterior_sample[:, -1] + self.calc_logprior_sample(
                 self.posterior_sample[:, 0:-1]
             )
-            np.savetxt(savepath_prefix + 'posterior_sample.txt', self.posterior_sample)
+            np.savetxt(posterior_sample_path, self.posterior_sample)
         else:
-            self.posterior_sample = np.loadtxt(savepath_prefix + 'posterior_sample.txt')
+            self.posterior_sample = np.loadtxt(posterior_sample_path)
 
         with open(savepath_prefix + 'nlive.json', 'w') as f:
             json.dump(nlive, f, indent=4, cls=JsonEncoder)
