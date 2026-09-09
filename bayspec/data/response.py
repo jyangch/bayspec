@@ -15,6 +15,7 @@ from io import BytesIO
 import astropy.io.fits as fits
 import numpy as np
 
+from ..util.group import estimate_channel_fwhm
 from ..util.info import Info
 from ..util.param import Par
 from ..util.prior import unif
@@ -28,6 +29,8 @@ class Response:
         chbin: ``(nchan, 2)`` array of channel energy bin edges.
         phbin: ``(nphot, 2)`` array of photon energy bin edges.
         drm: ``(nphot, nchan)`` detector redistribution matrix.
+        channel_fwhm: HEASP-compatible response FWHM for every detector
+            channel, measured in channel units.
         ra: Optional right-ascension ``Par``.
         dec: Optional declination ``Par``.
         factor: Multiplicative ``Par`` applied during convolution.
@@ -390,6 +393,12 @@ class Response:
         """Per-channel bin width, computed from ``chbin``."""
 
         return np.diff(self.chbin, axis=1).reshape(1, -1)[0]
+
+    @property
+    def channel_fwhm(self):
+        """HEASP-compatible response FWHM per detector channel, in channel units."""
+
+        return estimate_channel_fwhm(self.chbin, self.phbin, self.drm)
 
     @property
     def info(self):

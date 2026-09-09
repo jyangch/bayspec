@@ -12,6 +12,41 @@ bayspec.data.data module
    :undoc-members:
    :show-inheritance:
 
+Optimal grouping
+~~~~~~~~~~~~~~~~
+
+``DataUnit`` supports the Kaastra--Bleeker optimal grouping implemented by
+HEASP/``ftgrouppha``::
+
+   unit = DataUnit(src=src, rsp=rsp, grpg={'method': 'optimal'})
+
+The calculation uses the observed source-region counts and the response FWHM;
+the background is not subtracted when determining the optimal width. Widths
+are calculated from the complete observed channel array, as in HEASP, while
+quality and noticing gaps prevent groups from crossing excluded channels.
+
+BaySpec thresholds can be applied on top of the optimal width::
+
+   unit = DataUnit(
+       src=src,
+       bkg=bkg,
+       rsp=rsp,
+       grpg={'method': 'optimal', 'min_evt': 20, 'min_sigma': 3},
+   )
+
+The Kaastra--Bleeker width is the minimum allowed width. Thresholds extend a
+bin to the right one channel at a time until they are met, ``max_bin`` is
+reached, or the selected segment ends. Reaching ``max_bin`` closes the bin even
+when a threshold remains unmet. A final under-threshold tail is merged backward
+only while the merged bin remains within ``max_bin``; otherwise it is retained
+as a separate bin. A ``max_bin`` smaller than the initial optimal width is
+rejected because the two width requirements conflict. Responses containing a
+non-positive or non-finite channel FWHM are also rejected explicitly.
+
+For ``BalrogResponse``, ``method='optimal'`` requires both ``ra`` and ``dec``
+to be frozen because changing either coordinate changes the response on which
+the grouping is based. Use ``method='threshold'`` when fitting sky position.
+
 Count significance limits
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 

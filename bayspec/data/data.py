@@ -25,10 +25,11 @@ import astropy.io.fits as fits
 import numpy as np
 from scipy import special
 
+from ..util.group import build_grouping
 from ..util.info import Info
-from ..util.significance import pgsig, pgsig_inv, ppsig, ppsig_inv
+from ..util.significance import pgsig_inv, ppsig_inv
 from ..util.tools import SuperDict, cached_property, clear_cached_property, json_dump
-from .response import Auxiliary, Redistribution, Response
+from .response import Auxiliary, BalrogResponse, Redistribution, Response
 from .spectrum import Background, Source
 
 
@@ -935,9 +936,12 @@ class DataUnit:
             stat: Statistic name -- ``'pgstat'``, ``'pstat'``, ``'cstat'``,
                 ``'gstat'``, ``'chi2'``, or a variant thereof.
             notc: Optional noticing windows in channel energy.
-            grpg: Optional grouping rule dict (``min_evt``/``min_nevt``/
-                ``min_sigma``/``max_bin``).
-            rebn: Optional rebinning rule dict with the same keys.
+            grpg: Optional grouping rule dict. The default threshold method
+                accepts ``min_evt``/``min_nevt``/``min_sigma``/``max_bin``.
+                Set ``method='optimal'`` for HEASP-compatible optimal grouping;
+                the same thresholds can then make the optimal bins coarser.
+            rebn: Optional rebinning rule dict accepting
+                ``min_evt``/``min_nevt``/``min_sigma``/``max_bin``.
             time: Optional time tag used by time-dependent models.
             weight: Likelihood weight for this unit.
         """
@@ -1234,12 +1238,28 @@ class DataUnit:
         if self._grpg is None:
             self.grouping = self.src_ins.grouping
         else:
-            gr_params = {'min_evt': None, 'min_nevt': None, 'min_sigma': None, 'max_bin': None}
+            gr_params = {
+                'method': 'threshold',
+                'min_evt': None,
+                'min_nevt': None,
+                'min_sigma': None,
+                'max_bin': None,
+            }
             gr_params.update(self._grpg)
+
+            if (
+                gr_params['method'] == 'optimal'
+                and isinstance(self.rsp_ins, BalrogResponse)
+                and not (self.rsp_ins.ra.frozen and self.rsp_ins.dec.frozen)
+            ):
+                raise ValueError(
+                    "method='optimal' requires a fixed response; freeze both "
+                    "BalrogResponse ra and dec, or use method='threshold'"
+                )
 
             ini_flag = (np.array(self.qualifying) & np.array(self.noticing)).astype(int).tolist()
 
-            self.grouping = self._group(
+            self.grouping = build_grouping(
                 self.src_ins.counts,
                 self.bkg_ins.counts,
                 self.bkg_ins.errors,
@@ -1247,12 +1267,14 @@ class DataUnit:
                 self.bkg_ins.exposure,
                 self.src_ins.backscale,
                 self.bkg_ins.backscale,
+                method=gr_params['method'],
+                rsp_fwhm=(self.rsp_ins.channel_fwhm if gr_params['method'] == 'optimal' else None),
                 min_evt=gr_params['min_evt'],
                 min_nevt=gr_params['min_nevt'],
                 min_sigma=gr_params['min_sigma'],
                 max_bin=gr_params['max_bin'],
                 stat=self.stat,
-                ini_flag=ini_flag,
+                valid=ini_flag,
             )
 
         self.grouping_slice = self._get_grouping_slice(
@@ -1304,7 +1326,7 @@ class DataUnit:
 
             ini_flag = (np.array(self.qualifying) & np.array(self.noticing)).astype(int).tolist()
 
-            self.rebining = self._rebin(
+            self.rebining = build_grouping(
                 self.src_ins.counts,
                 self.bkg_ins.counts,
                 self.bkg_ins.errors,
@@ -1317,7 +1339,7 @@ class DataUnit:
                 min_sigma=rb_params['min_sigma'],
                 max_bin=rb_params['max_bin'],
                 stat=self.stat,
-                ini_flag=ini_flag,
+                valid=ini_flag,
             )
 
         self.rebining_slice = self._get_rebining_slice(
@@ -2091,155 +2113,6 @@ class DataUnit:
             flag = [pre or now for pre, now in zip(flag, flag_i, strict=False)]
 
         return flag
-
-    @staticmethod
-    def _group(
-        s,
-        b,
-        berr,
-        ts,
-        tb,
-        ss,
-        sb,
-        min_sigma=None,
-        min_evt=None,
-        min_nevt=None,
-        max_bin=None,
-        stat=None,
-        ini_flag=None,
-    ):
-        """Greedy channel-grouping using counts, significance, and width caps.
-
-        Walks channels left to right, starting a new bin on the first
-        allowed channel and extending it until the current bin meets every
-        threshold: total events, net events, significance, and maximum
-        width.
-
-        Args:
-            s: Source counts per channel.
-            b: Background counts per channel.
-            berr: Background errors per channel.
-            ts: Source exposure.
-            tb: Background exposure.
-            ss: Source backscale.
-            sb: Background backscale.
-            min_sigma: Minimum per-bin significance.
-            min_evt: Minimum per-bin total events.
-            min_nevt: Minimum per-bin net events.
-            max_bin: Maximum channels per bin.
-            stat: Statistic name driving the significance formula.
-            ini_flag: Per-channel gate: ``1`` means channel is allowed to
-                contribute, ``0`` excludes it.
-
-        Returns:
-            A numpy array of per-channel grouping flags: ``+1`` starts a
-            bin, ``-1`` continues one, ``0`` excludes the channel.
-
-        Raises:
-            AttributeError: If ``stat`` is not one of the known statistics.
-        """
-
-        # grouping flag:
-        # grpg = 0 if the channel is not allowed to group, including the not qualified noticed channels
-        # grpg = +1 if the channel is the start of a new bin
-        # grpg = -1 if the channel is part of a continuing bin
-
-        if ini_flag is None:
-            ini_flag = [1] * len(s)
-
-        if min_sigma is None:
-            min_sigma = -np.inf
-
-        if min_evt is None:
-            min_evt = 0
-
-        if min_nevt is None:
-            min_nevt = 0
-
-        if max_bin is None:
-            max_bin = np.inf
-
-        alpha = ts * ss / (tb * sb)
-
-        flag, gs = [], []
-        nowbin = False
-        cs, cb, cberr, cp = 0, 0, 0, 0
-        for i in range(len(s)):
-            if ini_flag[i] != 1:
-                flag.append(0)
-                if nowbin:
-                    if len(gs) < 2:
-                        pass
-                    else:
-                        flag[gs[-1]] = -1
-                nowbin = False
-                cs, cb, cberr, cp = 0, 0, 0, 0
-            else:
-                if not nowbin:
-                    flag.append(1)
-                    gs.append(i)
-                    cp = 1
-                else:
-                    flag.append(-1)
-                    cp += 1
-
-                si = s[i]
-                bi = b[i]
-                bierr = berr[i]
-                cs += si
-                cb += bi
-                cberr = np.sqrt(cberr**2 + bierr**2)
-
-                if stat is None:
-                    stat = 'pgstat'
-
-                if stat in ['pstat', 'cstat', 'ppstat', 'Xppstat', 'Xcstat']:
-                    sigma = 0 if (cb < 0 or cs < 0) and cb != cs else ppsig(cs, cb, alpha)
-                elif stat in ['gstat', 'chi2', 'pgstat', 'Xpgstat']:
-                    sigma = 0 if cs <= 0 or cberr == 0 else pgsig(cs, cb * alpha, cberr * alpha)
-                else:
-                    raise AttributeError(f'unsupported stat: {stat}')
-
-                evt = cs
-                nevt = cs - cb * alpha
-
-                if (
-                    (sigma >= min_sigma) and (evt >= min_evt) and (nevt >= min_nevt)
-                ) or cp == max_bin:
-                    nowbin = False
-                    cs, cb, cberr, cp = 0, 0, 0, 0
-                else:
-                    nowbin = True
-
-                if nowbin and i == (len(s) - 1):
-                    if len(gs) < 2:
-                        pass
-                    else:
-                        flag[gs[-1]] = -1
-
-        return np.array(flag)
-
-    @staticmethod
-    def _rebin(
-        s,
-        b,
-        berr,
-        ts,
-        tb,
-        ss,
-        sb,
-        min_sigma=None,
-        min_evt=None,
-        min_nevt=None,
-        max_bin=None,
-        stat=None,
-        ini_flag=None,
-    ):
-        """Alias for :meth:`_group` used for an independent rebinning pass."""
-
-        return DataUnit._group(
-            s, b, berr, ts, tb, ss, sb, min_sigma, min_evt, min_nevt, max_bin, stat, ini_flag
-        )
 
     @staticmethod
     def _get_grouping_slice(qualifying, noticing, grouping):

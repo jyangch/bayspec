@@ -12,6 +12,14 @@ bayspec.util.corner module
    :undoc-members:
    :show-inheritance:
 
+bayspec.util.group module
+--------------------------
+
+.. automodule:: bayspec.util.group
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 bayspec.util.info module
 ------------------------
 
