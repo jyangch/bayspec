@@ -28,7 +28,7 @@ setup(
         'Operating System :: MacOS',
         'Topic :: Scientific/Engineering :: Astronomy',
     ],
-    python_requires='>=3.8',
+    python_requires='>=3.10',
     install_requires=[
         'numpy>=1.20.4',
         'numba>=0.56',
