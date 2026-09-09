@@ -1,10 +1,10 @@
 """Post-fit analyzers for posterior samples and bootstrap ensembles.
 
 :class:`SampleAnalyzer` absorbs an :class:`~bayspec.infer.infer.Infer`
-instance, reads a 2D sample matrix (``param_sample`` plus a trailing
-log-probability column), attaches the draws to every free parameter's
-:class:`~bayspec.util.post.Post`, and exposes point estimates, credible
-intervals, and model-selection scores (AIC/AICc/BIC, optionally ``lnZ``).
+instance, reads a 2D parameter-sample matrix, evaluates each draw, attaches
+the draws to every free parameter's :class:`~bayspec.util.post.Post`, and
+exposes point estimates, credible intervals, and model-selection scores.
+Posterior analyzers also eagerly calculate WAIC and PSIS-LOO.
 
 :class:`Posterior` and :class:`Bootstrap` are thin subclasses that pick
 which attribute of the underlying ``Infer`` carries the sample matrix.
@@ -12,23 +12,25 @@ which attribute of the underlying ``Infer`` carries the sample matrix.
 
 from collections import OrderedDict
 import os
+import warnings
 
+import arviz as az
 import numpy as np
 
 from ..util.info import Info
 from ..util.post import Post
-from ..util.tools import json_dump
+from ..util.tools import json_dump, memoized
 from .infer import BayesInfer, Infer, MaxLikeFit
 
 
 class SampleAnalyzer(Infer):
     """Wrap an :class:`Infer` with posterior-/bootstrap-driven summary views.
 
-    The sample matrix is expected to have shape ``(nsample, nfree + 1)``,
-    where the last column holds the log-probability associated with each
-    draw. Subclasses set :attr:`sample_attribute` to the instance
-    attribute (``posterior_sample`` or ``bootstrap_sample``) that stores
-    the matrix.
+    The sample matrix is expected to have shape ``(nsample, nfree)`` and
+    contain parameter draws only. Subclasses set :attr:`sample_attribute`
+    to the instance attribute (``posterior_sample`` or ``bootstrap_sample``)
+    that stores the matrix. Pointwise log-likelihood, total log-likelihood,
+    log-prior, and log-probability samples are evaluated eagerly.
 
     Attributes:
         sample_attribute: Name of the source ``Infer`` attribute; set by
@@ -81,7 +83,7 @@ class SampleAnalyzer(Infer):
         self._allot_post()
 
     def _check_sample(self):
-        """Load and validate the sample matrix from :attr:`sample_attribute`."""
+        """Load parameter draws and eagerly evaluate their probability terms."""
 
         if self.sample_attribute is None:
             raise AttributeError('sample_attribute is not defined')
@@ -94,19 +96,44 @@ class SampleAnalyzer(Infer):
         if self.sample.ndim != 2:
             raise ValueError(f'{self.sample_attribute} is expected to be a 2D array')
 
-        if self.sample.shape[1] != self.free_nparams + 1:
+        if self.sample.shape[1] != self.free_nparams:
             raise ValueError(
-                f'{self.sample_attribute} is expected to have {self.free_nparams + 1} columns'
+                f'{self.sample_attribute} is expected to have {self.free_nparams} columns'
             )
 
-        self.param_sample = self.sample[:, : self.free_nparams].copy()
-        self.prob_sample = self.sample[:, -1].copy()
+        self.param_sample = self.sample.copy()
+
+        par_now = [par.val for par in self.free_par.values()]
+        try:
+            self.pointwise_loglike_sample = self._calc_pointwise_loglike_sample()
+            self.logprior_sample = self._calc_logprior_sample()
+        finally:
+            self.at_par(par_now)
+
+        self.loglike_sample = np.sum(self.pointwise_loglike_sample, axis=1)
+        self.logprob_sample = self.loglike_sample + self.logprior_sample
+
+    def _calc_pointwise_loglike_sample(self):
+        """Evaluate fitted-channel log-likelihoods for every parameter draw."""
+
+        return np.vstack([self.calc_pointwise_loglike(theta) for theta in self.param_sample])
+
+    def _calc_logprior_sample(self):
+        """Evaluate the joint log-prior for every parameter draw."""
+
+        return np.asarray([self.calc_logprior(theta) for theta in self.param_sample], dtype=float)
+
+    @property
+    def _ranking_sample(self):
+        """Per-draw score used for ``Post.best`` and best-CI selection."""
+
+        raise NotImplementedError
 
     def _allot_post(self):
         """Attach a :class:`Post` to every free parameter and seed the best-fit CI."""
 
         for i in range(self.free_nparams):
-            self.free_par[i + 1].post = Post(self.param_sample[:, i], self.prob_sample)
+            self.free_par[i + 1].post = Post(self.param_sample[:, i], self._ranking_sample)
 
         self._allot_best_ci(q=0.6827)
         self.at_par(self.par_best)
@@ -119,7 +146,7 @@ class SampleAnalyzer(Infer):
                 satisfy on every dimension simultaneously.
         """
 
-        argsort = np.argsort(self.prob_sample)[::-1]
+        argsort = np.argsort(self._ranking_sample)[::-1]
         sort_param_sample = self.param_sample[argsort]
 
         for sample in sort_param_sample:
@@ -131,8 +158,24 @@ class SampleAnalyzer(Infer):
 
                 break
 
+    @staticmethod
+    def _reshape_draws(values, sampler_type, nwalkers=None):
+        """Arrange flattened samples as ``(chain, draw, ...)`` for ArviZ."""
+
+        values = np.asarray(values)
+        if sampler_type != 'mcmc':
+            return values[None, ...]
+
+        if nwalkers is None or values.shape[0] % nwalkers != 0:
+            raise ValueError('flattened emcee samples are incompatible with mcmc_chain')
+
+        ndraw = values.shape[0] // nwalkers
+        shape = (ndraw, nwalkers, *values.shape[1:])
+
+        return values.reshape(shape).swapaxes(0, 1)
+
     @property
-    def sample_statistic(self):
+    def par_statistic(self):
         """Mean, median, and 1/2/3-sigma intervals of :attr:`param_sample`."""
 
         mean = np.mean(self.param_sample, axis=0)
@@ -175,7 +218,7 @@ class SampleAnalyzer(Infer):
 
     @property
     def par_best(self):
-        """Per-parameter highest-log-probability draws."""
+        """Per-parameter draws with the highest analyzer ranking score."""
 
         return [par.post.best for par in self.free_par.values()]
 
@@ -273,11 +316,25 @@ class SampleAnalyzer(Infer):
 
         return -2 * self.max_loglike + self.free_nparams * np.log(self.npoint)
 
-    @property
-    def lnZ(self):
-        """Log-evidence supplied by the nested sampler, or ``None``."""
+    def to_arviz(self):
+        """Return posterior draws and pointwise likelihood as ArviZ data."""
 
-        return getattr(self, 'logevidence', None)
+        sampler_type = getattr(self, 'sampler_type', 'independent')
+        nwalkers = self.mcmc_chain.shape[1] if sampler_type == 'mcmc' else None
+        reshaped_param_sample = self._reshape_draws(self.param_sample, sampler_type, nwalkers)
+        reshaped_loglikel_sample = self._reshape_draws(
+            self.pointwise_loglike_sample, sampler_type, nwalkers
+        )
+
+        return az.from_dict(
+            posterior={'theta': reshaped_param_sample},
+            log_likelihood={'obs': reshaped_loglikel_sample},
+            coords={
+                'parameter': list(self.clean_free_indexed_plabels),
+                'observation': np.arange(reshaped_loglikel_sample.shape[-1]),
+            },
+            dims={'theta': ['parameter'], 'obs': ['observation']},
+        )
 
     @property
     def free_par_info(self):
@@ -321,13 +378,12 @@ class SampleAnalyzer(Infer):
 
     @property
     def all_IC(self):
-        """Ordered dictionary of AIC/AICc/BIC/lnZ values."""
+        """Ordered dictionary of AIC/AICc/BIC values."""
 
         all_IC = OrderedDict()
         all_IC['AIC'] = self.aic
         all_IC['AICc'] = self.aicc
         all_IC['BIC'] = self.bic
-        all_IC['lnZ'] = self.lnZ
 
         return all_IC
 
@@ -411,6 +467,126 @@ class Posterior(SampleAnalyzer):
 
         super().__init__(infer)
 
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                'ignore',
+                message='For one or more samples the posterior variance.*',
+                category=UserWarning,
+            )
+            warnings.filterwarnings(
+                'ignore',
+                message='Estimated shape parameter of Pareto distribution.*',
+                category=UserWarning,
+            )
+            warnings.filterwarnings(
+                'ignore',
+                message=r'^overflow encountered in .*',
+                category=RuntimeWarning,
+            )
+
+            self.waic()
+            self.loo()
+
+    @property
+    def _ranking_sample(self):
+        """Log-posterior values used to rank posterior draws."""
+
+        return self.logprob_sample
+
+    def _warn_power_likelihood(self):
+        """Warn when predictive criteria describe a weighted power likelihood."""
+
+        if self.has_nonunit_weights:
+            warnings.warn(
+                'WAIC/LOO with non-unit data weights describes a power likelihood; '
+                'the usual independent-observation interpretation does not apply literally.',
+                UserWarning,
+                stacklevel=3,
+            )
+
+    @staticmethod
+    def _format_ic(value, error):
+        """Format an information criterion with its standard error."""
+
+        if value is None:
+            return None
+
+        if error is None:
+            return f'{value:.2f}'
+
+        return f'{value:.2f} ± {error:.2f}'
+
+    @memoized()
+    def waic(self, scale='log', pointwise=True):
+        """Compute WAIC from fitted-channel log-likelihoods using ArviZ.
+
+        The default full result is calculated during initialization. Results
+        are cached separately for each normalized argument combination.
+
+        Args:
+            scale: ArviZ output scale: ``'log'``, ``'negative_log'``, or
+                ``'deviance'``. Log scale is larger-is-better.
+            pointwise: Include the per-channel ``waic_i`` values.
+        """
+
+        self._warn_power_likelihood()
+
+        return az.waic(self.to_arviz(), var_name='obs', scale=scale, pointwise=pointwise)
+
+    @memoized()
+    def loo(self, scale='log', pointwise=True, reff=None):
+        """Compute PSIS-LOO and Pareto-k diagnostics using ArviZ.
+
+        The default full result is calculated during initialization. Results
+        are cached separately for each normalized argument combination.
+
+        Args:
+            scale: ArviZ output scale: ``'log'``, ``'negative_log'``, or
+                ``'deviance'``. Log scale is larger-is-better.
+            pointwise: Include per-channel ``loo_i`` and ``pareto_k`` values.
+            reff: Relative MCMC efficiency. Equal-weight MultiNest samples
+                default to one; emcee samples let ArviZ estimate it.
+        """
+
+        self._warn_power_likelihood()
+
+        if reff is None and getattr(self, 'sampler_type', None) == 'nested':
+            reff = 1.0
+
+        return az.loo(
+            self.to_arviz(),
+            var_name='obs',
+            scale=scale,
+            pointwise=pointwise,
+            reff=reff,
+        )
+
+    @property
+    def lnZ(self):
+        """Log-evidence supplied by the nested sampler, or ``None``."""
+
+        return getattr(self, 'logevidence', None)
+
+    @property
+    def lnZ_err(self):
+        """Nested-sampler uncertainty on :attr:`lnZ`, or ``None``."""
+
+        return getattr(self, 'logevidence_err', None)
+
+    @property
+    def all_IC(self):
+        """AIC-family scores, predictive information criteria, and evidence."""
+
+        waic = self.waic()
+        loo = self.loo()
+
+        all_IC = super().all_IC
+        all_IC['WAIC'] = self._format_ic(-2.0 * waic.elpd_waic, 2.0 * waic.se)
+        all_IC['LOOIC'] = self._format_ic(-2.0 * loo.elpd_loo, 2.0 * loo.se)
+        all_IC['lnZ'] = self._format_ic(self.lnZ, self.lnZ_err)
+
+        return all_IC
+
 
 class Bootstrap(SampleAnalyzer):
     """Analyzer specialised for maximum-likelihood bootstrap ensembles.
@@ -436,13 +612,16 @@ class Bootstrap(SampleAnalyzer):
 
         super().__init__(infer)
 
+    @property
+    def _ranking_sample(self):
+        """Log-likelihood values used to rank bootstrap draws."""
+
+        return self.loglike_sample
+
     def _allot_post(self):
         """Attach a :class:`Post` to every free parameter, plus best-CI and truth."""
 
-        for i in range(self.free_nparams):
-            self.free_par[i + 1].post = Post(self.param_sample[:, i], self.prob_sample)
-
-        self._allot_best_ci(q=0.6827)
+        super()._allot_post()
         self._allot_truth()
         self.at_par(self.par_truth)
 

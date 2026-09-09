@@ -10,14 +10,14 @@
         "Data": "ME",
         "Model": "(cpl+csbpl)",
         "Statistic": "pgstat",
-        "Value": 349.8698276673933,
+        "Value": 349.86982766739743,
         "Bins": 119
     },
     {
         "Data": "HE",
         "Model": "(cpl+csbpl)",
         "Statistic": "pgstat",
-        "Value": 152.51810713875147,
+        "Value": 152.51810713874923,
         "Bins": 117
     },
     {

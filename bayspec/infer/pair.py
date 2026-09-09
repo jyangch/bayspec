@@ -41,8 +41,6 @@ class Pair:
             'ppstat': StatisticNB.PPstat,
             'cstat': StatisticNB.PPstat,
             'pgstat': StatisticNB.PGstat,
-            'ULppstat': StatisticNB.PPstat_UL,
-            'ULpgstat': StatisticNB.PGstat_UL,
         }
     )
 
@@ -488,72 +486,37 @@ class Pair:
         )
 
     @cached_property()
-    def stat_func(self):
-        """Closure returning the per-unit statistic; ``+inf`` when the model is non-finite."""
+    def statistic_func(self):
+        """Closure returning the selected statistic's result object."""
 
-        return lambda S, B, m, ts, tb, sigma_S, sigma_B, stat: (
-            np.inf
-            if np.isnan(m).any() or np.isinf(m).any()
-            else self._allowed_stats[stat](
-                S=S, B=B, m=m, ts=ts, tb=tb, sigma_S=sigma_S, sigma_B=sigma_B
-            )[0]
+        return lambda S, B, m, ts, tb, sigma_S, sigma_B, stat: self._allowed_stats[stat](
+            S=S, B=B, m=m, ts=ts, tb=tb, sigma_S=sigma_S, sigma_B=sigma_B
         )
 
-    @cached_property()
-    def pseudo_residual_func(self):
-        """Closure returning the per-bin pseudo-residual from the chosen statistic."""
+    def _statistic_calculate(self):
+        """Evaluate every data unit through the shared result interface."""
 
-        return lambda S, B, m, ts, tb, sigma_S, sigma_B, stat: (
-            np.ones_like(m) * np.inf
-            if np.isnan(m).any() or np.isinf(m).any()
-            else self._allowed_stats[stat](
-                S=S, B=B, m=m, ts=ts, tb=tb, sigma_S=sigma_S, sigma_B=sigma_B
-            )[1]
-        )
+        results = []
+        for args in zip(
+            self.data.src_counts_f64,
+            self.data.bkg_counts_f64,
+            self.model.conv_ctsrate_f64,
+            self.data.corr_src_efficiency_f64,
+            self.data.corr_bkg_efficiency_f64,
+            self.data.src_errors_f64,
+            self.data.bkg_errors_f64,
+            self.data.stats,
+            strict=False,
+        ):
+            results.append(self.statistic_func(*args))
 
-    def _stat_calculate(self):
-
-        return list(
-            map(
-                self.stat_func,
-                self.data.src_counts_f64,
-                self.data.bkg_counts_f64,
-                self.model.conv_ctsrate_f64,
-                self.data.corr_src_efficiency_f64,
-                self.data.corr_bkg_efficiency_f64,
-                self.data.src_errors_f64,
-                self.data.bkg_errors_f64,
-                self.data.stats,
-            )
-        )
-
-    def _pseudo_residual_calculate(self):
-
-        return list(
-            map(
-                self.pseudo_residual_func,
-                self.data.src_counts_f64,
-                self.data.bkg_counts_f64,
-                self.model.conv_ctsrate_f64,
-                self.data.corr_src_efficiency_f64,
-                self.data.corr_bkg_efficiency_f64,
-                self.data.src_errors_f64,
-                self.data.bkg_errors_f64,
-                self.data.stats,
-            )
-        )
+        return results
 
     @property
-    def stat_list(self):
-        """Array of per-unit statistic values."""
+    def statistic_list(self):
+        """Per-unit statistic results in data order."""
 
-        return np.array(self._stat_calculate())
-
-    @property
-    def pseudo_residual_list(self):
-        """List of per-unit pseudo-residual arrays."""
-
-        return self._pseudo_residual_calculate()
+        return self._statistic_calculate()
 
     @property
     def weight_list(self):
@@ -562,10 +525,59 @@ class Pair:
         return self.data.weights
 
     @property
+    def has_nonunit_weights(self):
+        """Whether any data unit uses a power-likelihood weight other than one."""
+
+        return not np.allclose(self.weight_list, 1.0)
+
+    @property
+    def pointwise_loglike_list(self):
+        """Unweighted pointwise log-likelihood arrays for each data unit."""
+
+        return [result.pointwise_loglike for result in self.statistic_list]
+
+    @property
+    def pointwise_loglike(self):
+        """Weighted pointwise log-likelihood concatenated over fitted channels."""
+
+        return np.concatenate(
+            [
+                loglike * weight
+                for loglike, weight in zip(
+                    self.pointwise_loglike_list, self.weight_list, strict=False
+                )
+            ]
+        )
+
+    @property
+    def loglike_list(self):
+        """Per-unit log-likelihood values for likelihood statistics."""
+
+        return np.array([result.loglike for result in self.statistic_list])
+
+    @property
+    def loglike(self):
+        """Total weighted log-likelihood across all data units."""
+
+        return np.sum(self.loglike_list * self.weight_list)
+
+    @property
+    def stat_list(self):
+        """Array of per-unit statistic values."""
+
+        return np.array([result.stat for result in self.statistic_list])
+
+    @property
     def stat(self):
         """Total weighted statistic summed across all units."""
 
         return np.sum(self.stat_list * self.weight_list)
+
+    @property
+    def pseudo_residual_list(self):
+        """List of per-unit pseudo-residual arrays."""
+
+        return [result.residual for result in self.statistic_list]
 
     @property
     def pseudo_residual(self):
@@ -577,18 +589,6 @@ class Pair:
                 for rd, wt in zip(self.pseudo_residual_list, self.weight_list, strict=False)
             ]
         )
-
-    @property
-    def loglike_list(self):
-        """Per-unit log-likelihood, derived as ``-0.5 * stat_list``."""
-
-        return -0.5 * self.stat_list
-
-    @property
-    def loglike(self):
-        """Total log-likelihood, derived as ``-0.5 * stat``."""
-
-        return -0.5 * self.stat
 
     @property
     def npoint_list(self):

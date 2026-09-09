@@ -53,8 +53,12 @@ Icon?
 build/
 dist/
 
-# beta version
-bayspec_beta/
+# cache files
+.pytest_cache/
+.ruff_cache/
+
+# test files
+tests/
 
 # private models
 bayspec/docs/katu/
@@ -62,4 +66,3 @@ bayspec/docs/zxhsync/
 
 # Local-only docs and Claude Code project config
 docs/
-CLAUDE.md

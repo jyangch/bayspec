@@ -16,7 +16,9 @@ from collections import OrderedDict
 import copy
 import inspect
 from io import BytesIO
+from numbers import Real
 import os
+from types import MappingProxyType
 import warnings
 
 import astropy.io.fits as fits
@@ -24,7 +26,7 @@ import numpy as np
 from scipy import special
 
 from ..util.info import Info
-from ..util.significance import pgsig, ppsig
+from ..util.significance import pgsig, pgsig_inv, ppsig, ppsig_inv
 from ..util.tools import SuperDict, cached_property, clear_cached_property, json_dump
 from .response import Auxiliary, Redistribution, Response
 from .spectrum import Background, Source
@@ -659,6 +661,25 @@ class Data:
         """Per-unit net-count-rate upper limit at confidence level ``cl``."""
 
         return [unit.net_ctsrate_upperlimit(cl) for unit in self.data.values()]
+
+    def net_counts_significance_limit(self, sig=3):
+        """Per-unit net counts required to reach significance ``sig``.
+
+        This is a detection threshold obtained by inverting ``pgsig`` or
+        ``ppsig`` according to each unit's statistic. It is distinct from the
+        confidence/credible limit returned by :meth:`net_counts_upperlimit`.
+        """
+
+        return [unit.net_counts_significance_limit(sig) for unit in self.data.values()]
+
+    def net_ctsrate_significance_limit(self, sig=3):
+        """Per-unit net count rates required to reach significance ``sig``.
+
+        See :meth:`net_counts_significance_limit` for the statistical
+        definition.
+        """
+
+        return [unit.net_ctsrate_significance_limit(sig) for unit in self.data.values()]
 
     @property
     def deconv_phtspec(self):
@@ -1889,6 +1910,82 @@ class DataUnit:
 
         return self.net_counts_upperlimit(cl) / self.corr_src_efficiency
 
+    def _pp_net_counts_significance_limit(self, sig):
+
+        background = np.sum(self.bkg_counts)
+
+        return ppsig_inv(sig, background, self.alpha) - self.alpha * background
+
+    def _pg_net_counts_significance_limit(self, sig):
+
+        background = np.sum(self.bkg_counts) * self.alpha
+        background_error = np.sqrt(np.sum(self.bkg_errors**2)) * self.alpha
+
+        return pgsig_inv(sig, background, background_error) - background
+
+    @property
+    def _significance_limit_calculators(self):
+        return MappingProxyType(
+            {
+                'ppstat': self._pp_net_counts_significance_limit,
+                'cstat': self._pp_net_counts_significance_limit,
+                'pgstat': self._pg_net_counts_significance_limit,
+            }
+        )
+
+    def net_counts_significance_limit(self, sig=3):
+        """Return the net counts required to reach significance ``sig``.
+
+        The inverse significance gives the total source-region count threshold;
+        the expected background in that region is then subtracted. For
+        ``pgstat``, the summed Gaussian background and its quadrature error are
+        scaled by ``alpha`` before calling :func:`pgsig_inv`. For
+        ``ppstat``/``cstat``, the raw off-region background and ``alpha`` are
+        passed to :func:`ppsig_inv`. ``pstat`` is not supported because it has
+        no background measurement from which to define these significances.
+
+        This quantity is a detection threshold, not a Bayesian upper limit.
+        Use :meth:`net_counts_upperlimit` for the existing Poisson credible
+        upper limit.
+
+        Args:
+            sig: Positive finite target significance. The default is 3 sigma.
+
+        Returns:
+            Continuous net-count threshold; no integer rounding is applied.
+
+        Raises:
+            ValueError: If ``sig`` is invalid or the unit does not use a
+                supported Poisson-source statistic.
+        """
+
+        if (
+            isinstance(sig, (bool, np.bool_))
+            or not isinstance(sig, Real)
+            or not np.isfinite(sig)
+            or sig <= 0
+        ):
+            raise ValueError('sig must be positive and finite')
+
+        try:
+            calculator = self._significance_limit_calculators[self.stat]
+        except KeyError as exc:
+            raise ValueError(
+                'net-count significance limits require a Poisson source statistic '
+                "with a background significance model ('ppstat', 'cstat', or 'pgstat')"
+            ) from exc
+
+        return calculator(sig)
+
+    def net_ctsrate_significance_limit(self, sig=3):
+        """Return the net count rate required to reach significance ``sig``.
+
+        Divides :meth:`net_counts_significance_limit` by
+        :attr:`corr_src_efficiency`.
+        """
+
+        return self.net_counts_significance_limit(sig) / self.corr_src_efficiency
+
     @property
     def name(self):
         """User-assigned name if set, otherwise a best-effort caller-scope name."""
@@ -2096,9 +2193,9 @@ class DataUnit:
                 if stat is None:
                     stat = 'pgstat'
 
-                if stat in ['pstat', 'cstat', 'ppstat', 'Xppstat', 'Xcstat', 'ULppstat']:
+                if stat in ['pstat', 'cstat', 'ppstat', 'Xppstat', 'Xcstat']:
                     sigma = 0 if (cb < 0 or cs < 0) and cb != cs else ppsig(cs, cb, alpha)
-                elif stat in ['gstat', 'chi2', 'pgstat', 'Xpgstat', 'ULpgstat']:
+                elif stat in ['gstat', 'chi2', 'pgstat', 'Xpgstat']:
                     sigma = 0 if cs <= 0 or cberr == 0 else pgsig(cs, cb * alpha, cberr * alpha)
                 else:
                     raise AttributeError(f'unsupported stat: {stat}')

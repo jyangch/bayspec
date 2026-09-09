@@ -10,6 +10,7 @@ from collections import OrderedDict
 from datetime import date, datetime
 import functools
 import hashlib
+import inspect
 from io import BytesIO
 from itertools import islice
 import json
@@ -197,9 +198,10 @@ def memoized(dep_getter=None, *, cache_size=None, verbose=False):
     """Method-memoization decorator keyed on arguments and a dependency value.
 
     Each decorated method gets a per-instance bounded LRU cache keyed on
-    a fingerprint of ``dep_getter(self)``, the positional arguments, and
-    the keyword arguments. Numpy arrays are fingerprinted by content hash
-    (BLAKE2b) along with shape and dtype, so identical contents hit the
+    a fingerprint of ``dep_getter(self)`` and the arguments normalized by
+    the method signature. Equivalent positional, keyword, and omitted-default
+    calls therefore share one entry. Numpy arrays are fingerprinted by content
+    hash (BLAKE2b) along with shape and dtype, so identical contents hit the
     cache and in-place modifications correctly invalidate it.
 
     Args:
@@ -223,6 +225,7 @@ def memoized(dep_getter=None, *, cache_size=None, verbose=False):
     def decorator(func):
 
         cache_attr = f'{_CACHE_ATTR_PREFIX}{func.__name__}'
+        signature = inspect.signature(func)
 
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -230,11 +233,13 @@ def memoized(dep_getter=None, *, cache_size=None, verbose=False):
             if not _WITH_MEMOIZATION:
                 return func(self, *args, **kwargs)
 
-            fingerprint = (
-                get_fingerprint(dep_getter(self)),
-                tuple(get_fingerprint(a) for a in args),
-                tuple(sorted((k, get_fingerprint(v)) for k, v in kwargs.items())),
+            bound = signature.bind(self, *args, **kwargs)
+            bound.apply_defaults()
+            call_fingerprint = tuple(
+                (name, get_fingerprint(value))
+                for name, value in tuple(bound.arguments.items())[1:]
             )
+            fingerprint = (get_fingerprint(dep_getter(self)), call_fingerprint)
 
             cache = getattr(self, cache_attr, None)
             if cache is None:

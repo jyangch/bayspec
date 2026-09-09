@@ -247,3 +247,202 @@ def ppsig(n, b, alpha, sigma=0, k=0):
         res[idx_eq9] = np.sqrt(TS)
 
     return np.squeeze(sign * res)
+
+
+def _solve_inverse_scalar(forward, sig, zero_point, negative_upper=None):
+    """Solve one signed-significance inverse on a selected monotonic branch."""
+
+    if sig == 0:
+        return zero_point, (zero_point, None)
+
+    if sig < 0:
+        upper = zero_point if negative_upper is None else negative_upper
+        upper_is_zero = negative_upper is None
+
+        if upper <= 0:
+            raise ValueError(f'sig={sig} is not reachable for non-negative counts')
+
+        lower_value = forward(0.0)
+        upper_value = 0.0 if upper_is_zero else forward(upper)
+
+        if sig < lower_value or sig > upper_value:
+            raise ValueError(f'sig={sig} is not reachable on the low-count branch')
+
+        if sig == lower_value:
+            return 0.0, (0.0, upper)
+        if sig == upper_value:
+            return upper, (0.0, upper)
+
+        root = scipy.optimize.brentq(
+            lambda n: -sig if upper_is_zero and n == upper else forward(n) - sig,
+            0.0,
+            upper,
+        )
+        return root, (0.0, upper)
+
+    lower = zero_point
+    upper = max(lower + 1.0, 2.0 * lower)
+
+    for _ in range(100):
+        upper_value = forward(upper)
+        if upper_value >= sig:
+            break
+        upper = max(upper + 1.0, 2.0 * upper)
+    else:
+        raise ValueError(f'could not bracket sig={sig} on the high-count branch')
+
+    root = scipy.optimize.brentq(
+        lambda n: -sig if n == lower else forward(n) - sig,
+        lower,
+        upper,
+    )
+    return root, (lower, None)
+
+
+def _integer_inverse(forward, sig, root, branch):
+    """Return the first integer count reaching ``sig`` on ``branch``."""
+
+    lower, upper = branch
+    lower_integer = max(0, int(np.ceil(lower)))
+    upper_integer = None if upper is None else int(np.floor(upper))
+    candidate = max(lower_integer, int(np.floor(root)))
+
+    def significance(count):
+        if upper is None and count == lower:
+            return 0.0
+        return forward(count)
+
+    while significance(candidate) < sig:
+        candidate += 1
+        if upper_integer is not None and candidate > upper_integer:
+            raise ValueError(f'sig={sig} is not reachable at an integer count on this branch')
+
+    while candidate > lower_integer and significance(candidate - 1) >= sig:
+        candidate -= 1
+
+    return candidate
+
+
+def _inverse_elementwise(function, sig, parameters, integer):
+    """Broadcast inverse inputs and evaluate ``function`` element by element."""
+
+    if not isinstance(integer, (bool, np.bool_)):
+        raise ValueError('integer must be a boolean')
+
+    arrays = np.broadcast_arrays(
+        np.asarray(sig, dtype=float),
+        *(np.asarray(value, dtype=float) for value in parameters),
+    )
+
+    if not all(np.all(np.isfinite(array)) for array in arrays):
+        raise ValueError('inverse-significance inputs must be finite')
+
+    result = np.empty(arrays[0].shape, dtype=int if integer else float)
+    flat_arrays = [array.ravel() for array in arrays]
+
+    for index, values in enumerate(zip(*flat_arrays, strict=True)):
+        result.ravel()[index] = function(*map(float, values), integer=integer)
+
+    return result.item() if result.ndim == 0 else result
+
+
+def _pgsig_inv_scalar(sig, b, sigma, integer):
+    if b < 0:
+        raise ValueError('b must be non-negative')
+    if sigma <= 0:
+        raise ValueError('sigma must be positive')
+
+    def forward(n):
+        return float(pgsig(n, b, sigma))
+
+    root, branch = _solve_inverse_scalar(forward, sig, zero_point=b)
+
+    return _integer_inverse(forward, sig, root, branch) if integer else root
+
+
+def pgsig_inv(sig, b, sigma, integer=False):
+    """Invert :func:`pgsig` to obtain the observed source-region counts.
+
+    Args:
+        sig: Target signed significance; scalar or array.
+        b: Gaussian background estimate; non-negative and broadcastable with
+            the other inputs.
+        sigma: Positive background uncertainty; broadcastable with the other
+            inputs.
+        integer: If true, return the smallest non-negative integer count whose
+            significance reaches ``sig``. By default, return the continuous
+            real-valued root.
+
+    Returns:
+        The inferred observed count or an array with the broadcast input shape.
+
+    Raises:
+        ValueError: If inputs are invalid or the target is unreachable.
+    """
+
+    return _inverse_elementwise(_pgsig_inv_scalar, sig, (b, sigma), integer)
+
+
+def _ppsig_inv_scalar(sig, b, alpha, sigma, k, integer):
+    if b < 0:
+        raise ValueError('b must be non-negative')
+    if alpha <= 0:
+        raise ValueError('alpha must be positive')
+    if sigma < 0:
+        raise ValueError('sigma must be non-negative')
+    if k < 0:
+        raise ValueError('k must be non-negative')
+
+    def forward(n):
+        return float(ppsig(n, b, alpha, sigma=sigma, k=k))
+
+    if sigma == 0 and k > 0:
+        zero_point = alpha * (1 + k) * b
+        negative_upper = np.nextafter(alpha * b, 0.0)
+    else:
+        zero_point = alpha * b
+        negative_upper = None
+
+    root, branch = _solve_inverse_scalar(
+        forward,
+        sig,
+        zero_point=zero_point,
+        negative_upper=negative_upper,
+    )
+
+    return _integer_inverse(forward, sig, root, branch) if integer else root
+
+
+def ppsig_inv(sig, b, alpha, sigma=0, k=0, integer=False):
+    """Invert :func:`ppsig` to obtain the observed source-region counts.
+
+    The inverse follows the same Li & Ma / Vianello dispatch as :func:`ppsig`.
+    For Vianello eq. 7 (``k > 0`` and ``sigma == 0``), positive targets use
+    the high-count branch beginning at ``alpha * (1 + k) * b`` and negative
+    targets use the low-count branch below ``alpha * b``. Targets in the gap
+    introduced by the existing signed eq. 7 definition are rejected.
+
+    Args:
+        sig: Target signed significance; scalar or array.
+        b: Expected Poisson background counts; non-negative and broadcastable.
+        alpha: Positive source-to-background efficiency ratio; broadcastable.
+        sigma: Non-negative Gaussian systematic standard deviation.
+        k: Non-negative upper bound on fractional systematic uncertainty.
+        integer: If true, return the smallest non-negative integer count on the
+            selected branch whose significance reaches ``sig``. By default,
+            return the continuous real-valued root.
+
+    Returns:
+        The inferred observed count or an array with the broadcast input shape.
+
+    Raises:
+        ValueError: If inputs are invalid or the target is unreachable on the
+            selected branch.
+    """
+
+    return _inverse_elementwise(
+        _ppsig_inv_scalar,
+        sig,
+        (b, alpha, sigma, k),
+        integer,
+    )

@@ -41,6 +41,7 @@ setup(
         'corner>=2.2.1',
         'getdist>=1.7.2',
         'astropy>=5.2.2',
+        'arviz>=0.15',
         'emcee>=3.1.1',
         'pymultinest>=2.12',
         'lmfit>=1.0.3',

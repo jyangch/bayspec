@@ -65,9 +65,9 @@ class Infer:
 
         self.pairs = pairs
 
-        self.loglike_func = None
         self.logprior_func = None
         self.prior_transform_func = None
+        self.loglike_func = None
 
         self.inference_type = 'Inference'
 
@@ -728,34 +728,22 @@ class Infer:
             return np.log(self.prior)
 
     @property
-    def stat_list(self):
-        """Concatenated per-unit statistic across every pair."""
-
-        return np.hstack([pair.stat_list for pair in self.Pair])
-
-    @property
-    def pseudo_residual_list(self):
-        """Concatenated per-unit pseudo-residual arrays across every pair."""
-
-        return [rd for pair in self.Pair for rd in pair.pseudo_residual_list]
-
-    @property
     def weight_list(self):
         """Concatenated per-unit weights across every pair."""
 
         return np.hstack([pair.weight_list for pair in self.Pair])
 
     @property
-    def stat(self):
-        """Summed fit statistic across every pair."""
+    def has_nonunit_weights(self):
+        """Whether any paired data unit uses a non-unit likelihood weight."""
 
-        return np.sum([pair.stat for pair in self.Pair])
+        return any(pair.has_nonunit_weights for pair in self.Pair)
 
     @property
-    def pseudo_residual(self):
-        """Concatenated weight-scaled pseudo-residual vector across every pair."""
+    def pointwise_loglike(self):
+        """Weighted log-likelihood contribution from every fitted channel."""
 
-        return np.hstack([pair.pseudo_residual for pair in self.Pair])
+        return np.hstack([pair.pointwise_loglike for pair in self.Pair])
 
     @property
     def loglike_list(self):
@@ -768,6 +756,30 @@ class Infer:
         """Summed log-likelihood across every pair."""
 
         return np.sum([pair.loglike for pair in self.Pair])
+
+    @property
+    def stat_list(self):
+        """Concatenated per-unit statistic across every pair."""
+
+        return np.hstack([pair.stat_list for pair in self.Pair])
+
+    @property
+    def stat(self):
+        """Summed fit statistic across every pair."""
+
+        return np.sum([pair.stat for pair in self.Pair])
+
+    @property
+    def pseudo_residual_list(self):
+        """Concatenated per-unit pseudo-residual arrays across every pair."""
+
+        return [rd for pair in self.Pair for rd in pair.pseudo_residual_list]
+
+    @property
+    def pseudo_residual(self):
+        """Concatenated weight-scaled pseudo-residual vector across every pair."""
+
+        return np.hstack([pair.pseudo_residual for pair in self.Pair])
 
     @property
     def npoint_list(self):
@@ -856,6 +868,21 @@ class Infer:
             self.free_par[i + 1].val = thi
 
     @property
+    def logprior_func(self):
+        """Optional user override for the log-prior computation."""
+
+        return self._logprior_func
+
+    @logprior_func.setter
+    def logprior_func(self, new_logprior_func):
+        """Install a user-provided log-prior callable or clear it with ``None``."""
+
+        if isinstance(new_logprior_func, (Callable, type(None))):
+            self._logprior_func = new_logprior_func
+        else:
+            raise ValueError('logprior_func is expected to be Callable or None')
+
+    @property
     def prior_transform_func(self):
         """Optional user override for the unit-cube to prior transform."""
 
@@ -875,29 +902,14 @@ class Infer:
             raise ValueError('prior_transform_func is expected to be Callable or None')
 
     @property
-    def logprior_func(self):
-        """Optional user override for the log-prior computation."""
-
-        return self._logprior_func
-
-    @logprior_func.setter
-    def logprior_func(self, new_logprior_func):
-        """Install a user-provided log-prior callable or clear it with ``None``."""
-
-        if isinstance(new_logprior_func, (Callable, type(None))):
-            self._logprior_func = new_logprior_func
-        else:
-            raise ValueError('logprior_func is expected to be Callable or None')
-
-    @property
     def loglike_func(self):
-        """Optional user override for the log-likelihood computation."""
+        """Optional user function returning pointwise log-likelihood values."""
 
         return self._loglike_func
 
     @loglike_func.setter
     def loglike_func(self, new_loglike_func):
-        """Install a user-provided log-likelihood callable or clear it with ``None``."""
+        """Install a pointwise log-likelihood callable or clear it with ``None``."""
 
         if isinstance(new_loglike_func, (Callable, type(None))):
             self._loglike_func = new_loglike_func
@@ -937,6 +949,27 @@ class Infer:
         else:
             return self.logprior_func(self, theta)
 
+    def calc_pointwise_loglike(self, theta):
+        """Apply ``theta`` and return its fitted-channel log-likelihood values."""
+
+        self.at_par(theta)
+
+        if self.loglike_func is None:
+            return self.pointwise_loglike
+
+        pointwise = np.asarray(self.loglike_func(self, theta), dtype=float)
+        if pointwise.shape != (self.npoint,):
+            raise ValueError(f'loglike_func must return {self.npoint} values')
+        if np.isnan(pointwise).any():
+            raise ValueError('loglike_func must not return NaN')
+
+        return pointwise
+
+    def calc_loglike(self, theta):
+        """Apply ``theta`` and sum its pointwise log-likelihood."""
+
+        return np.sum(self.calc_pointwise_loglike(theta))
+
     def calc_stat(self, theta):
         """Apply ``theta`` and return the summed fit statistic."""
 
@@ -951,16 +984,6 @@ class Infer:
 
         return self.pseudo_residual
 
-    def calc_loglike(self, theta):
-        """Apply ``theta`` and return the log-likelihood (or the user override)."""
-
-        self.at_par(theta)
-
-        if self.loglike_func is None:
-            return self.loglike
-        else:
-            return self.loglike_func(self, theta)
-
     def calc_logprob(self, theta):
         """Return the unnormalised log-posterior; ``-inf`` outside the prior support."""
 
@@ -970,25 +993,6 @@ class Infer:
             return -np.inf
 
         return lp + self.calc_loglike(theta)
-
-    def calc_logprior_sample(self, theta_sample):
-        """Vectorized log-prior over a sample matrix; returns ``-inf`` where it vanishes.
-
-        Args:
-            theta_sample: ``(nsample, nparams)`` array of draws.
-
-        Returns:
-            ``(nsample,)`` array of log-prior values.
-        """
-
-        prior_list_sample = np.zeros_like(theta_sample, dtype=float)
-
-        for i in range(theta_sample.shape[1]):
-            prior_list_sample[:, i] = self.free_par[i + 1].prior.pdf(theta_sample[:, i])
-
-        prior_sample = np.prod(prior_list_sample, axis=1)
-
-        return np.where(prior_sample == 0, -np.inf, np.log(prior_sample))
 
 
 class BayesInfer(Infer):
@@ -1049,25 +1053,41 @@ class BayesInfer(Infer):
             sys.exit(1)
 
     @staticmethod
-    def _read_ns_global_evidence(stats_file):
-        """Parse the plain NS global log-evidence value from a MultiNest stats file.
+    def _multinest_evidence_from_plain(stats_file):
+        """Parse plain NS global log-evidence and its error from ``stats.dat``.
 
         Args:
             stats_file: Path to MultiNest's ``stats.dat``.
 
         Returns:
-            The nested-sampling global log-evidence as a float, or ``None`` if the
-            line cannot be read. Used as a fallback when INS writes an unparseable
-            subnormal evidence that breaks ``get_stats``.
+            A ``(log-evidence, error)`` tuple, or ``None`` if the line cannot
+            be read. Used as a fallback when INS writes an unparseable subnormal
+            evidence that breaks ``get_stats``.
         """
 
         try:
             with open(stats_file) as f:
                 line = f.readline()
-            value = line.split(':', 1)[1].split('+/-')[0]
-            return float(value)
+            value, error = line.split(':', 1)[1].split('+/-', 1)
+            return float(value), float(error)
         except (OSError, IndexError, ValueError):
             return None
+
+    @staticmethod
+    def _multinest_evidence_from_stats(posterior_stats, ins):
+        """Return matching log-evidence and error from MultiNest statistics."""
+
+        ins_logevidence = posterior_stats.get('nested importance sampling global log-evidence')
+        if ins and ins_logevidence is not None and np.isfinite(ins_logevidence):
+            return (
+                ins_logevidence,
+                posterior_stats['nested importance sampling global log-evidence error'],
+            )
+
+        return (
+            posterior_stats['nested sampling global log-evidence'],
+            posterior_stats['nested sampling global log-evidence error'],
+        )
 
     @staticmethod
     def _multinest_ev_niter(savepath_prefix):
@@ -1111,7 +1131,7 @@ class BayesInfer(Infer):
                 yielding a NaN/subnormal evidence that corrupts
                 ``stats.dat``. Set ``False`` for such boundary-pinned fits
                 to fall back to the robust plain nested-sampling evidence.
-            savepath: Directory for MultiNest outputs and cached samples.
+            savepath: Directory for MultiNest outputs and the parameter-sample export.
             random_seed: Seed forwarded to MultiNest for reproducible runs.
                 ``None`` (default) lets MultiNest pick a system-time seed,
                 so different runs differ.
@@ -1136,7 +1156,6 @@ class BayesInfer(Infer):
         if not os.path.exists(savepath):
             os.makedirs(savepath)
 
-        prev_niter = self._multinest_ev_niter(savepath_prefix) if resume else 0
         capped = resume and os.path.exists(max_iter_warning_path)
 
         if capped:
@@ -1190,8 +1209,8 @@ class BayesInfer(Infer):
             # plain NS evidence is on a separate, well-formed line, so recover that
             # and carry on rather than failing the whole run.
             posterior_stats = None
-            self.logevidence = self._read_ns_global_evidence(savepath_prefix + 'stats.dat')
-            if self.logevidence is None:
+            evidence = self._multinest_evidence_from_plain(savepath_prefix + 'stats.dat')
+            if evidence is None:
                 raise RuntimeError(
                     f'pymultinest could not parse the MultiNest stats file ({e}), and '
                     f'the plain nested-sampling evidence was also unreadable. This '
@@ -1200,6 +1219,7 @@ class BayesInfer(Infer):
                     + (f'The max_iter cap ({max_iter}) was also hit. ' if capped else '')
                     + 'Inspect the model and priors for this dataset.'
                 ) from e
+            self.logevidence, self.logevidence_err = evidence
             warnings.warn(
                 'INS evidence in stats.dat was unparseable (likely a boundary-pinned, '
                 'non-converged posterior); falling back to the plain nested-sampling '
@@ -1207,22 +1227,13 @@ class BayesInfer(Infer):
                 stacklevel=2,
             )
         else:
-            ins_logevidence = posterior_stats.get('nested importance sampling global log-evidence')
-            if ins and ins_logevidence is not None and np.isfinite(ins_logevidence):
-                self.logevidence = ins_logevidence
-            else:
-                self.logevidence = posterior_stats['nested sampling global log-evidence']
-
-        posterior_sample_path = savepath_prefix + 'posterior_sample.txt'
-        sampling_progressed = niter > prev_niter
-        if (not resume) or (not os.path.exists(posterior_sample_path)) or sampling_progressed:
-            self.posterior_sample = multinest_analyzer.get_equal_weighted_posterior()
-            self.posterior_sample[:, -1] = self.posterior_sample[:, -1] + self.calc_logprior_sample(
-                self.posterior_sample[:, 0:-1]
+            self.logevidence, self.logevidence_err = self._multinest_evidence_from_stats(
+                posterior_stats, ins
             )
-            np.savetxt(posterior_sample_path, self.posterior_sample)
-        else:
-            self.posterior_sample = np.loadtxt(posterior_sample_path)
+
+        equal_weighted_posterior = multinest_analyzer.get_equal_weighted_posterior()
+        self.posterior_sample = equal_weighted_posterior[:, : self.free_nparams]
+        np.savetxt(savepath_prefix + 'posterior_sample.txt', self.posterior_sample)
 
         with open(savepath_prefix + 'nlive.json', 'w') as f:
             json.dump(nlive, f, indent=4, cls=JsonEncoder)
@@ -1282,11 +1293,8 @@ class BayesInfer(Infer):
             emcee_sampler = emcee.EnsembleSampler(nwalkers, ndim, self.emcee_calc_logprob)
             emcee_sampler.run_mcmc(pos, nstep, progress=True)
 
-            params_sample = emcee_sampler.get_chain()
-            np.savez(savepath_prefix + '.npz', sample=params_sample)
-
-            logprob_sample = emcee_sampler.get_log_prob()
-            np.savetxt(savepath_prefix + 'logprob.dat', logprob_sample)
+            mcmc_chain = emcee_sampler.get_chain()
+            np.savez(savepath_prefix + '.npz', chain=mcmc_chain)
 
             try:
                 autocorr_time = emcee_sampler.get_autocorr_time()
@@ -1300,17 +1308,8 @@ class BayesInfer(Infer):
             except Exception:
                 pass
 
-        params_sample = np.load(savepath_prefix + '.npz')['sample']
-        logprob_sample = np.loadtxt(savepath_prefix + 'logprob.dat')
-
-        self.mcmc_chain = params_sample
-
-        flat_params_sample = params_sample[discard:, :, :].reshape(-1, ndim)
-        flat_logprob_sample = logprob_sample[discard:, :].reshape(-1)
-
-        self.posterior_sample = np.hstack(
-            (flat_params_sample, np.reshape(flat_logprob_sample, (-1, 1)))
-        )
+        self.mcmc_chain = np.load(savepath_prefix + '.npz')['chain']
+        self.posterior_sample = self.mcmc_chain[discard:, :, :].reshape(-1, ndim)
 
         np.savetxt(savepath_prefix + 'posterior_sample.txt', self.posterior_sample)
         with open(savepath_prefix + 'nstep.json', 'w') as f:
@@ -1339,7 +1338,7 @@ class MaxLikeFit(Infer):
     def _make_bootstrap_sample(
         self, values, covar=None, errors=None, nsample=1000, random_seed=450001
     ):
-        """Draw a covariance-respecting bootstrap sample and score each draw.
+        """Draw a covariance-respecting bootstrap parameter sample.
 
         Falls back to a diagonal covariance built from ``errors`` when
         ``covar`` is missing or non-finite. Draws are rejected if they
@@ -1402,9 +1401,7 @@ class MaxLikeFit(Infer):
         else:
             param_sample = np.asarray(param_sample[:nsample], dtype=float)
 
-        loglike_sample = np.array([self.calc_loglike(theta) for theta in param_sample], dtype=float)
-
-        self.bootstrap_sample = np.hstack((param_sample, loglike_sample[:, None]))
+        self.bootstrap_sample = param_sample
 
         self.at_par(values)
 

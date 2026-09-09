@@ -1114,9 +1114,12 @@ def load_posterior(
     """Rebuild a Posterior from a previous run's `1-posterior_sample.txt`.
 
     The supplied `infer` must reflect the same model + data layout used for
-    the original run (so the column count matches `free_nparams + 1`).
+    the original run (so the parameter-only column count matches
+    `free_nparams`).
     For `sampler='nested'`, `logevidence` is read from
     `1-posterior_stats.json` if present, so `lnZ` survives the round-trip.
+    For `sampler='mcmc'`, the unflattened walker chain is restored from
+    `1-.npz` so ArviZ diagnostics retain the original chain structure.
     """
     inf = _get('infers', infer)
     sample_path = Path(savepath) / '1-posterior_sample.txt'
@@ -1124,8 +1127,11 @@ def load_posterior(
         raise FileNotFoundError(f"No posterior sample at {sample_path}")
     inf.sampler_type = sampler
     inf._you_free()
-    inf.posterior_sample = np.loadtxt(sample_path)
-    if sampler == 'nested':
+    inf.posterior_sample = np.loadtxt(sample_path, ndmin=2)
+    if sampler == 'mcmc':
+        with np.load(Path(savepath) / '1-.npz') as archive:
+            inf.mcmc_chain = archive['chain']
+    else:
         stats_path = Path(savepath) / '1-posterior_stats.json'
         if stats_path.exists():
             with stats_path.open() as f:

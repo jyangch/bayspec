@@ -2,30 +2,98 @@
 
 Implements the Gaussian (``Gstat``), Poisson (``Pstat``), Poisson-source
 plus Poisson-background (``PPstat``/``cstat``), Poisson-source plus
-Gaussian-background (``PGstat``) statistics, and their upper-limit
-variants. ``StatisticNB`` exposes the numba-accelerated fast path (fused
-stat + signed residual per bin); ``Statistic`` is a pure-numpy fallback
-with the same interface.
+Gaussian-background (``PGstat``) statistics. ``StatisticNB`` exposes the
+numba-accelerated fast path and ``Statistic`` is a pure-numpy fallback with
+the same interface.
 
 Every statistic takes the same keyword arguments (``S``, ``B``, ``m``,
-``ts``, ``tb``, ``sigma_S``, ``sigma_B``) and returns ``(stat,
-residual)`` where ``residual`` is the signed square-root of the per-bin
-statistic contribution.
+``ts``, ``tb``, ``sigma_S``, ``sigma_B``) and returns a
+:class:`StatisticResult`. Likelihood results expose channel-wise relative
+log-likelihoods and signed pseudo-residuals.
 """
+
+from dataclasses import dataclass
+from functools import wraps
 
 import numba as nb
 import numpy as np
 
-from ..util.significance import pgsig, ppsig
+
+@dataclass
+class StatisticResult:
+    """Pointwise likelihood output and its derived fit diagnostics."""
+
+    pointwise_loglike: np.ndarray
+    pointwise_sign: np.ndarray
+
+    def __post_init__(self):
+        self.pointwise_loglike = np.asarray(self.pointwise_loglike, dtype=np.float64)
+        self.pointwise_sign = np.asarray(self.pointwise_sign, dtype=np.float64)
+
+        if (
+            self.pointwise_loglike.ndim != 1
+            or self.pointwise_sign.shape != self.pointwise_loglike.shape
+        ):
+            raise ValueError(
+                'pointwise_loglike and pointwise_sign must have the same one-dimensional shape'
+            )
+
+        if np.isnan(self.pointwise_loglike).any() or np.isnan(self.pointwise_sign).any():
+            raise ValueError('statistic result must not contain NaN')
+
+        if (self.pointwise_loglike > 1e-12).any():
+            raise ValueError('positive relative log-likelihood cannot define a pseudo-residual')
+
+        self.pointwise_loglike = np.where(self.pointwise_loglike > 0.0, 0.0, self.pointwise_loglike)
+
+    @property
+    def pointwise_stat(self):
+        """Per-observation deviance contributions."""
+
+        return -2.0 * self.pointwise_loglike
+
+    @property
+    def loglike(self):
+        """Total relative log-likelihood."""
+
+        return np.sum(self.pointwise_loglike)
+
+    @property
+    def stat(self):
+        """Total fit statistic."""
+
+        return np.sum(self.pointwise_stat)
+
+    @property
+    def residual(self):
+        """Signed square-root statistic contribution per channel."""
+
+        return self.pointwise_sign * np.sqrt(self.pointwise_stat)
+
+
+def guard_statistic(func):
+    """Return an infinite statistic result when model predictions are invalid."""
+
+    @wraps(func)
+    def guarded(**kwargs):
+        model = np.asarray(kwargs['m'])
+        if not np.isfinite(model).all():
+            return StatisticResult(
+                np.full_like(model, -np.inf, dtype=np.float64),
+                np.ones_like(model, dtype=np.float64),
+            )
+        return func(**kwargs)
+
+    return guarded
 
 
 @nb.njit(cache=True, fastmath=True)
 def _gstat_core(S, B, m, ts, tb, sigma_S, sigma_B):
-    """Numba kernel for ``Gstat``; returns ``(total_stat, signed_residual)``."""
+    """Numba kernel for pointwise ``Gstat`` likelihood and residual sign."""
 
     n = S.shape[0]
-    residual = np.empty(n, dtype=np.float64)
-    stat = 0.0
+    pointwise_loglike = np.empty(n, dtype=np.float64)
+    pointwise_sign = np.empty(n, dtype=np.float64)
 
     ratio = 0.0
     if tb != 0.0:
@@ -49,28 +117,25 @@ def _gstat_core(S, B, m, ts, tb, sigma_S, sigma_B):
         else:
             logli = 0.0 if delta == 0.0 else -np.inf
 
-        stati = -2.0 * logli
-        stat += stati
-
         sign = 0.0
-        delta = di - mi
         if delta > 0.0:
             sign = 1.0
         elif delta < 0.0:
             sign = -1.0
 
-        residual[i] = sign * np.sqrt(stati)
+        pointwise_loglike[i] = logli
+        pointwise_sign[i] = sign
 
-    return stat, residual
+    return pointwise_loglike, pointwise_sign
 
 
 @nb.njit(cache=True, fastmath=True)
 def _pstat_core(S, m, ts):
-    """Numba kernel for the pure-Poisson ``Pstat``; background is absent."""
+    """Numba kernel for pointwise pure-Poisson likelihood and residual sign."""
 
     n = S.shape[0]
-    residual = np.empty(n, dtype=np.float64)
-    stat = 0.0
+    pointwise_loglike = np.empty(n, dtype=np.float64)
+    pointwise_sign = np.empty(n, dtype=np.float64)
 
     for i in range(n):
         si = S[i]
@@ -85,9 +150,6 @@ def _pstat_core(S, m, ts):
             klogk = si * np.log(si)
 
         logli = klogmu - mu - klogk + si
-        stati = -2.0 * logli
-        stat += stati
-
         delta = si - mu
         sign = 0.0
         if delta > 0.0:
@@ -95,9 +157,10 @@ def _pstat_core(S, m, ts):
         elif delta < 0.0:
             sign = -1.0
 
-        residual[i] = sign * np.sqrt(stati)
+        pointwise_loglike[i] = logli
+        pointwise_sign[i] = sign
 
-    return stat, residual
+    return pointwise_loglike, pointwise_sign
 
 
 @nb.njit(cache=True, fastmath=True)
@@ -109,8 +172,8 @@ def _ppstat_core(S, B, m, ts, tb):
     """
 
     n = S.shape[0]
-    residual = np.empty(n, dtype=np.float64)
-    stat = 0.0
+    pointwise_loglike = np.empty(n, dtype=np.float64)
+    pointwise_sign = np.empty(n, dtype=np.float64)
 
     aa = ts + tb
 
@@ -148,9 +211,6 @@ def _ppstat_core(S, B, m, ts, tb):
             b_klogk = bi * np.log(bi)
 
         logli = (s_klogmu - mu_s - s_klogk + si) + (b_klogmu - mu_b - b_klogk + bi)
-        stati = -2.0 * logli
-        stat += stati
-
         delta = si / ts - bi / tb - mi
         sign = 0.0
         if delta > 0.0:
@@ -158,9 +218,10 @@ def _ppstat_core(S, B, m, ts, tb):
         elif delta < 0.0:
             sign = -1.0
 
-        residual[i] = sign * np.sqrt(stati)
+        pointwise_loglike[i] = logli
+        pointwise_sign[i] = sign
 
-    return stat, residual
+    return pointwise_loglike, pointwise_sign
 
 
 @nb.njit(cache=True, fastmath=True)
@@ -173,8 +234,8 @@ def _pgstat_core(S, B, m, ts, tb, sigma_B):
     """
 
     n = S.shape[0]
-    residual = np.empty(n, dtype=np.float64)
-    stat = 0.0
+    pointwise_loglike = np.empty(n, dtype=np.float64)
+    pointwise_sign = np.empty(n, dtype=np.float64)
 
     aa = tb * tb
 
@@ -216,9 +277,6 @@ def _pgstat_core(S, B, m, ts, tb, sigma_B):
             gauss_logli = -0.5 * z * z
 
         logli = pois_logli + gauss_logli
-        stati = -2.0 * logli
-        stat += stati
-
         delta = si / ts - bi / tb - mi
         sign = 0.0
         if delta > 0.0:
@@ -226,25 +284,26 @@ def _pgstat_core(S, B, m, ts, tb, sigma_B):
         elif delta < 0.0:
             sign = -1.0
 
-        residual[i] = sign * np.sqrt(stati)
+        pointwise_loglike[i] = logli
+        pointwise_sign[i] = sign
 
-    return stat, residual
+    return pointwise_loglike, pointwise_sign
 
 
 class StatisticNB:
     """Numba-accelerated statistic dispatch table.
 
     Every method takes the standard keyword bundle (``S``, ``B``, ``m``,
-    ``ts``, ``tb``, ``sigma_S``, ``sigma_B``) and returns ``(stat,
-    residual)``. Upper-limit variants compare a significance against a
-    target (default 3σ) so that a minimiser can search for the
-    model normalization that produces the requested sigma.
+    ``ts``, ``tb``, ``sigma_S``, ``sigma_B``) and returns a
+    :class:`StatisticResult`.
     """
 
     @staticmethod
+    @guard_statistic
     def Gstat(**kwargs):
-        """Gaussian statistic; delegates to :func:`_gstat_core`."""
-        return _gstat_core(
+        """Return the pointwise Gaussian statistic result."""
+
+        pointwise_loglike, pointwise_sign = _gstat_core(
             kwargs['S'],
             kwargs['B'],
             kwargs['m'],
@@ -254,78 +313,49 @@ class StatisticNB:
             kwargs['sigma_B'],
         )
 
+        return StatisticResult(pointwise_loglike, pointwise_sign)
+
     @staticmethod
+    @guard_statistic
     def Pstat(**kwargs):
-        """Pure-Poisson statistic (no background); delegates to :func:`_pstat_core`."""
-        return _pstat_core(kwargs['S'], kwargs['m'], kwargs['ts'])
+        """Return the pointwise pure-Poisson statistic result."""
+
+        pointwise_loglike, pointwise_sign = _pstat_core(kwargs['S'], kwargs['m'], kwargs['ts'])
+
+        return StatisticResult(pointwise_loglike, pointwise_sign)
 
     @staticmethod
+    @guard_statistic
     def PPstat(**kwargs):
-        """Profile Poisson-Poisson statistic (``cstat``); uses :func:`_ppstat_core`."""
-        return _ppstat_core(kwargs['S'], kwargs['B'], kwargs['m'], kwargs['ts'], kwargs['tb'])
+        """Return the pointwise profiled Poisson-Poisson result."""
+
+        pointwise_loglike, pointwise_sign = _ppstat_core(
+            kwargs['S'], kwargs['B'], kwargs['m'], kwargs['ts'], kwargs['tb']
+        )
+        return StatisticResult(pointwise_loglike, pointwise_sign)
 
     @staticmethod
+    @guard_statistic
     def PGstat(**kwargs):
-        """Profile Poisson-Gaussian statistic; uses :func:`_pgstat_core`."""
-        return _pgstat_core(
-            kwargs['S'], kwargs['B'], kwargs['m'], kwargs['ts'], kwargs['tb'], kwargs['sigma_B']
+        """Return the pointwise profiled Poisson-Gaussian result."""
+
+        pointwise_loglike, pointwise_sign = _pgstat_core(
+            kwargs['S'],
+            kwargs['B'],
+            kwargs['m'],
+            kwargs['ts'],
+            kwargs['tb'],
+            kwargs['sigma_B'],
         )
 
-    @staticmethod
-    def PPstat_UL(**kwargs):
-        """Upper-limit driver for ``PPstat``: minimize ``(sigma - 3)^2``."""
-
-        B = kwargs['B']
-        m = kwargs['m']
-
-        ts = kwargs['ts']
-        tb = kwargs['tb']
-        alpha = ts / tb
-
-        bkg_cts = np.sum(B)
-        mo_cts = np.sum(m * ts)
-
-        ul_sigma = 3.0
-        sigma = ppsig(mo_cts + bkg_cts * alpha, bkg_cts, alpha)
-
-        stat = (sigma - ul_sigma) ** 2
-        residual = np.array([sigma - ul_sigma], dtype=np.float64)
-
-        return stat, residual
-
-    @staticmethod
-    def PGstat_UL(**kwargs):
-        """Upper-limit driver for ``PGstat``: minimize ``(sigma - 3)^2``."""
-
-        B = kwargs['B']
-        m = kwargs['m']
-
-        ts = kwargs['ts']
-        tb = kwargs['tb']
-        alpha = ts / tb
-
-        sigma_B = kwargs['sigma_B']
-
-        bkg_cts = np.sum(B)
-        mo_cts = np.sum(m * ts)
-        bkg_err = np.sqrt(np.sum(sigma_B * sigma_B))
-
-        ul_sigma = 3.0
-        sigma = pgsig(mo_cts + bkg_cts * alpha, bkg_cts * alpha, bkg_err * alpha)
-
-        stat = (sigma - ul_sigma) ** 2
-        residual = np.array([sigma - ul_sigma], dtype=np.float64)
-
-        return stat, residual
+        return StatisticResult(pointwise_loglike, pointwise_sign)
 
 
 class Statistic:
     """Pure-numpy fallback mirror of :class:`StatisticNB`.
 
-    Same ``(stat, residual)`` contract as the numba-accelerated class,
-    intended for debugging and for environments where numba cannot be
-    used. Every method returns the total statistic plus the signed
-    per-bin residual.
+    Same :class:`StatisticResult` contract as the numba-accelerated class,
+    intended for debugging and for environments where numba cannot be used.
     """
 
     @staticmethod
@@ -367,8 +397,9 @@ class Statistic:
         return -0.5 * (Statistic.xdivy(x - loc, scale) ** 2)
 
     @staticmethod
+    @guard_statistic
     def Gstat(**kwargs):
-        """Gaussian source-background statistic (``Gstat``/``chi2``)."""
+        """Return the pointwise Gaussian source-background result."""
 
         S = kwargs['S']
         B = kwargs['B']
@@ -386,33 +417,29 @@ class Statistic:
 
         sigma = np.sqrt(sigma_S**2 + sigma_B**2)
 
-        sign = np.sign(S - B - m * ts)
-        loglike = Statistic.gaussian_logpdf(S - B, m * ts, sigma)
+        pointwise_sign = np.sign(S - B - m * ts)
+        pointwise_loglike = Statistic.gaussian_logpdf(S - B, m * ts, sigma)
 
-        stat = (-2 * loglike).sum()
-        residual = sign * np.sqrt(-2 * loglike)
-
-        return stat, residual
+        return StatisticResult(pointwise_loglike, pointwise_sign)
 
     @staticmethod
+    @guard_statistic
     def Pstat(**kwargs):
-        """Pure-Poisson statistic when the background is ignored."""
+        """Return the pointwise pure-Poisson result."""
 
         S = kwargs['S']
         m = kwargs['m']
         ts = kwargs['ts']
 
-        sign = np.sign(S - m * ts)
-        loglike = Statistic.poisson_logpmf(S, m * ts)
+        pointwise_sign = np.sign(S - m * ts)
+        pointwise_loglike = Statistic.poisson_logpmf(S, m * ts)
 
-        stat = (-2 * loglike).sum()
-        residual = sign * np.sqrt(-2 * loglike)
-
-        return stat, residual
+        return StatisticResult(pointwise_loglike, pointwise_sign)
 
     @staticmethod
+    @guard_statistic
     def PPstat(**kwargs):
-        """Profile Poisson-Poisson statistic (``cstat`` equivalent)."""
+        """Return the pointwise profiled Poisson-Poisson result."""
 
         S = kwargs['S']
         B = kwargs['B']
@@ -436,16 +463,17 @@ class Statistic:
         b[safe_po] = -2 * cc[safe_po] / denom[safe_po]
         b[~po] = -(bb[~po] - dd[~po]) / (2 * aa)
 
-        sign = np.sign(S / ts - B / tb - m)
-        loglike = Statistic.poisson_logpmf(S, ts * (b + m)) + Statistic.poisson_logpmf(B, tb * b)
+        pointwise_sign = np.sign(S / ts - B / tb - m)
+        pointwise_loglike = Statistic.poisson_logpmf(S, ts * (b + m)) + Statistic.poisson_logpmf(
+            B, tb * b
+        )
 
-        stat = (-2 * loglike).sum()
-        residual = sign * np.sqrt(-2 * loglike)
+        return StatisticResult(pointwise_loglike, pointwise_sign)
 
-        return stat, residual
-
+    @staticmethod
+    @guard_statistic
     def PGstat(**kwargs):
-        """Profile Poisson-Gaussian statistic (XSPEC-style ``pgstat``)."""
+        """Return the pointwise profiled Poisson-Gaussian result."""
 
         S = kwargs['S']
         B = kwargs['B']
@@ -470,59 +498,9 @@ class Statistic:
         b2[nonzero_qq] = cc[nonzero_qq] / qq[nonzero_qq]
         b = np.where(b1 > 0, b1, b2)
 
-        sign = np.sign(S / ts - B / tb - m)
-        loglike = Statistic.poisson_logpmf(S, ts * (b + m)) + Statistic.gaussian_logpdf(
+        pointwise_sign = np.sign(S / ts - B / tb - m)
+        pointwise_loglike = Statistic.poisson_logpmf(S, ts * (b + m)) + Statistic.gaussian_logpdf(
             B, tb * b, sigma
         )
 
-        stat = (-2 * loglike).sum()
-        residual = sign * np.sqrt(-2 * loglike)
-
-        return stat, residual
-
-    @staticmethod
-    def PPstat_UL(**kwargs):
-        """Upper-limit driver for ``PPstat``: minimize ``(sigma - 3)^2``."""
-
-        B = kwargs['B']
-        m = kwargs['m']
-
-        ts = kwargs['ts']
-        tb = kwargs['tb']
-        alpha = ts / tb
-
-        bkg_cts = np.sum(B)
-        mo_cts = np.sum(m * ts)
-
-        ul_sigma = 3.0
-        sigma = ppsig(mo_cts + bkg_cts * alpha, bkg_cts, alpha)
-
-        stat = (sigma - ul_sigma) ** 2
-        residual = np.array([sigma - ul_sigma], dtype=np.float64)
-
-        return stat, residual
-
-    @staticmethod
-    def PGstat_UL(**kwargs):
-        """Upper-limit driver for ``PGstat``: minimize ``(sigma - 3)^2``."""
-
-        B = kwargs['B']
-        m = kwargs['m']
-
-        ts = kwargs['ts']
-        tb = kwargs['tb']
-        alpha = ts / tb
-
-        sigma_B = kwargs['sigma_B']
-
-        bkg_cts = np.sum(B)
-        mo_cts = np.sum(m * ts)
-        bkg_err = np.sqrt(np.sum(sigma_B * sigma_B))
-
-        ul_sigma = 3.0
-        sigma = pgsig(mo_cts + bkg_cts * alpha, bkg_cts * alpha, bkg_err * alpha)
-
-        stat = (sigma - ul_sigma) ** 2
-        residual = np.array([sigma - ul_sigma], dtype=np.float64)
-
-        return stat, residual
+        return StatisticResult(pointwise_loglike, pointwise_sign)
