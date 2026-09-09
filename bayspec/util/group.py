@@ -290,13 +290,12 @@ def build_optimal_threshold_grouping(
     bkg_err = np.asarray(bkg_err)
 
     opt_widths = calculate_optimal_bin_widths(rsp_fwhm, src_cts)
+    valid = np.ones(len(src_cts), dtype=bool) if valid is None else np.asarray(valid, dtype=bool)
 
     if max_bin is None:
         max_bin = np.inf
     if stat is None:
         stat = 'pgstat'
-
-    valid = np.ones(len(src_cts), dtype=bool) if valid is None else np.asarray(valid, dtype=bool)
 
     alpha = src_expo * src_scal / (bkg_expo * bkg_scal)
 
