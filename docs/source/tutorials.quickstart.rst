@@ -256,68 +256,6 @@ It covers the three stages of a typical session:
     </table></details>
 
 
-4. Evaluate posterior predictive criteria.
-
-WAIC and PSIS-LOO use one pointwise log-likelihood contribution per fitted
-channel. Here a fitted channel means a quality-good, noticed channel after
-grouping. For ``pgstat`` and ``cstat``, the source and background measurement
-in the same channel form one joint observation; a whole spectrum must not be
-treated as one observation.
-
-Both criteria are calculated eagerly when ``Posterior`` is constructed. The
-default full ArviZ results are cached, and ``post.IC_info`` includes
-``WAIC = -2 * elpd_waic`` and ``LOOIC = -2 * elpd_loo`` alongside AIC, AICc,
-BIC, and ``lnZ``. WAIC and LOOIC are displayed with ``2 * se``; ``lnZ`` is
-displayed with the matching nested-sampling evidence error. All entries named
-as information criteria are therefore on the same lower-is-better scale.
-
-.. code:: python
-
-    waic = post.waic()
-    loo = post.loo()
-
-    print(waic.elpd_waic, waic.p_waic, waic.se)
-    print(loo.elpd_loo, loo.p_loo, loo.se)
-    print(loo.pareto_k)
-
-The public methods above cache results separately for each argument
-combination; equivalent positional, keyword, and omitted-default calls reuse
-the same result. Their ``scale='log'`` means larger ELPD is better. Inspect
-``loo.pareto_k`` together with ``loo.good_k`` and ``loo.warning``. Observations
-above the reported threshold make the PSIS approximation unreliable and may
-require exact refitting, which BaySpec does not perform automatically.
-The corresponding ArviZ warnings are suppressed during the mandatory eager
-calculation so notebook output stays concise; the diagnostic fields remain
-available as shown above. Runtime warnings matching
-``overflow encountered in ...`` are also suppressed during this eager
-calculation, while unrelated runtime warnings remain visible.
-
-The pointwise likelihood matrix and ArviZ container remain available for
-inspection:
-
-.. code:: python
-
-    log_likelihood = post.pointwise_loglike_sample
-    idata = post.to_arviz()
-
-The sampler-level ``posterior_sample`` contains parameter draws only. When the
-``Posterior`` is constructed, BaySpec evaluates the pointwise matrix above and
-also provides ``post.loglike_sample``, ``post.logprior_sample``, and
-``post.logprob_sample``. These calculations are eager rather than deferred.
-
-BaySpec retains its existing relative/deviance likelihood convention, which
-omits constants depending only on the observed counts. WAIC/LOO comparisons
-are therefore valid for models fitted to exactly the same noticed and grouped
-channels, but their absolute ELPD values should not be compared across changed
-channel selections. ``cstat`` and ``pgstat`` also use profiled channel
-backgrounds, so these diagnostics describe that profile-likelihood model.
-Non-unit data weights define a power likelihood and trigger an additional
-interpretation warning.
-
-Bayesian evidence remains available directly from MultiNest as ``post.lnZ``.
-WBIC is not implemented because it requires a separate tempered-posterior run
-while providing only an asymptotic approximation to that evidence.
-
 .. code:: ipython3
 
     fig = Plot.infer(post, style='CE')
