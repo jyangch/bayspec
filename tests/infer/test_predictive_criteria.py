@@ -4,6 +4,7 @@ import warnings
 
 import numpy as np
 import pytest
+from scipy.special import logsumexp
 
 from bayspec.infer.analyzer import Posterior, SampleAnalyzer
 from bayspec.infer.infer import BayesInfer
@@ -119,8 +120,63 @@ def test_loo_uses_raw_weights_for_degenerate_psis_tail():
     assert np.isfinite(result.elpd_loo)
     assert np.asarray(result.loo_i)[0] == pytest.approx(-0.0010001184667300933)
     assert np.isnan(np.asarray(result.pareto_k)[0])
-    assert any('nearly constant' in str(item.message) for item in caught)
+    assert result.warning
+    assert any('PSIS-LOO failed' in str(item.message) for item in caught)
+    assert not any('nearly constant' in str(item.message) for item in caught)
     assert not any(issubclass(item.category, RuntimeWarning) for item in caught)
+
+
+@pytest.mark.parametrize('scale, factor', [('log', 1), ('negative_log', -1), ('deviance', -2)])
+@pytest.mark.parametrize('pointwise', [True, False])
+def test_loo_marks_failed_nonconstant_tail_as_unreliable(scale, factor, pointwise):
+    loglike = -np.r_[np.zeros(80), np.linspace(0.01, 0.2, 19), 708.0]
+    post = make_posterior(np.arange(100.0)[:, None], loglike[:, None])
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        result = post.loo(scale=scale, pointwise=pointwise)
+
+    assert result.elpd_loo == pytest.approx(factor * (-708.0 + np.log(100)))
+    assert result.warning
+    assert any('PSIS-LOO failed' in str(item.message) for item in caught)
+    assert not any('nearly constant' in str(item.message) for item in caught)
+    assert not any('Estimated shape parameter' in str(item.message) for item in caught)
+    if pointwise:
+        assert np.isnan(result.pareto_k[0])
+
+
+def test_loo_nearly_constant_channels_do_not_signal_psis_failure():
+    loglike = np.column_stack([np.full(100, -2.0), -3 + np.linspace(0, 1e-9, 100)])
+    post = make_posterior(np.arange(100.0)[:, None], loglike)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        result = post.loo()
+
+    np.testing.assert_allclose(result.loo_i, -logsumexp(-loglike, axis=0) + np.log(100))
+    assert np.isnan(result.pareto_k).all()
+    assert not result.warning
+    assert any('nearly constant' in str(item.message) for item in caught)
+    assert not any('PSIS-LOO failed' in str(item.message) for item in caught)
+
+
+def test_loo_failure_warning_survives_initialization_and_cache(monkeypatch):
+    loglike = np.column_stack(
+        [
+            -np.r_[np.zeros(80), np.linspace(0.01, 0.2, 19), 708.0],
+            -0.5 * np.linspace(-1.0, 1.0, 100) ** 2,
+        ]
+    )
+    prepared = make_posterior(np.arange(100.0)[:, None], loglike)
+    monkeypatch.setattr(
+        SampleAnalyzer, '__init__', lambda self, infer: self.__dict__.update(prepared.__dict__)
+    )
+
+    with pytest.warns(UserWarning, match='PSIS-LOO failed'):
+        post = Posterior(object.__new__(BayesInfer))
+
+    assert post.loo().warning
+    assert post.loo() is post.loo()
 
 
 def test_loo_preserves_infinite_pareto_k_as_unreliable():
@@ -251,9 +307,7 @@ def test_posterior_initialization_suppresses_all_overflow_warnings(monkeypatch):
     monkeypatch.setattr(
         Posterior,
         'waic',
-        lambda self: warnings.warn(
-            'overflow encountered in exp', RuntimeWarning, stacklevel=2
-        ),
+        lambda self: warnings.warn('overflow encountered in exp', RuntimeWarning, stacklevel=2),
     )
 
     def loo_with_overflows(self):
@@ -338,6 +392,43 @@ def test_predictive_criteria_are_cached_by_normalized_arguments(monkeypatch):
     assert calls == {'waic': 2, 'loo': 2}
 
 
+@pytest.mark.parametrize('scale, factor', [('log', 1), ('deviance', -2)])
+def test_replacing_infer_invalidates_predictive_criteria_cache(monkeypatch, scale, factor):
+    rng = np.random.default_rng(833)
+    params = rng.normal(size=(200, 1))
+    loglike = -0.5 * rng.normal(size=(200, 4)) ** 2
+    post = make_posterior(params, loglike)
+    replacement = object.__new__(BayesInfer)
+    replacement.__dict__.update(make_posterior(params, loglike - 2).__dict__)
+    replacement.posterior_sample = params
+    replacement.expected_pointwise = loglike - 2
+    monkeypatch.setattr(
+        SampleAnalyzer,
+        '_calc_pointwise_loglike_sample',
+        lambda self: self.expected_pointwise.copy(),
+    )
+    monkeypatch.setattr(SampleAnalyzer, '_calc_logprior_sample', lambda self: np.zeros(200))
+    monkeypatch.setattr(SampleAnalyzer, '_allot_post', lambda self: None)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        old_waic = post.waic(scale=scale)
+        old_loo = post.loo(scale=scale)
+        post.infer = replacement
+        new_waic = post.waic(scale=scale)
+        new_loo = post.loo(scale=scale)
+
+    np.testing.assert_array_equal(post.pointwise_loglike_sample, loglike - 2)
+    assert new_waic.elpd_waic == pytest.approx(old_waic.elpd_waic - factor * 8)
+    assert new_loo.elpd_loo == pytest.approx(old_loo.elpd_loo - factor * 8)
+    assert new_waic.p_waic == pytest.approx(old_waic.p_waic)
+    assert new_loo.p_loo == pytest.approx(old_loo.p_loo)
+    assert new_waic is not old_waic
+    assert new_loo is not old_loo
+    assert post.waic(scale=scale) is new_waic
+    assert post.loo(scale=scale) is new_loo
+
+
 def test_posterior_ic_info_includes_waic_and_looic():
     rng = np.random.default_rng(20260908)
     post = make_posterior(
@@ -354,12 +445,8 @@ def test_posterior_ic_info_includes_waic_and_looic():
 
     assert list(all_ic) == ['AIC', 'AICc', 'BIC', 'WAIC', 'LOOIC', 'lnZ']
     assert list(ic_info.data_dict) == ['AIC', 'AICc', 'BIC', 'WAIC', 'LOOIC', 'lnZ']
-    assert all_ic['WAIC'] == (
-        f'{-2.0 * post.waic().elpd_waic:.3f} ± {2.0 * post.waic().se:.3f}'
-    )
-    assert all_ic['LOOIC'] == (
-        f'{-2.0 * post.loo().elpd_loo:.3f} ± {2.0 * post.loo().se:.3f}'
-    )
+    assert all_ic['WAIC'] == (f'{-2.0 * post.waic().elpd_waic:.3f} ± {2.0 * post.waic().se:.3f}')
+    assert all_ic['LOOIC'] == (f'{-2.0 * post.loo().elpd_loo:.3f} ± {2.0 * post.loo().se:.3f}')
     assert all_ic['lnZ'] == '-12.345 ± 0.678'
     assert ic_info.data_dict['WAIC'][0] == all_ic['WAIC']
     assert ic_info.data_dict['LOOIC'][0] == all_ic['LOOIC']

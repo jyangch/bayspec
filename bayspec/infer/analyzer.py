@@ -20,7 +20,7 @@ from scipy.special import logsumexp
 
 from ..util.info import Info
 from ..util.post import Post
-from ..util.tools import json_dump, memoized
+from ..util.tools import clear_memoized, json_dump, memoized
 from .infer import BayesInfer, Infer, MaxLikeFit
 
 
@@ -85,6 +85,8 @@ class SampleAnalyzer(Infer):
 
     def _check_sample(self):
         """Load parameter draws and eagerly evaluate their probability terms."""
+
+        clear_memoized(self, 'waic', 'loo')
 
         if self.sample_attribute is None:
             raise AttributeError('sample_attribute is not defined')
@@ -541,7 +543,9 @@ class Posterior(SampleAnalyzer):
         The default full result is calculated during initialization. Results
         are cached separately for each normalized argument combination. Channels
         with numerically constant likelihood use raw importance sampling because
-        their zero-width weight distribution has no Pareto tail to fit.
+        their zero-width weight distribution has no Pareto tail to fit. Failed
+        PSIS calculations also fall back to raw importance sampling, but retain
+        a warning that their LOO estimates are unreliable.
 
         Args:
             scale: ArviZ output scale: ``'log'``, ``'negative_log'``, or
@@ -564,10 +568,11 @@ class Posterior(SampleAnalyzer):
             raise TypeError('Valid scale values are "deviance", "log", "negative_log"')
 
         n_samples, n_data_points = loglike.shape
-        fallback = np.ptp(loglike, axis=0) <= np.sqrt(np.finfo(float).eps)
+        nearly_constant = np.ptp(loglike, axis=0) <= np.sqrt(np.finfo(float).eps)
+        psis_failed = np.zeros(n_data_points, dtype=bool)
         loo_i_values = np.empty(n_data_points, dtype=float)
         pareto_k_values = np.full(n_data_points, np.nan, dtype=float)
-        psis_channels = np.flatnonzero(~fallback)
+        psis_channels = np.flatnonzero(~nearly_constant)
 
         if psis_channels.size:
             with warnings.catch_warnings():
@@ -594,7 +599,7 @@ class Posterior(SampleAnalyzer):
             psis_pareto_k = np.asarray(psis_result.pareto_k)
             undefined_pareto_k = np.isnan(psis_pareto_k) | np.isneginf(psis_pareto_k)
             failed = ~np.isfinite(psis_loo_i) | undefined_pareto_k
-            fallback[psis_channels[failed]] = True
+            psis_failed[psis_channels[failed]] = True
 
             accepted = ~failed
             accepted_channels = psis_channels[accepted]
@@ -602,11 +607,19 @@ class Posterior(SampleAnalyzer):
             diagnosed = accepted | np.isposinf(psis_pareto_k)
             pareto_k_values[psis_channels[diagnosed]] = psis_pareto_k[diagnosed]
 
-        if fallback.any():
+        if nearly_constant.any():
             warnings.warn(
-                f'PSIS tail fitting was skipped for {fallback.sum()} channels with nearly '
+                f'PSIS tail fitting was skipped for {nearly_constant.sum()} channels with nearly '
                 'constant log-likelihood; raw importance weights were used and their Pareto-k '
                 'values are undefined.',
+                UserWarning,
+                stacklevel=2,
+            )
+
+        if psis_failed.any():
+            warnings.warn(
+                f'PSIS-LOO failed for {psis_failed.sum()} channels; raw importance weights '
+                'were used as a fallback. Their LOO estimates are unreliable.',
                 UserWarning,
                 stacklevel=2,
             )
@@ -614,6 +627,7 @@ class Posterior(SampleAnalyzer):
         log_n_samples = np.log(n_samples)
         lppd_i = logsumexp(loglike, axis=0) - log_n_samples
 
+        fallback = nearly_constant | psis_failed
         fallback_loglike = loglike[:, fallback]
         raw_loo_i = -(logsumexp(-fallback_loglike, axis=0) - log_n_samples)
         loo_i_values[fallback] = scale_value * raw_loo_i
@@ -622,9 +636,10 @@ class Posterior(SampleAnalyzer):
         loo_se = np.sqrt(n_data_points * np.var(loo_i_values))
         p_loo = np.sum(lppd_i - loo_i_values / scale_value)
         good_k = min(1 - 1 / np.log10(n_samples), 0.7)
-        warn_mg = bool(np.any(pareto_k_values > good_k))
+        high_k = bool(np.any(pareto_k_values > good_k))
+        warn_mg = high_k or bool(psis_failed.any())
 
-        if warn_mg:
+        if high_k:
             warnings.warn(
                 f'Estimated shape parameter of Pareto distribution is greater than {good_k:.2f} '
                 'for one or more samples. Importance sampling may be unreliable for those '
