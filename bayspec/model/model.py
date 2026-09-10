@@ -21,20 +21,6 @@ from ..util.prior import unif
 from ..util.tools import SuperDict, cached_property, json_dump, trapz_1d, trapz_2d
 
 
-def _spectrum_ratio(spectrum, counts):
-    """Divide a spectrum by model counts, leaving zero-count bins undefined."""
-
-    spectrum = np.asarray(spectrum, dtype=float)
-    counts = np.asarray(counts, dtype=float)
-
-    return np.divide(
-        spectrum,
-        counts,
-        out=np.full_like(spectrum, np.nan),
-        where=counts != 0,
-    )
-
-
 class Model:
     """Base class for a spectral model component.
 
@@ -488,6 +474,20 @@ class Model:
             )
         ]
 
+    @staticmethod
+    def _x_to_y(y, x):
+        """Divide a spectrum by model counts, leaving zero-count bins undefined."""
+
+        y = np.asarray(y, dtype=float)
+        x = np.asarray(x, dtype=float)
+
+        return np.divide(
+            y,
+            x,
+            out=np.full_like(y, np.nan),
+            where=x != 0,
+        )
+
     @property
     def cts_to_pht(self):
         """Per-bin conversion factor from convolved counts to photon density.
@@ -498,7 +498,7 @@ class Model:
         """
 
         return [
-            _spectrum_ratio(pht, cts)
+            self._x_to_y(pht, cts)
             for (cts, pht) in zip(self.conv_ctsspec, self.phtspec_at_rsp, strict=False)
         ]
 
@@ -506,7 +506,7 @@ class Model:
     def re_cts_to_pht(self):
 
         return [
-            _spectrum_ratio(pht, cts)
+            self._x_to_y(pht, cts)
             for (cts, pht) in zip(self.conv_re_ctsspec, self.re_phtspec_at_rsp, strict=False)
         ]
 
@@ -514,7 +514,7 @@ class Model:
     def cts_to_flx(self):
 
         return [
-            _spectrum_ratio(flx, cts)
+            self._x_to_y(flx, cts)
             for (cts, flx) in zip(self.conv_ctsspec, self.flxspec_at_rsp, strict=False)
         ]
 
@@ -522,7 +522,7 @@ class Model:
     def re_cts_to_flx(self):
 
         return [
-            _spectrum_ratio(flx, cts)
+            self._x_to_y(flx, cts)
             for (cts, flx) in zip(self.conv_re_ctsspec, self.re_flxspec_at_rsp, strict=False)
         ]
 
@@ -530,7 +530,7 @@ class Model:
     def cts_to_erg(self):
 
         return [
-            _spectrum_ratio(erg, cts)
+            self._x_to_y(erg, cts)
             for (cts, erg) in zip(self.conv_ctsspec, self.ergspec_at_rsp, strict=False)
         ]
 
@@ -538,7 +538,7 @@ class Model:
     def re_cts_to_erg(self):
 
         return [
-            _spectrum_ratio(erg, cts)
+            self._x_to_y(erg, cts)
             for (cts, erg) in zip(self.conv_re_ctsspec, self.re_ergspec_at_rsp, strict=False)
         ]
 

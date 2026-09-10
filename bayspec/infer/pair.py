@@ -11,7 +11,7 @@ from types import MappingProxyType
 import numpy as np
 
 from ..data.data import Data
-from ..model.model import Model, _spectrum_ratio
+from ..model.model import Model
 from ..util.tools import cached_property, clear_cached_property
 from .statistic import Statistic
 
@@ -237,11 +237,25 @@ class Pair:
             )
         ]
 
+    @staticmethod
+    def _x_to_y(y, x):
+        """Divide a spectrum by model counts, leaving zero-count bins undefined."""
+
+        y = np.asarray(y, dtype=float)
+        x = np.asarray(x, dtype=float)
+
+        return np.divide(
+            y,
+            x,
+            out=np.full_like(y, np.nan),
+            where=x != 0,
+        )
+
     @property
     def cts_to_pht(self):
 
         return [
-            _spectrum_ratio(pht, cts)
+            self._x_to_y(pht, cts)
             for (cts, pht) in zip(self.conv_ctsspec, self.phtspec_at_rsp, strict=False)
         ]
 
@@ -249,7 +263,7 @@ class Pair:
     def re_cts_to_pht(self):
 
         return [
-            _spectrum_ratio(pht, cts)
+            self._x_to_y(pht, cts)
             for (cts, pht) in zip(self.conv_re_ctsspec, self.re_phtspec_at_rsp, strict=False)
         ]
 
@@ -257,7 +271,7 @@ class Pair:
     def cts_to_flx(self):
 
         return [
-            _spectrum_ratio(flx, cts)
+            self._x_to_y(flx, cts)
             for (cts, flx) in zip(self.conv_ctsspec, self.flxspec_at_rsp, strict=False)
         ]
 
@@ -265,7 +279,7 @@ class Pair:
     def re_cts_to_flx(self):
 
         return [
-            _spectrum_ratio(flx, cts)
+            self._x_to_y(flx, cts)
             for (cts, flx) in zip(self.conv_re_ctsspec, self.re_flxspec_at_rsp, strict=False)
         ]
 
@@ -273,7 +287,7 @@ class Pair:
     def cts_to_erg(self):
 
         return [
-            _spectrum_ratio(erg, cts)
+            self._x_to_y(erg, cts)
             for (cts, erg) in zip(self.conv_ctsspec, self.ergspec_at_rsp, strict=False)
         ]
 
@@ -281,7 +295,7 @@ class Pair:
     def re_cts_to_erg(self):
 
         return [
-            _spectrum_ratio(erg, cts)
+            self._x_to_y(erg, cts)
             for (cts, erg) in zip(self.conv_re_ctsspec, self.re_ergspec_at_rsp, strict=False)
         ]
 

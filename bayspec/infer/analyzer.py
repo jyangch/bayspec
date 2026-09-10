@@ -558,60 +558,78 @@ class Posterior(SampleAnalyzer):
 
         idata = self.to_arviz()
         loglike = np.asarray(self.pointwise_loglike_sample, dtype=float)
-        degenerate = np.ptp(loglike, axis=0) <= np.sqrt(np.finfo(float).eps)
-
-        if not degenerate.any():
-            return az.loo(
-                idata,
-                var_name='obs',
-                scale=scale,
-                pointwise=pointwise,
-                reff=reff,
-            )
-
         scale = scale.lower()
         scale_value = {'log': 1, 'negative_log': -1, 'deviance': -2}.get(scale)
         if scale_value is None:
             raise TypeError('Valid scale values are "deviance", "log", "negative_log"')
 
-        warnings.warn(
-            f'PSIS tail fitting was skipped for {degenerate.sum()} channels with nearly '
-            'constant log-likelihood; raw importance weights were used and their Pareto-k '
-            'values are undefined.',
-            UserWarning,
-            stacklevel=2,
-        )
-
         n_samples, n_data_points = loglike.shape
-        good = ~degenerate
+        fallback = np.ptp(loglike, axis=0) <= np.sqrt(np.finfo(float).eps)
         loo_i_values = np.empty(n_data_points, dtype=float)
         pareto_k_values = np.full(n_data_points, np.nan, dtype=float)
-        p_loo = 0.0
-        warn_mg = False
+        psis_channels = np.flatnonzero(~fallback)
 
-        if good.any():
-            good_result = az.loo(
-                idata.isel(observation=np.flatnonzero(good)),
-                var_name='obs',
-                scale=scale,
-                pointwise=True,
-                reff=reff,
+        if psis_channels.size:
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    'ignore',
+                    message=r'^(divide by zero|invalid value) encountered in .*',
+                    category=RuntimeWarning,
+                    module=r'arviz\.stats\.stats',
+                )
+                warnings.filterwarnings(
+                    'ignore',
+                    message='Estimated shape parameter of Pareto distribution.*',
+                    category=UserWarning,
+                )
+                psis_result = az.loo(
+                    idata.isel(observation=psis_channels),
+                    var_name='obs',
+                    scale=scale,
+                    pointwise=True,
+                    reff=reff,
+                )
+
+            psis_loo_i = np.asarray(psis_result.loo_i)
+            psis_pareto_k = np.asarray(psis_result.pareto_k)
+            failed = ~np.isfinite(psis_loo_i) | ~np.isfinite(psis_pareto_k)
+            fallback[psis_channels[failed]] = True
+
+            accepted = ~failed
+            accepted_channels = psis_channels[accepted]
+            loo_i_values[accepted_channels] = psis_loo_i[accepted]
+            pareto_k_values[accepted_channels] = psis_pareto_k[accepted]
+
+        if fallback.any():
+            warnings.warn(
+                f'PSIS tail fitting was skipped for {fallback.sum()} channels with nearly '
+                'constant log-likelihood; raw importance weights were used and their Pareto-k '
+                'values are undefined.',
+                UserWarning,
+                stacklevel=2,
             )
-            loo_i_values[good] = np.asarray(good_result.loo_i)
-            pareto_k_values[good] = np.asarray(good_result.pareto_k)
-            p_loo += good_result.p_loo
-            warn_mg = bool(good_result.warning)
 
-        degenerate_loglike = loglike[:, degenerate].T
         log_n_samples = np.log(n_samples)
-        raw_loo_i = -(logsumexp(-degenerate_loglike, axis=1) - log_n_samples)
-        lppd_i = logsumexp(degenerate_loglike, axis=1) - log_n_samples
-        loo_i_values[degenerate] = scale_value * raw_loo_i
-        p_loo += np.sum(lppd_i - raw_loo_i)
+        lppd_i = logsumexp(loglike, axis=0) - log_n_samples
+
+        fallback_loglike = loglike[:, fallback]
+        raw_loo_i = -(logsumexp(-fallback_loglike, axis=0) - log_n_samples)
+        loo_i_values[fallback] = scale_value * raw_loo_i
 
         elpd_loo = np.sum(loo_i_values)
         loo_se = np.sqrt(n_data_points * np.var(loo_i_values))
+        p_loo = np.sum(lppd_i - loo_i_values / scale_value)
         good_k = min(1 - 1 / np.log10(n_samples), 0.7)
+        warn_mg = bool(np.any(pareto_k_values > good_k))
+
+        if warn_mg:
+            warnings.warn(
+                f'Estimated shape parameter of Pareto distribution is greater than {good_k:.2f} '
+                'for one or more samples. Importance sampling may be unreliable for those '
+                'observations.',
+                UserWarning,
+                stacklevel=2,
+            )
 
         if not pointwise:
             return az.ELPDData(

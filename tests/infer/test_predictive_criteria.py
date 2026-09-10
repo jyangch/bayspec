@@ -103,7 +103,7 @@ def test_loo_uses_raw_weights_for_degenerate_psis_tail():
     delta = np.r_[
         np.zeros(80),
         np.full(5, 5e-18),
-        np.geomspace(5e-17, 1e-12, 15),
+        np.geomspace(5e-17, 1e-5, 15),
     ]
     degenerate = -1e-3 - delta
     regular = -0.5 * np.linspace(-2.0, 2.0, 100) ** 2
@@ -117,24 +117,35 @@ def test_loo_uses_raw_weights_for_degenerate_psis_tail():
         result = post.loo(reff=1.0)
 
     assert np.isfinite(result.elpd_loo)
-    assert np.asarray(result.loo_i)[0] == pytest.approx(-0.001, abs=1e-12)
+    assert np.asarray(result.loo_i)[0] == pytest.approx(-0.0010001184667300933)
     assert np.isnan(np.asarray(result.pareto_k)[0])
     assert any('nearly constant' in str(item.message) for item in caught)
     assert not any(issubclass(item.category, RuntimeWarning) for item in caught)
 
 
 def test_loo_preserves_runtime_warnings_outside_initialization(monkeypatch):
-    post = make_posterior([[0.0], [1.0]], [[-1.0, -1.5], [-2.0, -1.0]])
+    rng = np.random.default_rng(20260910)
+    post = make_posterior(
+        rng.normal(size=(200, 1)),
+        -0.5 * rng.normal(size=(200, 4)) ** 2,
+    )
     analyzer_module = import_module('bayspec.infer.analyzer')
+    arviz_loo = analyzer_module.az.loo
 
     def loo_with_unrelated_warning(*args, **kwargs):
         warnings.warn('overflow encountered in multiply', RuntimeWarning, stacklevel=2)
-        return object()
+        return arviz_loo(*args, **kwargs)
 
     monkeypatch.setattr(analyzer_module.az, 'loo', loo_with_unrelated_warning)
 
-    with pytest.warns(RuntimeWarning, match='overflow encountered in multiply'):
-        post.loo(reff=1.0)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            'ignore',
+            message='Estimated shape parameter of Pareto distribution.*',
+            category=UserWarning,
+        )
+        with pytest.warns(RuntimeWarning, match='overflow encountered in multiply'):
+            post.loo(reff=1.0)
 
 
 def test_predictive_criteria_warn_for_power_likelihood():
