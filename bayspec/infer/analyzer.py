@@ -24,19 +24,6 @@ from ..util.tools import clear_memoized, json_dump, memoized
 from .infer import BayesInfer, Infer, MaxLikeFit
 
 
-def _ic_number(value):
-    """Represent a scalar in JSON without losing infinite diagnostics."""
-
-    if value is None:
-        return None
-    value = float(value)
-    if np.isnan(value):
-        return None
-    if np.isinf(value):
-        return 'Infinity' if value > 0 else '-Infinity'
-    return value
-
-
 class SampleAnalyzer(Infer):
     """Wrap an :class:`Infer` with posterior-/bootstrap-driven summary views.
 
@@ -99,7 +86,7 @@ class SampleAnalyzer(Infer):
     def _check_sample(self):
         """Load parameter draws and eagerly evaluate their probability terms."""
 
-        clear_memoized(self, 'waic', 'loo')
+        clear_memoized(self)
 
         if self.sample_attribute is None:
             raise AttributeError('sample_attribute is not defined')
@@ -411,8 +398,26 @@ class SampleAnalyzer(Infer):
 
         return Info.from_dict(all_IC)
 
+    @staticmethod
+    def _format_ic(value, error=None, *, as_text=False):
+        """Return a JSON-safe scalar, or three-decimal table text with uncertainty."""
+
+        if value is None:
+            return None
+        if as_text:
+            if error is None:
+                return f'{value:.3f}'
+            return f'{value:.3f} ± {error:.3f}'
+
+        value = float(value)
+        if np.isnan(value):
+            return None
+        if np.isinf(value):
+            return 'Infinity' if value > 0 else '-Infinity'
+        return value
+
     @property
-    def ic(self):
+    def ic_criteria(self):
         """Machine-readable criteria and fitted-channel ordering.
 
         ``criteria`` contains unrounded values and optimization directions.
@@ -424,14 +429,10 @@ class SampleAnalyzer(Infer):
         ``'Infinity'`` and ``'-Infinity'`` so the bundle is valid JSON.
         """
 
-        par_now = [par.val for par in self.free_par.values()]
-        try:
-            criteria = {
-                name: {'value': _ic_number(getattr(self, name.lower())), 'higher_is_better': False}
-                for name in ('AIC', 'AICc', 'BIC')
-            }
-        finally:
-            self.at_par(par_now)
+        criteria = {
+            name: {'value': self._format_ic(getattr(self, name.lower())), 'higher_is_better': False}
+            for name in ('AIC', 'AICc', 'BIC')
+        }
 
         data = []
         start = 0
@@ -443,7 +444,7 @@ class SampleAnalyzer(Infer):
                         'pair': pair_index,
                         'name': name,
                         'stat': unit.stat,
-                        'weight': _ic_number(unit.weight),
+                        'weight': self._format_ic(unit.weight),
                         'slice': [start, stop],
                         'channel_bins': np.asarray(unit.rsp_chbin).tolist(),
                     }
@@ -451,7 +452,6 @@ class SampleAnalyzer(Infer):
                 start = stop
 
         return {
-            'schema_version': 1,
             'analyzer': type(self).__name__,
             'n_params': int(self.free_nparams),
             'n_data_points': int(self.npoint),
@@ -461,16 +461,6 @@ class SampleAnalyzer(Infer):
             'data': data,
             'criteria': criteria,
         }
-
-    def save_ic(self, filepath):
-        """Save :attr:`ic` as JSON, readable with ``json.load``.
-
-        Args:
-            filepath: Output filename (string or path-like). Missing parent
-                directories are created. Existing files are overwritten.
-        """
-
-        json_dump(self.ic, filepath)
 
     def save(self, savepath):
         """Dump summary tables and a machine-readable IC bundle.
@@ -488,7 +478,7 @@ class SampleAnalyzer(Infer):
         )
         json_dump(self.stat_info.data_list_dict, savepath + f'/{self.save_prefix}_stat.json')
         json_dump(self.IC_info.data_list_dict, savepath + f'/{self.save_prefix}_IC.json')
-        self.save_ic(os.path.join(savepath, f'{self.save_prefix}_ic_summary.json'))
+        json_dump(self.ic_criteria, savepath + f'/{self.save_prefix}_ic_criteria.json')
 
     def __str__(self):
 
@@ -582,18 +572,6 @@ class Posterior(SampleAnalyzer):
                 UserWarning,
                 stacklevel=3,
             )
-
-    @staticmethod
-    def _format_ic(value, error):
-        """Format an information criterion with its standard error."""
-
-        if value is None:
-            return None
-
-        if error is None:
-            return f'{value:.3f}'
-
-        return f'{value:.3f} ± {error:.3f}'
 
     @memoized()
     def waic(self, scale='log', pointwise=True):
@@ -792,43 +770,6 @@ class Posterior(SampleAnalyzer):
         return getattr(self, 'logevidence_err', None)
 
     @property
-    def ic(self):
-        """Include WAIC, LOOIC, evidence, and their comparison diagnostics.
-
-        WAIC/LOOIC ``value``, ``se``, and ``pointwise`` use deviance scale
-        (``-2 * ELPD``); smaller is better. ``lnZ`` is on natural-log scale
-        and larger is better. Its ``error`` is the nested-sampling evidence
-        uncertainty, not the predictive criteria's data-based standard error.
-        """
-
-        bundle = super().ic
-        criteria = bundle['criteria']
-        for name, result, elpd, penalty, pointwise in (
-            ('WAIC', self.waic(), 'elpd_waic', 'p_waic', 'waic_i'),
-            ('LOOIC', self.loo(), 'elpd_loo', 'p_loo', 'loo_i'),
-        ):
-            criteria[name] = {
-                'value': _ic_number(-2.0 * result[elpd]),
-                'se': _ic_number(2.0 * result.se),
-                'scale': 'deviance',
-                'higher_is_better': False,
-                penalty: _ic_number(result[penalty]),
-                'warning': bool(result.warning),
-                'pointwise': [_ic_number(value) for value in -2.0 * np.asarray(result[pointwise])],
-            }
-
-        loo = self.loo()
-        criteria['LOOIC']['pareto_k'] = [_ic_number(value) for value in np.asarray(loo.pareto_k)]
-        criteria['LOOIC']['good_k'] = _ic_number(loo.good_k)
-        criteria['lnZ'] = {
-            'value': _ic_number(self.lnZ),
-            'error': _ic_number(self.lnZ_err),
-            'scale': 'log',
-            'higher_is_better': True,
-        }
-        return bundle
-
-    @property
     def all_IC(self):
         """AIC-family scores, predictive information criteria, and evidence."""
 
@@ -836,11 +777,59 @@ class Posterior(SampleAnalyzer):
         loo = self.loo()
 
         all_IC = super().all_IC
-        all_IC['WAIC'] = self._format_ic(-2.0 * waic.elpd_waic, 2.0 * waic.se)
-        all_IC['LOOIC'] = self._format_ic(-2.0 * loo.elpd_loo, 2.0 * loo.se)
-        all_IC['lnZ'] = self._format_ic(self.lnZ, self.lnZ_err)
+        all_IC['WAIC'] = self._format_ic(-2.0 * waic.elpd_waic, 2.0 * waic.se, as_text=True)
+        all_IC['LOOIC'] = self._format_ic(-2.0 * loo.elpd_loo, 2.0 * loo.se, as_text=True)
+        all_IC['lnZ'] = self._format_ic(self.lnZ, self.lnZ_err, as_text=True)
 
         return all_IC
+
+    @property
+    def ic_criteria(self):
+        """Include WAIC, LOOIC, evidence, and their comparison diagnostics.
+
+        WAIC/LOOIC ``value``, ``error``, and ``pointwise`` use deviance scale
+        (``-2 * ELPD``); smaller is better. ``lnZ`` is on natural-log scale
+        and larger is better. Its ``error`` is the nested-sampling evidence
+        uncertainty, not the predictive criteria's data-based standard error.
+        ``penalty`` stores the effective parameter count (p_waic or p_loo);
+        its contribution on deviance scale is twice this value.
+        """
+
+        bundle = super().ic_criteria
+        criteria = bundle['criteria']
+
+        waic = self.waic()
+        criteria['WAIC'] = {
+            'value': self._format_ic(-2.0 * waic.elpd_waic),
+            'error': self._format_ic(2.0 * waic.se),
+            'scale': 'deviance',
+            'higher_is_better': False,
+            'penalty': self._format_ic(waic.p_waic),
+            'warning': bool(waic.warning),
+            'pointwise': [self._format_ic(value) for value in -2.0 * np.asarray(waic.waic_i)],
+        }
+
+        loo = self.loo()
+        criteria['LOOIC'] = {
+            'value': self._format_ic(-2.0 * loo.elpd_loo),
+            'error': self._format_ic(2.0 * loo.se),
+            'scale': 'deviance',
+            'higher_is_better': False,
+            'penalty': self._format_ic(loo.p_loo),
+            'warning': bool(loo.warning),
+            'pointwise': [self._format_ic(value) for value in -2.0 * np.asarray(loo.loo_i)],
+            'pareto_k': [self._format_ic(value) for value in np.asarray(loo.pareto_k)],
+            'good_k': self._format_ic(loo.good_k),
+        }
+
+        criteria['lnZ'] = {
+            'value': self._format_ic(self.lnZ),
+            'error': self._format_ic(self.lnZ_err),
+            'scale': 'log',
+            'higher_is_better': True,
+        }
+
+        return bundle
 
 
 class Bootstrap(SampleAnalyzer):

@@ -10,7 +10,39 @@ from scipy.special import logsumexp
 from bayspec.infer.analyzer import Bootstrap, Posterior, SampleAnalyzer
 from bayspec.infer.infer import BayesInfer
 from bayspec.util.info import Info
-from bayspec.util.tools import SuperDict
+from bayspec.util.tools import SuperDict, json_dump
+
+
+@pytest.mark.parametrize(
+    'value, expected',
+    [
+        (1.23456, 1.23456),
+        (None, None),
+        (np.nan, None),
+        (np.inf, 'Infinity'),
+        (-np.inf, '-Infinity'),
+    ],
+)
+def test_format_ic_preserves_json_numbers(value, expected):
+    result = SampleAnalyzer._format_ic(value)
+
+    assert result == expected
+    assert json.loads(json.dumps(result, allow_nan=False)) == expected
+
+
+@pytest.mark.parametrize(
+    'value, error, expected',
+    [
+        (1.23456, 0.12345, '1.235 ± 0.123'),
+        (1.23456, None, '1.235'),
+        (None, 0.12345, None),
+        (np.nan, None, 'nan'),
+        (np.inf, 0.0, 'inf ± 0.000'),
+        (-np.inf, np.inf, '-inf ± inf'),
+    ],
+)
+def test_format_ic_preserves_table_text(value, error, expected):
+    assert SampleAnalyzer._format_ic(value, error, as_text=True) == expected
 
 
 class Value:
@@ -500,13 +532,10 @@ def make_ic_posterior(pointwise=None):
 
 def test_ic_bundle_contains_unrounded_numeric_criteria_and_channel_order():
     post = make_ic_posterior()
-    par_before = [par.val for par in post.free_par.values()]
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        bundle = post.ic
+        bundle = post.ic_criteria
 
-    assert [par.val for par in post.free_par.values()] == par_before
-    assert bundle['schema_version'] == 1
     assert bundle['n_params'] == 1
     assert bundle['n_data_points'] == 6
     assert bundle['n_samples'] == 200
@@ -524,8 +553,14 @@ def test_ic_bundle_contains_unrounded_numeric_criteria_and_channel_order():
         ('LOOIC', post.loo(), 'elpd_loo', 'loo_i', 'p_loo'),
     ]:
         assert criteria[name]['value'] == -2 * result[elpd]
-        assert criteria[name]['se'] == 2 * result.se
-        assert criteria[name][penalty] == result[penalty]
+        assert criteria[name]['error'] == 2 * result.se
+        assert criteria[name]['penalty'] == result[penalty]
+        assert 'se' not in criteria[name]
+        assert penalty not in criteria[name]
+        lppd = np.sum(
+            logsumexp(post.pointwise_loglike_sample, axis=0) - np.log(bundle['n_samples'])
+        )
+        assert criteria[name]['value'] == pytest.approx(-2 * lppd + 2 * criteria[name]['penalty'])
         assert criteria[name]['warning'] == bool(result.warning)
         assert criteria[name]['scale'] == 'deviance'
         assert not criteria[name]['higher_is_better']
@@ -537,7 +572,7 @@ def test_ic_bundle_contains_unrounded_numeric_criteria_and_channel_order():
     assert criteria['lnZ']['higher_is_better']
 
 
-def test_save_ic_roundtrip_preserves_failures_infinite_k_and_missing_evidence(tmp_path):
+def test_ic_criteria_roundtrip_preserves_failures_infinite_k_and_missing_evidence(tmp_path):
     regular = -0.5 * np.linspace(-1.0, 1.0, 100) ** 2
     post = make_ic_posterior(
         np.column_stack(
@@ -556,13 +591,13 @@ def test_save_ic_roundtrip_preserves_failures_infinite_k_and_missing_evidence(tm
     path = tmp_path / 'model' / 'ic.json'
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        post.save_ic(path)
+        json_dump(post.ic_criteria, path)
 
     def reject_nonstandard_constant(value):
         raise AssertionError(f'Non-standard JSON constant: {value}')
 
     loaded = json.loads(path.read_text(), parse_constant=reject_nonstandard_constant)
-    assert loaded == post.ic
+    assert loaded == post.ic_criteria
     loo = loaded['criteria']['LOOIC']
     assert loo['warning']
     assert loo['pareto_k'][:3] == [None, 'Infinity', None]
@@ -578,8 +613,8 @@ def test_ic_files_support_paired_waic_comparison_without_posterior(tmp_path):
     right = make_ic_posterior(left.pointwise_loglike_sample - shift)
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        left.save_ic(tmp_path / 'left.json')
-        right.save_ic(tmp_path / 'right.json')
+        json_dump(left.ic_criteria, tmp_path / 'left.json')
+        json_dump(right.ic_criteria, tmp_path / 'right.json')
     first = json.loads((tmp_path / 'left.json').read_text())
     second = json.loads((tmp_path / 'right.json').read_text())
     difference = (
@@ -603,14 +638,19 @@ def test_save_writes_machine_readable_bundle_alongside_existing_tables(monkeypat
     assert (tmp_path / 'post_free_par.json').is_file()
     assert (tmp_path / 'post_stat.json').is_file()
     assert isinstance(json.loads((tmp_path / 'post_IC.json').read_text()), list)
-    assert json.loads((tmp_path / 'post_ic_summary.json').read_text()) == post.ic
+    saved = json.loads((tmp_path / 'post_ic_criteria.json').read_text())
+    assert saved == post.ic_criteria
+    assert list(saved['criteria']) == ['AIC', 'AICc', 'BIC', 'WAIC', 'LOOIC', 'lnZ']
+    assert saved['criteria']['WAIC']['value'] == -2 * post.waic().elpd_waic
+    assert saved['criteria']['LOOIC']['value'] == -2 * post.loo().elpd_loo
+    assert saved['criteria']['lnZ']['value'] == post.lnZ
 
 
 def test_bootstrap_ic_bundle_contains_only_available_criteria(tmp_path):
     bootstrap = object.__new__(Bootstrap)
     bootstrap.__dict__.update(make_ic_posterior().__dict__)
     bootstrap.free_par[1].post.truth = 7.0
-    bootstrap.save_ic(tmp_path / 'bootstrap.json')
+    json_dump(bootstrap.ic_criteria, tmp_path / 'bootstrap.json')
     bundle = json.loads((tmp_path / 'bootstrap.json').read_text())
     assert bundle['analyzer'] == 'Bootstrap'
     assert list(bundle['criteria']) == ['AIC', 'AICc', 'BIC']
