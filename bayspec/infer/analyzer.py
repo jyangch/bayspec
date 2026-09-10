@@ -457,8 +457,6 @@ class SampleAnalyzer(Infer):
             'n_data_points': int(self.npoint),
             'n_samples': int(self.param_sample.shape[0]),
             'sampler_type': getattr(self, 'sampler_type', None),
-            'models': [pair.model.expr for pair in self.Pair],
-            'data': data,
             'criteria': criteria,
         }
 
