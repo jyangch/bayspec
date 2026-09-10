@@ -3,21 +3,21 @@
         "Data": "LE",
         "Model": "((tbabs*ztbabs)*(cpl+csbpl))",
         "Statistic": "cstat",
-        "Value": 18.730749150684517,
+        "Value": 18.73074915068447,
         "Bins": 20
     },
     {
         "Data": "ME",
         "Model": "(cpl+csbpl)",
         "Statistic": "pgstat",
-        "Value": 349.86982766739743,
+        "Value": 349.8698276673992,
         "Bins": 119
     },
     {
         "Data": "HE",
         "Model": "(cpl+csbpl)",
         "Statistic": "pgstat",
-        "Value": 152.51810713874923,
+        "Value": 152.518107138751,
         "Bins": 117
     },
     {

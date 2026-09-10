@@ -1057,7 +1057,7 @@ class BayesInfer(Infer):
             self._multinest_callback_error = (stage, error)
 
     @staticmethod
-    def _multinest_evidence_from_plain(stats_file):
+    def _get_multinest_evidence_from_plain(stats_file):
         """Parse plain NS global log-evidence and its error from ``stats.dat``.
 
         Args:
@@ -1078,7 +1078,7 @@ class BayesInfer(Infer):
             return None
 
     @staticmethod
-    def _multinest_evidence_from_stats(posterior_stats, ins):
+    def _get_multinest_evidence_from_stats(posterior_stats, ins):
         """Return matching log-evidence and error from MultiNest statistics."""
 
         ins_logevidence = posterior_stats.get('nested importance sampling global log-evidence')
@@ -1094,7 +1094,7 @@ class BayesInfer(Infer):
         )
 
     @staticmethod
-    def _multinest_ev_niter(savepath_prefix):
+    def _get_multinest_ev_niter(savepath_prefix):
         """Return the number of rejected points recorded in ``ev.dat``."""
 
         ev_path = savepath_prefix + 'ev.dat'
@@ -1191,7 +1191,7 @@ class BayesInfer(Infer):
                 stage, error = self._multinest_callback_error
                 raise RuntimeError(f'MultiNest {stage} callback failed: {error}') from error
 
-        niter = self._multinest_ev_niter(savepath_prefix)
+        niter = self._get_multinest_ev_niter(savepath_prefix)
         if not capped and niter >= max_iter:
             capped = True
             msg = (
@@ -1217,7 +1217,7 @@ class BayesInfer(Infer):
             # plain NS evidence is on a separate, well-formed line, so recover that
             # and carry on rather than failing the whole run.
             posterior_stats = None
-            evidence = self._multinest_evidence_from_plain(savepath_prefix + 'stats.dat')
+            evidence = self._get_multinest_evidence_from_plain(savepath_prefix + 'stats.dat')
             if evidence is None:
                 raise RuntimeError(
                     f'pymultinest could not parse the MultiNest stats file ({e}), and '
@@ -1235,7 +1235,7 @@ class BayesInfer(Infer):
                 stacklevel=2,
             )
         else:
-            self.logevidence, self.logevidence_err = self._multinest_evidence_from_stats(
+            self.logevidence, self.logevidence_err = self._get_multinest_evidence_from_stats(
                 posterior_stats, ins
             )
 
