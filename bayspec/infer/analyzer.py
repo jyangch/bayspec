@@ -592,13 +592,15 @@ class Posterior(SampleAnalyzer):
 
             psis_loo_i = np.asarray(psis_result.loo_i)
             psis_pareto_k = np.asarray(psis_result.pareto_k)
-            failed = ~np.isfinite(psis_loo_i) | ~np.isfinite(psis_pareto_k)
+            undefined_pareto_k = np.isnan(psis_pareto_k) | np.isneginf(psis_pareto_k)
+            failed = ~np.isfinite(psis_loo_i) | undefined_pareto_k
             fallback[psis_channels[failed]] = True
 
             accepted = ~failed
             accepted_channels = psis_channels[accepted]
             loo_i_values[accepted_channels] = psis_loo_i[accepted]
-            pareto_k_values[accepted_channels] = psis_pareto_k[accepted]
+            diagnosed = accepted | np.isposinf(psis_pareto_k)
+            pareto_k_values[psis_channels[diagnosed]] = psis_pareto_k[diagnosed]
 
         if fallback.any():
             warnings.warn(

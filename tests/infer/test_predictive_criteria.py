@@ -123,6 +123,23 @@ def test_loo_uses_raw_weights_for_degenerate_psis_tail():
     assert not any(issubclass(item.category, RuntimeWarning) for item in caught)
 
 
+def test_loo_preserves_infinite_pareto_k_as_unreliable():
+    influential = np.r_[-10.0, np.zeros(99)]
+    post = make_posterior(
+        np.arange(100.0)[:, None],
+        influential[:, None],
+    )
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        result = post.loo(reff=1.0)
+
+    assert np.isfinite(result.elpd_loo)
+    assert np.isposinf(np.asarray(result.pareto_k)[0])
+    assert result.warning
+    assert any('Estimated shape parameter' in str(item.message) for item in caught)
+
+
 def test_loo_preserves_runtime_warnings_outside_initialization(monkeypatch):
     rng = np.random.default_rng(20260910)
     post = make_posterior(
@@ -146,6 +163,34 @@ def test_loo_preserves_runtime_warnings_outside_initialization(monkeypatch):
         )
         with pytest.warns(RuntimeWarning, match='overflow encountered in multiply'):
             post.loo(reff=1.0)
+
+
+def test_loo_suppresses_known_arviz_runtime_warnings(monkeypatch):
+    rng = np.random.default_rng(20260910)
+    post = make_posterior(
+        rng.normal(size=(200, 1)),
+        -0.5 * rng.normal(size=(200, 4)) ** 2,
+    )
+    analyzer_module = import_module('bayspec.infer.analyzer')
+    arviz_loo = analyzer_module.az.loo
+
+    def loo_with_arviz_warning(*args, **kwargs):
+        warnings.warn_explicit(
+            'divide by zero encountered in divide',
+            RuntimeWarning,
+            filename='arviz/stats/stats.py',
+            lineno=1052,
+            module='arviz.stats.stats',
+        )
+        return arviz_loo(*args, **kwargs)
+
+    monkeypatch.setattr(analyzer_module.az, 'loo', loo_with_arviz_warning)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
+        post.loo(reff=1.0)
+
+    assert not any(issubclass(item.category, RuntimeWarning) for item in caught)
 
 
 def test_predictive_criteria_warn_for_power_likelihood():
