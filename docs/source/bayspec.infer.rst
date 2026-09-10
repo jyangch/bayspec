@@ -50,15 +50,20 @@ Posterior draws are ranked by ``logprob_sample``; bootstrap draws are ranked
 by ``loglike_sample``. Sample files written by older versions include a final
 score column and must be regenerated or converted before loading.
 
-Constructing ``Posterior`` also calculates and caches its default WAIC and
-PSIS-LOO results. ``Posterior.IC_info`` reports their lower-is-better deviance
-forms as ``WAIC`` and ``LOOIC``, formatted together with their standard errors.
+Constructing ``Posterior`` also calculates and caches its default WAIC result.
+PSIS-LOO is computed only on an explicit ``post.loo()`` call, not during
+initialization, display, or saving. ``Posterior.IC_info`` reports the
+lower-is-better deviance-scale ``WAIC`` with its standard error; it never
+includes LOOIC, even after an explicit LOO calculation.
 Nested-sampling evidence is likewise shown as ``lnZ ± lnZ_err``. The numeric
 values remain available from ``post.waic()``, ``post.loo()``, ``post.lnZ``, and
-``post.lnZ_err``; the ArviZ results also include pointwise values and Pareto-k
-diagnostics. ArviZ's WAIC-variance and Pareto-k warnings are suppressed during
-this eager calculation; inspect ``waic.warning``, ``loo.warning``, and
-``loo.pareto_k`` explicitly. Runtime warnings matching
+``post.lnZ_err``. The explicit pointwise LOO result includes ``loo_i``,
+``pareto_k``, ``good_k``, ``nearly_constant``, and ``psis_failed``. The latter
+two boolean arrays distinguish near-constant likelihood channels from actual
+PSIS failures that used raw-weight fallback. LOO results retain their existing
+argument-aware caching and are invalidated when samples are reloaded.
+ArviZ's WAIC-variance warnings are suppressed during initialization; inspect
+``waic.warning`` explicitly. Runtime warnings matching
 ``overflow encountered in ...`` are also suppressed during this eager
 calculation; other runtime warnings remain visible.
 
@@ -84,23 +89,25 @@ dictionary. ``save`` writes the bundle alongside the display tables:
 
 The dictionaries can be passed directly to a separately defined comparison
 function. ``Posterior`` bundles contain ``AIC``, ``AICc``, ``BIC``, ``WAIC``,
-``LOOIC``, and ``lnZ`` under ``criteria``; ``Bootstrap`` bundles contain only
+and ``lnZ`` under ``criteria``; ``Bootstrap`` bundles contain only
 ``AIC``, ``AICc``, and ``BIC``. Each criterion has a numeric ``value`` and a
 ``higher_is_better`` flag. No model-selection threshold is applied on export.
 
-For WAIC and LOOIC, ``value``, ``error``, and ``pointwise`` are all on the
+LOOIC is always omitted from ``ic_criteria`` and its saved JSON, even after
+``post.loo()`` has been called. Explicit LOO results are returned to the caller
+only; no cached LOO result is automatically inserted into the export.
+
+For WAIC, ``value``, ``error``, and ``pointwise`` are all on the
 lower-is-better deviance scale (``-2 * ELPD``). The bundle also preserves
-the effective parameter count as ``penalty`` and the ``warning`` flag;
-LOOIC includes ``pareto_k`` and
-``good_k``. The pointwise arrays allow a comparison function to calculate
+the effective parameter count as ``penalty`` and the ``warning`` flag.
+The pointwise arrays allow a comparison function to calculate
 paired differences and their standard error without loading posterior draws.
 The standard error of a difference must be calculated from these paired
 contributions, not by combining the two individual standard errors.
 
-``penalty`` is the unscaled ``p_waic`` / ``p_loo``. For WAIC it is the
-sum of posterior log-likelihood variances over observations; for LOO it is
-``lppd - elpd_loo``, where ``lppd`` is the sum of log posterior-mean
-likelihoods for the fitted observations. Both information criteria satisfy
+``penalty`` is the unscaled ``p_waic``, the sum of posterior log-likelihood
+variances over observations. With ``lppd`` denoting the sum of log
+posterior-mean likelihoods for the fitted observations, WAIC satisfies
 ``value = -2 * lppd + 2 * penalty``. This correction for training-data
 optimism is often interpreted as an effective number of parameters; it
 need not equal the actual parameter count and can be non-integer.
@@ -122,8 +129,7 @@ and channel selection/grouping were used.
 
 The bundle uses standard JSON: missing/undefined numeric entries are
 ``null``, and positive/negative infinities are the strings ``"Infinity"``
-and ``"-Infinity"``. Thus an undefined Pareto-k remains distinct from an
-infinite, unreliable one. For numeric diagnostic arrays,
+and ``"-Infinity"``. For numeric diagnostic arrays,
 ``np.asarray(values, dtype=float)`` restores ``null`` as NaN and the infinity
 strings as floating-point infinities. Comparison functions must check for
 unavailable/non-finite scores and diagnostic warnings before ranking models.

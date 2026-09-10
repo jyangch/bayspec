@@ -7,6 +7,7 @@ trapezoidal integrators used in model evaluation.
 
 import collections
 from collections import OrderedDict
+from collections.abc import Mapping
 from datetime import date, datetime
 import functools
 import hashlib
@@ -14,7 +15,9 @@ import inspect
 from io import BytesIO
 from itertools import islice
 import json
+from numbers import Integral
 from pathlib import Path
+import warnings
 
 from matplotlib import rcParams
 import numba as nb
@@ -236,8 +239,7 @@ def memoized(dep_getter=None, *, cache_size=None, verbose=False):
             bound = signature.bind(self, *args, **kwargs)
             bound.apply_defaults()
             call_fingerprint = tuple(
-                (name, get_fingerprint(value))
-                for name, value in tuple(bound.arguments.items())[1:]
+                (name, get_fingerprint(value)) for name, value in tuple(bound.arguments.items())[1:]
             )
             fingerprint = (get_fingerprint(dep_getter(self)), call_fingerprint)
 
@@ -403,3 +405,262 @@ def trapz_2d(y, x):
         out[i] = acc
 
     return out
+
+
+def _ic_diagnostics(result, criterion, npoint):
+    """Describe available predictive diagnostics without asserting convergence."""
+
+    diagnostic = {'status': 'not_assessed', 'reasons': []}
+    if criterion not in ('WAIC', 'LOOIC'):
+        return diagnostic
+
+    reasons = diagnostic['reasons']
+    flag = result.get('warning')
+    incomplete = not isinstance(flag, (bool, np.bool_))
+    warned = bool(flag) if not incomplete else False
+    if incomplete:
+        reasons.append('The criterion warning flag is missing or invalid.')
+    if warned:
+        reasons.append(f'{criterion} reports a diagnostic warning.')
+
+    if criterion == 'LOOIC':
+        masks = {}
+        for name in ('nearly_constant', 'psis_failed'):
+            mask = np.zeros(npoint, dtype=bool)
+            if name in result:
+                supplied = np.asarray(result[name])
+                if supplied.shape == (npoint,) and supplied.dtype.kind == 'b':
+                    mask = supplied
+                else:
+                    incomplete = True
+                    reasons.append(f'{name} channel flags are invalid.')
+            masks[name] = mask
+            diagnostic[f'{name}_channels'] = np.flatnonzero(mask).tolist()
+        if masks['nearly_constant'].any():
+            reasons.append('Nearly constant channels used raw weights; no Pareto tail was fitted.')
+        if masks['psis_failed'].any():
+            warned = True
+            reasons.append(
+                'PSIS failed on nonconstant channels; raw-weight fallback is unreliable.'
+            )
+
+        try:
+            k = np.asarray(result.get('pareto_k'), dtype=float)
+            good_k = float(result.get('good_k'))
+            valid_k = k.shape == (npoint,) and np.isfinite(good_k)
+        except (TypeError, ValueError):
+            valid_k = False
+        if not valid_k:
+            incomplete = True
+            reasons.append('Pareto-k values or their diagnostic threshold are missing or invalid.')
+        else:
+            high_k = k > good_k
+            unknown = (np.isnan(k) | np.isneginf(k)) & ~(
+                masks['nearly_constant'] | masks['psis_failed']
+            )
+            diagnostic['high_k_channels'] = np.flatnonzero(high_k).tolist()
+            diagnostic['undefined_k_channels'] = np.flatnonzero(unknown).tolist()
+            if high_k.any():
+                warned = True
+                reasons.append('Pareto-k exceeds good_k on one or more channels.')
+            if unknown.any():
+                incomplete = True
+                reasons.append('Undefined Pareto-k values have no recorded fallback explanation.')
+
+    diagnostic['status'] = 'warning' if warned else 'insufficient' if incomplete else 'no_warning'
+    return diagnostic
+
+
+def select_model(ic_by_model, criterion='WAIC', threshold=2.0, *, return_details=False):
+    """Select a model from named ``ic_criteria`` bundles.
+
+    Scores are criterion values when ``higher_is_better`` is true and
+    their negatives otherwise, with no rescaling. Candidates must be
+    strictly less than ``threshold`` below the global maximum score.
+    Select the fewest parameters, then the highest score, then the
+    lexicographically smallest model name. Input bundles are not modified.
+
+    Args:
+        ic_by_model: Mapping of unique model names to analyzer ``ic_criteria``
+            dictionaries, either directly obtained or loaded from JSON.
+        criterion: Criterion key, e.g. ``'BIC'``, ``'lnZ'``, or ``'WAIC'``.
+        threshold: Positive finite difference in the criterion's native units.
+        return_details: Return the selection, per-model diagnostics, and differences
+            from both the selected model and the global highest-score model.
+
+    Returns:
+        The selected model name, or a dictionary containing ``best_model``,
+        ``highest_score_model``, ``candidate_models``, ``criterion``, ``threshold``,
+        per-model ``models`` records, and ``comparisons`` when ``return_details=True``.
+        Comparisons are grouped as ``selected`` and ``highest_score``, each with
+        its own ``reference_model`` and per-model ``models`` comparison records.
+
+    Raises:
+        ValueError: Empty/invalid input, missing or nonfinite criterion values,
+            invalid parameter counts or threshold, or inconsistent data/scale.
+
+    Notes:
+        Matching ``data`` and ``n_data_points`` metadata is required, but does
+        not prove identical input counts, backgrounds, or responses. Callers
+        must ensure the fits use the same data and comparable likelihoods.
+        Criterion diagnostic warnings are emitted without excluding models.
+        Only the requested criterion is required. Missing LOOIC does not affect
+        comparisons using other criteria; requesting an absent criterion raises
+        ValueError without silently dropping models or calculating it.
+        Uncertainties and penalties do not enter this selection rule.
+        Detailed WAIC/LOOIC comparisons require finite, aligned ``pointwise``
+        arrays whose sums match their criterion values. ``delta`` is the
+        reference score minus model score: positive means worse than the
+        reference, negative means better. Only the highest-score group's
+        differences are necessarily nonnegative. ``delta_error`` uses
+        ``sqrt(N * var(pointwise_difference, ddof=0))``, following ArviZ.
+        It is a data-based paired standard error, not Monte Carlo error or
+        a correction for unreliable estimates. With fewer than two channels,
+        or for nonpredictive criteria, no difference error is estimated.
+        Diagnostic states describe available checks, not proof of reliability
+        or statistical significance; no_warning does not establish convergence.
+    """
+
+    if not isinstance(ic_by_model, Mapping) or not ic_by_model:
+        raise ValueError('ic_by_model must be a nonempty mapping of model names to IC bundles')
+    if any(not isinstance(name, str) or not name for name in ic_by_model):
+        raise ValueError('model names must be nonempty strings')
+    if not isinstance(criterion, str) or not criterion:
+        raise ValueError('criterion must be a nonempty string')
+    try:
+        if isinstance(threshold, (bool, np.bool_)):
+            raise ValueError
+        threshold = float(threshold)
+    except (TypeError, ValueError) as exc:
+        raise ValueError('threshold must be positive and finite') from exc
+    if not np.isfinite(threshold) or threshold <= 0:
+        raise ValueError('threshold must be positive and finite')
+
+    scores = {}
+    nparams = {}
+    reference = None
+    for model in sorted(ic_by_model):
+        bundle = ic_by_model[model]
+
+        try:
+            nparam = bundle['n_params']
+            npoint = bundle['n_data_points']
+            data = bundle['data']
+            result = bundle['criteria'][criterion]
+            value = result['value']
+            higher = result['higher_is_better']
+            scale = result.get('scale')
+        except (KeyError, TypeError) as exc:
+            raise ValueError(f'{model}: missing or invalid {criterion} metadata: {exc}') from exc
+
+        if not isinstance(higher, (bool, np.bool_)):
+            raise ValueError(f'{model}: {criterion} higher_is_better must be boolean')
+        if isinstance(nparam, bool) or not isinstance(nparam, Integral) or nparam < 0:
+            raise ValueError(f'{model}: n_params must be a nonnegative integer')
+        if isinstance(npoint, bool) or not isinstance(npoint, Integral) or npoint < 0:
+            raise ValueError(f'{model}: n_data_points must be a nonnegative integer')
+        if not isinstance(data, list):
+            raise ValueError(f'{model}: data must be an ordered list of data-unit metadata')
+        try:
+            if isinstance(value, (bool, np.bool_)):
+                raise ValueError
+            value = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f'{model}: {criterion} value must be finite') from exc
+        if not np.isfinite(value):
+            raise ValueError(f'{model}: {criterion} value must be finite')
+
+        if reference is None:
+            reference = (data, npoint, higher, scale)
+        else:
+            if data != reference[0] or npoint != reference[1]:
+                raise ValueError(f'{model}: data metadata differs between models')
+            if higher != reference[2]:
+                raise ValueError(f'{model}: {criterion} higher_is_better differs between models')
+            if scale != reference[3]:
+                raise ValueError(f'{model}: {criterion} scale differs between models')
+
+        if result.get('warning', False):
+            warnings.warn(
+                f'{model}: {criterion} has diagnostic warnings; retained for model selection.',
+                UserWarning,
+                stacklevel=2,
+            )
+
+        scores[model] = value if higher else -value
+        nparams[model] = int(nparam)
+
+    best_score = max(scores.values())
+    candidates = [model for model in scores if best_score - scores[model] < threshold]
+
+    best_model = min(candidates, key=lambda model: (nparams[model], -scores[model], model))
+    if not return_details:
+        return best_model
+
+    highest_score_model = min(scores, key=lambda model: (-scores[model], model))
+    predictive = criterion in ('WAIC', 'LOOIC')
+    pointwise = {}
+    models = {}
+    for model in scores:
+        result = ic_by_model[model]['criteria'][criterion]
+        if predictive:
+            try:
+                values = np.asarray(result.get('pointwise'), dtype=float)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f'{model}: invalid {criterion} pointwise values') from exc
+            if values.shape != (npoint,) or not np.isfinite(values).all():
+                raise ValueError(
+                    f'{model}: {criterion} pointwise values must be finite and aligned'
+                )
+            if not np.isclose(values.sum(), float(result['value']), rtol=1e-10, atol=1e-10):
+                raise ValueError(f'{model}: {criterion} pointwise sum differs from its value')
+            pointwise[model] = values
+        models[model] = {
+            'value': float(result['value']),
+            'score': scores[model],
+            'n_params': nparams[model],
+            'diagnostics': _ic_diagnostics(result, criterion, npoint),
+        }
+
+    comparisons = {}
+    for name, reference_model in (('selected', best_model), ('highest_score', highest_score_model)):
+        comparison_models = {}
+        for model, record in models.items():
+            status = 'not_assessed'
+            error = None
+            if predictive:
+                statuses = (
+                    record['diagnostics']['status'],
+                    models[reference_model]['diagnostics']['status'],
+                )
+                status = (
+                    'warning'
+                    if 'warning' in statuses
+                    else 'insufficient'
+                    if 'insufficient' in statuses or npoint < 2
+                    else 'no_warning'
+                )
+                if npoint >= 2:
+                    with np.errstate(over='ignore', invalid='ignore'):
+                        difference = pointwise[model] - pointwise[reference_model]
+                        error = float(np.sqrt(npoint * np.var(difference, ddof=0)))
+                    if not np.isfinite(error):
+                        raise ValueError(
+                            f'{model}: {criterion} pointwise difference error is nonfinite'
+                        )
+            comparison_models[model] = {
+                'delta': scores[reference_model] - scores[model],
+                'delta_error': error,
+                'comparison_status': status,
+            }
+        comparisons[name] = {'reference_model': reference_model, 'models': comparison_models}
+
+    return {
+        'best_model': best_model,
+        'candidate_models': candidates,
+        'highest_score_model': highest_score_model,
+        'criterion': criterion,
+        'threshold': threshold,
+        'models': models,
+        'comparisons': comparisons,
+    }

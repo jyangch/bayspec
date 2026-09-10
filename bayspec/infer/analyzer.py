@@ -4,7 +4,7 @@
 instance, reads a 2D parameter-sample matrix, evaluates each draw, attaches
 the draws to every free parameter's :class:`~bayspec.util.post.Post`, and
 exposes point estimates, credible intervals, and model-selection scores.
-Posterior analyzers also eagerly calculate WAIC and PSIS-LOO.
+Posterior analyzers also eagerly calculate WAIC; PSIS-LOO is explicitly opt-in.
 
 :class:`Posterior` and :class:`Bootstrap` are thin subclasses that pick
 which attribute of the underlying ``Infer`` carries the sample matrix.
@@ -544,17 +544,11 @@ class Posterior(SampleAnalyzer):
             )
             warnings.filterwarnings(
                 'ignore',
-                message='Estimated shape parameter of Pareto distribution.*',
-                category=UserWarning,
-            )
-            warnings.filterwarnings(
-                'ignore',
                 message=r'^overflow encountered in .*',
                 category=RuntimeWarning,
             )
 
             self.waic()
-            self.loo()
 
     @property
     def _ranking_sample(self):
@@ -594,8 +588,8 @@ class Posterior(SampleAnalyzer):
     def loo(self, scale='log', pointwise=True, reff=None):
         """Compute PSIS-LOO and Pareto-k diagnostics using ArviZ.
 
-        The default full result is calculated during initialization. Results
-        are cached separately for each normalized argument combination. Channels
+        Computed only on explicit calls, never by initialization, display, or
+        export. Results are cached separately for each normalized argument combination. Channels
         with numerically constant likelihood use raw importance sampling because
         their zero-width weight distribution has no Pareto tail to fit. Failed
         PSIS calculations also fall back to raw importance sampling, but retain
@@ -729,6 +723,8 @@ class Posterior(SampleAnalyzer):
         pointwise_template = idata.log_likelihood['obs'].isel(chain=0, draw=0, drop=True)
         loo_i = pointwise_template.copy(data=loo_i_values).rename('loo_i')
         pareto_k = pointwise_template.copy(data=pareto_k_values).rename('pareto_shape')
+        constant_channels = pointwise_template.copy(data=nearly_constant).rename('nearly_constant')
+        failed_channels = pointwise_template.copy(data=psis_failed).rename('psis_failed')
 
         return az.ELPDData(
             data=[
@@ -742,6 +738,8 @@ class Posterior(SampleAnalyzer):
                 pareto_k,
                 scale,
                 good_k,
+                constant_channels,
+                failed_channels,
             ],
             index=[
                 'elpd_loo',
@@ -754,6 +752,8 @@ class Posterior(SampleAnalyzer):
                 'pareto_k',
                 'scale',
                 'good_k',
+                'nearly_constant',
+                'psis_failed',
             ],
         )
 
@@ -771,27 +771,26 @@ class Posterior(SampleAnalyzer):
 
     @property
     def all_IC(self):
-        """AIC-family scores, predictive information criteria, and evidence."""
+        """AIC-family scores, WAIC, and evidence; LOOIC is never included."""
 
         waic = self.waic()
-        loo = self.loo()
 
         all_IC = super().all_IC
         all_IC['WAIC'] = self._format_ic(-2.0 * waic.elpd_waic, 2.0 * waic.se, as_text=True)
-        all_IC['LOOIC'] = self._format_ic(-2.0 * loo.elpd_loo, 2.0 * loo.se, as_text=True)
         all_IC['lnZ'] = self._format_ic(self.lnZ, self.lnZ_err, as_text=True)
 
         return all_IC
 
     @property
     def ic_criteria(self):
-        """Include WAIC, LOOIC, evidence, and their comparison diagnostics.
+        """Include WAIC, evidence, and their comparison diagnostics.
 
-        WAIC/LOOIC ``value``, ``error``, and ``pointwise`` use deviance scale
+        LOOIC is always omitted, even after an explicit :meth:`loo` call.
+        WAIC ``value``, ``error``, and ``pointwise`` use deviance scale
         (``-2 * ELPD``); smaller is better. ``lnZ`` is on natural-log scale
         and larger is better. Its ``error`` is the nested-sampling evidence
         uncertainty, not the predictive criteria's data-based standard error.
-        ``penalty`` stores the effective parameter count (p_waic or p_loo);
+        ``penalty`` stores the effective parameter count (p_waic);
         its contribution on deviance scale is twice this value.
         """
 
@@ -807,19 +806,6 @@ class Posterior(SampleAnalyzer):
             'penalty': self._format_ic(waic.p_waic),
             'warning': bool(waic.warning),
             'pointwise': [self._format_ic(value) for value in -2.0 * np.asarray(waic.waic_i)],
-        }
-
-        loo = self.loo()
-        criteria['LOOIC'] = {
-            'value': self._format_ic(-2.0 * loo.elpd_loo),
-            'error': self._format_ic(2.0 * loo.se),
-            'scale': 'deviance',
-            'higher_is_better': False,
-            'penalty': self._format_ic(loo.p_loo),
-            'warning': bool(loo.warning),
-            'pointwise': [self._format_ic(value) for value in -2.0 * np.asarray(loo.loo_i)],
-            'pareto_k': [self._format_ic(value) for value in np.asarray(loo.pareto_k)],
-            'good_k': self._format_ic(loo.good_k),
         }
 
         criteria['lnZ'] = {

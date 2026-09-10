@@ -248,10 +248,10 @@ It covers the three stages of a typical session:
     </tbody>
     </table></details><details open style="margin-top: 10px;"><summary style="margin-bottom: 10px;"><b>Information Criterias</b></summary><table class="my-table">
     <thead>
-    <tr><th style="text-align: center;">  AIC  </th><th style="text-align: center;"> AICc  </th><th style="text-align: center;">  BIC  </th><th style="text-align: center;"> WAIC </th><th style="text-align: center;"> LOOIC </th><th style="text-align: center;">  lnZ   </th></tr>
+    <tr><th style="text-align: center;">  AIC  </th><th style="text-align: center;"> AICc  </th><th style="text-align: center;">  BIC  </th><th style="text-align: center;"> WAIC </th><th style="text-align: center;">  lnZ   </th></tr>
     </thead>
     <tbody>
-    <tr><td style="text-align: center;">560.781</td><td style="text-align: center;">560.885</td><td style="text-align: center;">571.173</td><td style="text-align: center;">570.94 ± 114.32</td><td style="text-align: center;">571.02 ± 114.30</td><td style="text-align: center;">-295.85 ± 0.02</td></tr>
+    <tr><td style="text-align: center;">560.781</td><td style="text-align: center;">560.885</td><td style="text-align: center;">571.173</td><td style="text-align: center;">570.94 ± 114.32</td><td style="text-align: center;">-295.85 ± 0.02</td></tr>
     </tbody>
     </table></details>
 

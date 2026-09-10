@@ -158,6 +158,8 @@ def test_loo_uses_raw_weights_for_degenerate_psis_tail():
     assert any('PSIS-LOO failed' in str(item.message) for item in caught)
     assert not any('nearly constant' in str(item.message) for item in caught)
     assert not any(issubclass(item.category, RuntimeWarning) for item in caught)
+    assert result.psis_failed[0]
+    assert not result.nearly_constant[0]
 
 
 @pytest.mark.parametrize('scale, factor', [('log', 1), ('negative_log', -1), ('deviance', -2)])
@@ -194,7 +196,7 @@ def test_loo_nearly_constant_channels_do_not_signal_psis_failure():
     assert not any('PSIS-LOO failed' in str(item.message) for item in caught)
 
 
-def test_loo_failure_warning_survives_initialization_and_cache(monkeypatch):
+def test_loo_failure_warning_occurs_only_on_explicit_call_and_survives_cache(monkeypatch):
     loglike = np.column_stack(
         [
             -np.r_[np.zeros(80), np.linspace(0.01, 0.2, 19), 708.0],
@@ -206,10 +208,15 @@ def test_loo_failure_warning_survives_initialization_and_cache(monkeypatch):
         SampleAnalyzer, '__init__', lambda self, infer: self.__dict__.update(prepared.__dict__)
     )
 
-    with pytest.warns(UserWarning, match='PSIS-LOO failed'):
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter('always')
         post = Posterior(object.__new__(BayesInfer))
+    assert not any('PSIS-LOO failed' in str(item.message) for item in caught)
 
-    assert post.loo().warning
+    with warnings.catch_warnings(record=True) as explicit_warnings:
+        warnings.simplefilter('always')
+        assert post.loo().warning
+    assert any('PSIS-LOO failed' in str(item.message) for item in explicit_warnings)
     assert post.loo() is post.loo()
 
 
@@ -291,7 +298,7 @@ def test_predictive_criteria_warn_for_power_likelihood():
         post.waic()
 
 
-def test_posterior_initialization_eagerly_computes_default_criteria(monkeypatch):
+def test_posterior_initialization_eagerly_computes_only_waic(monkeypatch):
     calls = []
     infer = object.__new__(BayesInfer)
 
@@ -301,7 +308,7 @@ def test_posterior_initialization_eagerly_computes_default_criteria(monkeypatch)
 
     Posterior(infer)
 
-    assert calls == ['waic', 'loo']
+    assert calls == ['waic']
 
 
 def test_posterior_initialization_suppresses_arviz_predictive_warnings(monkeypatch):
@@ -463,7 +470,7 @@ def test_replacing_infer_invalidates_predictive_criteria_cache(monkeypatch, scal
     assert post.loo(scale=scale) is new_loo
 
 
-def test_posterior_ic_info_includes_waic_and_looic():
+def test_posterior_ic_info_includes_waic_without_looic():
     rng = np.random.default_rng(20260908)
     post = make_posterior(
         rng.normal(size=(200, 1)),
@@ -477,13 +484,11 @@ def test_posterior_ic_info_includes_waic_and_looic():
         all_ic = post.all_IC
         ic_info = post.IC_info
 
-    assert list(all_ic) == ['AIC', 'AICc', 'BIC', 'WAIC', 'LOOIC', 'lnZ']
-    assert list(ic_info.data_dict) == ['AIC', 'AICc', 'BIC', 'WAIC', 'LOOIC', 'lnZ']
+    assert list(all_ic) == ['AIC', 'AICc', 'BIC', 'WAIC', 'lnZ']
+    assert list(ic_info.data_dict) == ['AIC', 'AICc', 'BIC', 'WAIC', 'lnZ']
     assert all_ic['WAIC'] == (f'{-2.0 * post.waic().elpd_waic:.3f} ± {2.0 * post.waic().se:.3f}')
-    assert all_ic['LOOIC'] == (f'{-2.0 * post.loo().elpd_loo:.3f} ± {2.0 * post.loo().se:.3f}')
     assert all_ic['lnZ'] == '-12.345 ± 0.678'
     assert ic_info.data_dict['WAIC'][0] == all_ic['WAIC']
-    assert ic_info.data_dict['LOOIC'][0] == all_ic['LOOIC']
     assert ic_info.data_dict['lnZ'][0] == all_ic['lnZ']
 
 
@@ -544,35 +549,29 @@ def test_ic_bundle_contains_unrounded_numeric_criteria_and_channel_order():
     assert [unit['slice'] for unit in bundle['data']] == [[0, 3], [3, 6]]
     assert bundle['data'][1]['channel_bins'] == [[4.0, 5.0], [5.0, 6.0], [6.0, 7.0]]
     criteria = bundle['criteria']
-    assert list(criteria) == ['AIC', 'AICc', 'BIC', 'WAIC', 'LOOIC', 'lnZ']
+    assert list(criteria) == ['AIC', 'AICc', 'BIC', 'WAIC', 'lnZ']
     assert criteria['AIC']['value'] == post.aic
     assert criteria['AICc']['value'] == post.aicc
     assert criteria['BIC']['value'] == post.bic
-    for name, result, elpd, pointwise, penalty in [
-        ('WAIC', post.waic(), 'elpd_waic', 'waic_i', 'p_waic'),
-        ('LOOIC', post.loo(), 'elpd_loo', 'loo_i', 'p_loo'),
-    ]:
-        assert criteria[name]['value'] == -2 * result[elpd]
-        assert criteria[name]['error'] == 2 * result.se
-        assert criteria[name]['penalty'] == result[penalty]
-        assert 'se' not in criteria[name]
-        assert penalty not in criteria[name]
-        lppd = np.sum(
-            logsumexp(post.pointwise_loglike_sample, axis=0) - np.log(bundle['n_samples'])
-        )
-        assert criteria[name]['value'] == pytest.approx(-2 * lppd + 2 * criteria[name]['penalty'])
-        assert criteria[name]['warning'] == bool(result.warning)
-        assert criteria[name]['scale'] == 'deviance'
-        assert not criteria[name]['higher_is_better']
-        np.testing.assert_array_equal(criteria[name]['pointwise'], -2 * result[pointwise])
-        assert sum(criteria[name]['pointwise']) == pytest.approx(criteria[name]['value'])
-    assert criteria['LOOIC']['good_k'] == post.loo().good_k
+    waic = post.waic()
+    assert criteria['WAIC']['value'] == -2 * waic.elpd_waic
+    assert criteria['WAIC']['error'] == 2 * waic.se
+    assert criteria['WAIC']['penalty'] == waic.p_waic
+    assert 'se' not in criteria['WAIC']
+    assert 'p_waic' not in criteria['WAIC']
+    lppd = np.sum(logsumexp(post.pointwise_loglike_sample, axis=0) - np.log(bundle['n_samples']))
+    assert criteria['WAIC']['value'] == pytest.approx(-2 * lppd + 2 * criteria['WAIC']['penalty'])
+    assert criteria['WAIC']['warning'] == bool(waic.warning)
+    assert criteria['WAIC']['scale'] == 'deviance'
+    assert not criteria['WAIC']['higher_is_better']
+    np.testing.assert_array_equal(criteria['WAIC']['pointwise'], -2 * waic.waic_i)
+    assert sum(criteria['WAIC']['pointwise']) == pytest.approx(criteria['WAIC']['value'])
     assert criteria['lnZ']['value'] == -12.3456789
     assert criteria['lnZ']['error'] == 0.123456789
     assert criteria['lnZ']['higher_is_better']
 
 
-def test_ic_criteria_roundtrip_preserves_failures_infinite_k_and_missing_evidence(tmp_path):
+def test_ic_criteria_omits_explicit_loo_diagnostics_and_preserves_missing_evidence(tmp_path):
     regular = -0.5 * np.linspace(-1.0, 1.0, 100) ** 2
     post = make_ic_posterior(
         np.column_stack(
@@ -591,6 +590,7 @@ def test_ic_criteria_roundtrip_preserves_failures_infinite_k_and_missing_evidenc
     path = tmp_path / 'model' / 'ic.json'
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
+        loo = post.loo()
         json_dump(post.ic_criteria, path)
 
     def reject_nonstandard_constant(value):
@@ -598,11 +598,11 @@ def test_ic_criteria_roundtrip_preserves_failures_infinite_k_and_missing_evidenc
 
     loaded = json.loads(path.read_text(), parse_constant=reject_nonstandard_constant)
     assert loaded == post.ic_criteria
-    loo = loaded['criteria']['LOOIC']
-    assert loo['warning']
-    assert loo['pareto_k'][:3] == [None, 'Infinity', None]
-    restored_k = np.asarray(loo['pareto_k'], dtype=float)
-    assert np.isnan(restored_k[0]) and np.isposinf(restored_k[1]) and np.isnan(restored_k[2])
+    assert 'LOOIC' not in loaded['criteria']
+    assert loo.warning
+    np.testing.assert_array_equal(loo.nearly_constant[:3], [True, False, False])
+    np.testing.assert_array_equal(loo.psis_failed[:3], [False, False, True])
+    assert np.isnan(loo.pareto_k[0]) and np.isposinf(loo.pareto_k[1]) and np.isnan(loo.pareto_k[2])
     assert loaded['criteria']['lnZ']['value'] is None
     assert loaded['criteria']['lnZ']['error'] is None
 
@@ -625,24 +625,46 @@ def test_ic_files_support_paired_waic_comparison_without_posterior(tmp_path):
         second['criteria']['WAIC']['value'] - first['criteria']['WAIC']['value']
     )
     assert np.sqrt(6 * difference.var()) == pytest.approx(np.sqrt(6 * (2 * shift).var()))
+    tools = import_module('bayspec.util.tools')
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        assert tools.select_model({'left': first, 'right': second}, 'WAIC') == 'left'
+        details = tools.select_model({'left': first, 'right': second}, 'WAIC', return_details=True)
+    assert details['comparisons']['highest_score']['models']['right'][
+        'delta_error'
+    ] == pytest.approx(np.sqrt(6 * (2 * shift).var()))
+    assert details['comparisons']['selected'] == details['comparisons']['highest_score']
 
 
-def test_save_writes_machine_readable_bundle_alongside_existing_tables(monkeypatch, tmp_path):
+@pytest.mark.parametrize('explicit_loo', [False, True])
+def test_display_and_save_never_call_or_include_loo(monkeypatch, tmp_path, explicit_loo):
     post = make_ic_posterior()
+    if explicit_loo:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            post.loo()
+
+    def unexpected_loo(self, *args, **kwargs):
+        raise AssertionError('Display and export must not call loo, even on a cache hit')
+
+    monkeypatch.setattr(Posterior, 'loo', unexpected_loo)
     table = Info.from_dict({'test': 1.0})
     monkeypatch.setattr(SampleAnalyzer, 'free_par_info', property(lambda self: table))
     monkeypatch.setattr(SampleAnalyzer, 'stat_info', property(lambda self: table))
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
+        assert 'LOOIC' not in post.all_IC
+        assert 'LOOIC' not in post.ic_criteria['criteria']
+        assert 'LOOIC' not in str(post)
+        assert 'LOOIC' not in post._repr_html_()
         post.save(tmp_path)
     assert (tmp_path / 'post_free_par.json').is_file()
     assert (tmp_path / 'post_stat.json').is_file()
     assert isinstance(json.loads((tmp_path / 'post_IC.json').read_text()), list)
     saved = json.loads((tmp_path / 'post_ic_criteria.json').read_text())
     assert saved == post.ic_criteria
-    assert list(saved['criteria']) == ['AIC', 'AICc', 'BIC', 'WAIC', 'LOOIC', 'lnZ']
+    assert list(saved['criteria']) == ['AIC', 'AICc', 'BIC', 'WAIC', 'lnZ']
     assert saved['criteria']['WAIC']['value'] == -2 * post.waic().elpd_waic
-    assert saved['criteria']['LOOIC']['value'] == -2 * post.loo().elpd_loo
     assert saved['criteria']['lnZ']['value'] == post.lnZ
 
 
