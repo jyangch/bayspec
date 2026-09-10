@@ -160,12 +160,12 @@ def build_optimal_grouping(rsp_fwhm, src_cts, valid=None):
 
 def _grouping_significance(src, bkg, bkg_err, alpha, stat):
 
-    if stat in ['pstat', 'cstat', 'ppstat', 'Xppstat', 'Xcstat']:
+    if stat in ['pstat', 'cstat', 'ppstat']:
         if (bkg < 0 or src < 0) and bkg != src:
             return 0
         return ppsig(src, bkg, alpha)
 
-    if stat in ['gstat', 'chi2', 'pgstat', 'Xpgstat']:
+    if stat in ['gstat', 'chi2', 'pgstat']:
         if src <= 0 or bkg_err == 0:
             return 0
         return pgsig(src, bkg * alpha, bkg_err * alpha)

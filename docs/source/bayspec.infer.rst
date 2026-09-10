@@ -9,9 +9,9 @@ Starting with BaySpec 0.4.0, every low-level statistic function returns a
 
 .. code:: python
 
-   from bayspec import StatisticNB
+   from bayspec import Statistic
 
-   result = StatisticNB.PGstat(
+   result = Statistic.PGstat(
        S=source_counts,
        B=background_counts,
        m=model_rate,

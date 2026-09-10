@@ -1022,8 +1022,8 @@ class BayesInfer(Infer):
     def multinest_safe_prior_transform(self, cube, ndim, nparams):
         """MultiNest C-callback wrapper that writes ``cube`` in place.
 
-        Terminates the process on any Python-level exception so MultiNest
-        does not silently swallow it.
+        Records Python exceptions because ctypes cannot propagate them across
+        the C callback boundary.
         """
 
         try:
@@ -1032,13 +1032,13 @@ class BayesInfer(Infer):
             for i in range(ndim):
                 cube[i] = theta_arr[i]
         except Exception as e:
-            import sys
-
-            sys.stderr.write(f'ERROR in prior: {e}\n')
-            sys.exit(1)
+            self._record_multinest_callback_error('prior', e)
 
     def multinest_safe_calc_loglike(self, cube, ndim, nparams, lnew):
         """MultiNest C-callback log-likelihood; returns ``-2e100`` when non-finite."""
+
+        if getattr(self, '_multinest_callback_error', None) is not None:
+            return -2e100
 
         try:
             cube_arr = np.array([cube[i] for i in range(ndim)])
@@ -1047,10 +1047,14 @@ class BayesInfer(Infer):
                 return -2e100
             return ll
         except Exception as e:
-            import sys
+            self._record_multinest_callback_error('loglikelihood', e)
+            return -2e100
 
-            sys.stderr.write(f'ERROR in loglikelihood: {e}\n')
-            sys.exit(1)
+    def _record_multinest_callback_error(self, stage, error):
+        """Keep the first callback error for propagation after MultiNest returns."""
+
+        if getattr(self, '_multinest_callback_error', None) is None:
+            self._multinest_callback_error = (stage, error)
 
     @staticmethod
     def _multinest_evidence_from_plain(stats_file):
@@ -1168,6 +1172,7 @@ class BayesInfer(Infer):
         else:
             if os.path.exists(max_iter_warning_path):
                 os.remove(max_iter_warning_path)
+            self._multinest_callback_error = None
             pymultinest.run(
                 LogLikelihood=self.multinest_safe_calc_loglike,
                 Prior=self.multinest_safe_prior_transform,
@@ -1182,6 +1187,9 @@ class BayesInfer(Infer):
                 max_iter=max_iter,
                 seed=-1 if random_seed is None else int(random_seed),
             )
+            if self._multinest_callback_error is not None:
+                stage, error = self._multinest_callback_error
+                raise RuntimeError(f'MultiNest {stage} callback failed: {error}') from error
 
         niter = self._multinest_ev_niter(savepath_prefix)
         if not capped and niter >= max_iter:

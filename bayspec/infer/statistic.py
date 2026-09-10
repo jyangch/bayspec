@@ -1,10 +1,10 @@
 """Likelihood-statistic kernels for spectral fitting.
 
 Implements the Gaussian (``Gstat``), Poisson (``Pstat``), Poisson-source
-plus Poisson-background (``PPstat``/``cstat``), Poisson-source plus
-Gaussian-background (``PGstat``) statistics. ``StatisticNB`` exposes the
-numba-accelerated fast path and ``Statistic`` is a pure-numpy fallback with
-the same interface.
+plus Poisson-background (``PPstat``/``cstat``), and Poisson-source plus
+Gaussian-background (``PGstat``) statistics. ``Statistic`` exposes the
+Numba-accelerated implementation; ``StatisticNB`` remains as a compatibility
+alias.
 
 Every statistic takes the same keyword arguments (``S``, ``B``, ``m``,
 ``ts``, ``tb``, ``sigma_S``, ``sigma_B``) and returns a
@@ -41,10 +41,8 @@ class StatisticResult:
         if np.isnan(self.pointwise_loglike).any() or np.isnan(self.pointwise_sign).any():
             raise ValueError('statistic result must not contain NaN')
 
-        if (self.pointwise_loglike > 1e-12).any():
+        if (self.pointwise_loglike > 0.0).any():
             raise ValueError('positive relative log-likelihood cannot define a pseudo-residual')
-
-        self.pointwise_loglike = np.where(self.pointwise_loglike > 0.0, 0.0, self.pointwise_loglike)
 
     @property
     def pointwise_stat(self):
@@ -85,6 +83,40 @@ def guard_statistic(func):
         return func(**kwargs)
 
     return guarded
+
+
+@nb.vectorize([nb.float64(nb.float64, nb.float64)], cache=True)
+def poisson_relative_loglike(count, mean):
+    """Return the Poisson log-likelihood relative to its saturated value."""
+
+    if (
+        np.isnan(count)
+        or np.isnan(mean)
+        or count == np.inf
+        or count == -np.inf
+        or mean == np.inf
+        or mean == -np.inf
+        or count < 0.0
+        or mean < 0.0
+    ):
+        return -np.inf
+    if count == 0.0:
+        return -mean
+    if mean == 0.0:
+        return -np.inf
+
+    delta = (mean - count) / count
+    if np.abs(delta) < 1e-4:
+        return (
+            -count
+            * delta
+            * delta
+            * (0.5 - delta / 3.0 + delta * delta / 4.0 - delta * delta * delta / 5.0)
+        )
+    if delta != np.inf and delta != -np.inf and delta > -1.0:
+        return -count * (delta - np.log1p(delta))
+
+    return count * (np.log(mean) - np.log(count)) - mean + count
 
 
 @nb.njit(cache=True, fastmath=True)
@@ -141,15 +173,7 @@ def _pstat_core(S, m, ts):
         si = S[i]
         mu = m[i] * ts
 
-        klogmu = 0.0
-        if si != 0.0:
-            klogmu = si * np.log(mu)
-
-        klogk = 0.0
-        if si != 0.0:
-            klogk = si * np.log(si)
-
-        logli = klogmu - mu - klogk + si
+        logli = poisson_relative_loglike(si, mu)
         delta = si - mu
         sign = 0.0
         if delta > 0.0:
@@ -194,23 +218,7 @@ def _ppstat_core(S, B, m, ts, tb):
         mu_s = ts * (b + mi)
         mu_b = tb * b
 
-        s_klogmu = 0.0
-        if si != 0.0:
-            s_klogmu = si * np.log(mu_s)
-
-        s_klogk = 0.0
-        if si != 0.0:
-            s_klogk = si * np.log(si)
-
-        b_klogmu = 0.0
-        if bi != 0.0:
-            b_klogmu = bi * np.log(mu_b)
-
-        b_klogk = 0.0
-        if bi != 0.0:
-            b_klogk = bi * np.log(bi)
-
-        logli = (s_klogmu - mu_s - s_klogk + si) + (b_klogmu - mu_b - b_klogk + bi)
+        logli = poisson_relative_loglike(si, mu_s) + poisson_relative_loglike(bi, mu_b)
         delta = si / ts - bi / tb - mi
         sign = 0.0
         if delta > 0.0:
@@ -261,15 +269,7 @@ def _pgstat_core(S, B, m, ts, tb, sigma_B):
 
         mu_s = ts * (b + mi)
 
-        s_klogmu = 0.0
-        if si != 0.0:
-            s_klogmu = si * np.log(mu_s)
-
-        s_klogk = 0.0
-        if si != 0.0:
-            s_klogk = si * np.log(si)
-
-        pois_logli = s_klogmu - mu_s - s_klogk + si
+        pois_logli = poisson_relative_loglike(si, mu_s)
 
         gauss_logli = 0.0
         if sigma != 0.0:
@@ -290,7 +290,7 @@ def _pgstat_core(S, B, m, ts, tb, sigma_B):
     return pointwise_loglike, pointwise_sign
 
 
-class StatisticNB:
+class Statistic:
     """Numba-accelerated statistic dispatch table.
 
     Every method takes the standard keyword bundle (``S``, ``B``, ``m``,
@@ -351,156 +351,4 @@ class StatisticNB:
         return StatisticResult(pointwise_loglike, pointwise_sign)
 
 
-class Statistic:
-    """Pure-numpy fallback mirror of :class:`StatisticNB`.
-
-    Same :class:`StatisticResult` contract as the numba-accelerated class,
-    intended for debugging and for environments where numba cannot be used.
-    """
-
-    @staticmethod
-    def xlogy(x, y):
-        """Return ``x * log(y)`` element-wise, treating ``0 * log(y)`` as 0 for any ``y``."""
-
-        res = np.zeros_like(x, dtype=np.float64)
-
-        zero = x == 0
-        res[~zero] = x[~zero] * np.log(y[~zero])
-
-        return res
-
-    @staticmethod
-    def xdivy(x, y):
-        """Return ``x / y`` element-wise, treating ``0 / 0`` as 0."""
-
-        res = np.zeros_like(x, dtype=np.float64)
-
-        zero = (x == 0) & (y == 0)
-        res[~zero] = x[~zero] / y[~zero]
-
-        return res
-
-    @staticmethod
-    def poisson_logpmf(k, mu):
-        """Poisson log-PMF with Stirling's approximation for ``log(k!)``.
-
-        Drops the ``log(2πk) / 2`` term, so the result is accurate up to
-        an additive constant that cancels in likelihood ratios.
-        """
-
-        return Statistic.xlogy(k, mu) - mu - Statistic.xlogy(k, k) + k
-
-    @staticmethod
-    def gaussian_logpdf(x, loc, scale):
-        """Gaussian log-PDF dropping the ``log(2π σ²)`` normalization constant."""
-
-        return -0.5 * (Statistic.xdivy(x - loc, scale) ** 2)
-
-    @staticmethod
-    @guard_statistic
-    def Gstat(**kwargs):
-        """Return the pointwise Gaussian source-background result."""
-
-        S = kwargs['S']
-        B = kwargs['B']
-        m = kwargs['m']
-
-        ts = kwargs['ts']
-        tb = kwargs['tb']
-
-        sigma_S = kwargs['sigma_S']
-        sigma_B = kwargs['sigma_B']
-
-        if tb != 0:
-            B = B / tb * ts
-            sigma_B = sigma_B / tb * ts
-
-        sigma = np.sqrt(sigma_S**2 + sigma_B**2)
-
-        pointwise_sign = np.sign(S - B - m * ts)
-        pointwise_loglike = Statistic.gaussian_logpdf(S - B, m * ts, sigma)
-
-        return StatisticResult(pointwise_loglike, pointwise_sign)
-
-    @staticmethod
-    @guard_statistic
-    def Pstat(**kwargs):
-        """Return the pointwise pure-Poisson result."""
-
-        S = kwargs['S']
-        m = kwargs['m']
-        ts = kwargs['ts']
-
-        pointwise_sign = np.sign(S - m * ts)
-        pointwise_loglike = Statistic.poisson_logpmf(S, m * ts)
-
-        return StatisticResult(pointwise_loglike, pointwise_sign)
-
-    @staticmethod
-    @guard_statistic
-    def PPstat(**kwargs):
-        """Return the pointwise profiled Poisson-Poisson result."""
-
-        S = kwargs['S']
-        B = kwargs['B']
-        m = kwargs['m']
-
-        ts = kwargs['ts']
-        tb = kwargs['tb']
-
-        aa = ts + tb
-        bb = (ts + tb) * m - S - B
-        cc = -B * m
-        dd = np.sqrt(bb * bb - 4 * aa * cc)
-
-        po = bb >= 0
-        b = np.empty_like(B, dtype=np.float64)
-
-        denom = bb + dd
-        zero_denom = po & (denom == 0)
-        safe_po = po & ~zero_denom
-        b[zero_denom] = 0.0
-        b[safe_po] = -2 * cc[safe_po] / denom[safe_po]
-        b[~po] = -(bb[~po] - dd[~po]) / (2 * aa)
-
-        pointwise_sign = np.sign(S / ts - B / tb - m)
-        pointwise_loglike = Statistic.poisson_logpmf(S, ts * (b + m)) + Statistic.poisson_logpmf(
-            B, tb * b
-        )
-
-        return StatisticResult(pointwise_loglike, pointwise_sign)
-
-    @staticmethod
-    @guard_statistic
-    def PGstat(**kwargs):
-        """Return the pointwise profiled Poisson-Gaussian result."""
-
-        S = kwargs['S']
-        B = kwargs['B']
-        m = kwargs['m']
-
-        ts = kwargs['ts']
-        tb = kwargs['tb']
-
-        sigma = kwargs['sigma_B']
-
-        aa = tb**2
-        bb = ts * sigma**2 - tb * B + tb**2 * m
-        cc = ts * sigma**2 * m - S * sigma**2 - tb * B * m
-        dd = np.sqrt(bb**2 - 4 * aa * cc)
-
-        sign = np.where(bb >= 0, 1, -1)
-        qq = -0.5 * (bb + sign * dd)
-
-        b1 = qq / aa
-        b2 = np.zeros_like(B, dtype=np.float64)
-        nonzero_qq = qq != 0
-        b2[nonzero_qq] = cc[nonzero_qq] / qq[nonzero_qq]
-        b = np.where(b1 > 0, b1, b2)
-
-        pointwise_sign = np.sign(S / ts - B / tb - m)
-        pointwise_loglike = Statistic.poisson_logpmf(S, ts * (b + m)) + Statistic.gaussian_logpdf(
-            B, tb * b, sigma
-        )
-
-        return StatisticResult(pointwise_loglike, pointwise_sign)
+StatisticNB = Statistic

@@ -11,9 +11,9 @@ from types import MappingProxyType
 import numpy as np
 
 from ..data.data import Data
-from ..model.model import Model
+from ..model.model import Model, _spectrum_ratio
 from ..util.tools import cached_property, clear_cached_property
-from .statistic import StatisticNB
+from .statistic import Statistic
 
 
 class Pair:
@@ -35,12 +35,12 @@ class Pair:
 
     _allowed_stats = MappingProxyType(
         {
-            'gstat': StatisticNB.Gstat,
-            'chi2': StatisticNB.Gstat,
-            'pstat': StatisticNB.Pstat,
-            'ppstat': StatisticNB.PPstat,
-            'cstat': StatisticNB.PPstat,
-            'pgstat': StatisticNB.PGstat,
+            'gstat': Statistic.Gstat,
+            'chi2': Statistic.Gstat,
+            'pstat': Statistic.Pstat,
+            'ppstat': Statistic.PPstat,
+            'cstat': Statistic.PPstat,
+            'pgstat': Statistic.PGstat,
         }
     )
 
@@ -241,14 +241,15 @@ class Pair:
     def cts_to_pht(self):
 
         return [
-            pht / cts for (cts, pht) in zip(self.conv_ctsspec, self.phtspec_at_rsp, strict=False)
+            _spectrum_ratio(pht, cts)
+            for (cts, pht) in zip(self.conv_ctsspec, self.phtspec_at_rsp, strict=False)
         ]
 
     @property
     def re_cts_to_pht(self):
 
         return [
-            pht / cts
+            _spectrum_ratio(pht, cts)
             for (cts, pht) in zip(self.conv_re_ctsspec, self.re_phtspec_at_rsp, strict=False)
         ]
 
@@ -256,14 +257,15 @@ class Pair:
     def cts_to_flx(self):
 
         return [
-            flx / cts for (cts, flx) in zip(self.conv_ctsspec, self.flxspec_at_rsp, strict=False)
+            _spectrum_ratio(flx, cts)
+            for (cts, flx) in zip(self.conv_ctsspec, self.flxspec_at_rsp, strict=False)
         ]
 
     @property
     def re_cts_to_flx(self):
 
         return [
-            flx / cts
+            _spectrum_ratio(flx, cts)
             for (cts, flx) in zip(self.conv_re_ctsspec, self.re_flxspec_at_rsp, strict=False)
         ]
 
@@ -271,14 +273,15 @@ class Pair:
     def cts_to_erg(self):
 
         return [
-            erg / cts for (cts, erg) in zip(self.conv_ctsspec, self.ergspec_at_rsp, strict=False)
+            _spectrum_ratio(erg, cts)
+            for (cts, erg) in zip(self.conv_ctsspec, self.ergspec_at_rsp, strict=False)
         ]
 
     @property
     def re_cts_to_erg(self):
 
         return [
-            erg / cts
+            _spectrum_ratio(erg, cts)
             for (cts, erg) in zip(self.conv_re_ctsspec, self.re_ergspec_at_rsp, strict=False)
         ]
 

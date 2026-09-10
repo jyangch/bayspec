@@ -16,6 +16,7 @@ import warnings
 
 import arviz as az
 import numpy as np
+from scipy.special import logsumexp
 
 from ..util.info import Info
 from ..util.post import Post
@@ -512,9 +513,9 @@ class Posterior(SampleAnalyzer):
             return None
 
         if error is None:
-            return f'{value:.2f}'
+            return f'{value:.3f}'
 
-        return f'{value:.2f} ± {error:.2f}'
+        return f'{value:.3f} ± {error:.3f}'
 
     @memoized()
     def waic(self, scale='log', pointwise=True):
@@ -538,7 +539,9 @@ class Posterior(SampleAnalyzer):
         """Compute PSIS-LOO and Pareto-k diagnostics using ArviZ.
 
         The default full result is calculated during initialization. Results
-        are cached separately for each normalized argument combination.
+        are cached separately for each normalized argument combination. Channels
+        with numerically constant likelihood use raw importance sampling because
+        their zero-width weight distribution has no Pareto tail to fit.
 
         Args:
             scale: ArviZ output scale: ``'log'``, ``'negative_log'``, or
@@ -553,12 +556,116 @@ class Posterior(SampleAnalyzer):
         if reff is None and getattr(self, 'sampler_type', None) == 'nested':
             reff = 1.0
 
-        return az.loo(
-            self.to_arviz(),
-            var_name='obs',
-            scale=scale,
-            pointwise=pointwise,
-            reff=reff,
+        idata = self.to_arviz()
+        loglike = np.asarray(self.pointwise_loglike_sample, dtype=float)
+        degenerate = np.ptp(loglike, axis=0) <= np.sqrt(np.finfo(float).eps)
+
+        if not degenerate.any():
+            return az.loo(
+                idata,
+                var_name='obs',
+                scale=scale,
+                pointwise=pointwise,
+                reff=reff,
+            )
+
+        scale = scale.lower()
+        scale_value = {'log': 1, 'negative_log': -1, 'deviance': -2}.get(scale)
+        if scale_value is None:
+            raise TypeError('Valid scale values are "deviance", "log", "negative_log"')
+
+        warnings.warn(
+            f'PSIS tail fitting was skipped for {degenerate.sum()} channels with nearly '
+            'constant log-likelihood; raw importance weights were used and their Pareto-k '
+            'values are undefined.',
+            UserWarning,
+            stacklevel=2,
+        )
+
+        n_samples, n_data_points = loglike.shape
+        good = ~degenerate
+        loo_i_values = np.empty(n_data_points, dtype=float)
+        pareto_k_values = np.full(n_data_points, np.nan, dtype=float)
+        p_loo = 0.0
+        warn_mg = False
+
+        if good.any():
+            good_result = az.loo(
+                idata.isel(observation=np.flatnonzero(good)),
+                var_name='obs',
+                scale=scale,
+                pointwise=True,
+                reff=reff,
+            )
+            loo_i_values[good] = np.asarray(good_result.loo_i)
+            pareto_k_values[good] = np.asarray(good_result.pareto_k)
+            p_loo += good_result.p_loo
+            warn_mg = bool(good_result.warning)
+
+        degenerate_loglike = loglike[:, degenerate].T
+        log_n_samples = np.log(n_samples)
+        raw_loo_i = -(logsumexp(-degenerate_loglike, axis=1) - log_n_samples)
+        lppd_i = logsumexp(degenerate_loglike, axis=1) - log_n_samples
+        loo_i_values[degenerate] = scale_value * raw_loo_i
+        p_loo += np.sum(lppd_i - raw_loo_i)
+
+        elpd_loo = np.sum(loo_i_values)
+        loo_se = np.sqrt(n_data_points * np.var(loo_i_values))
+        good_k = min(1 - 1 / np.log10(n_samples), 0.7)
+
+        if not pointwise:
+            return az.ELPDData(
+                data=[
+                    elpd_loo,
+                    loo_se,
+                    p_loo,
+                    n_samples,
+                    n_data_points,
+                    warn_mg,
+                    scale,
+                    good_k,
+                ],
+                index=[
+                    'elpd_loo',
+                    'se',
+                    'p_loo',
+                    'n_samples',
+                    'n_data_points',
+                    'warning',
+                    'scale',
+                    'good_k',
+                ],
+            )
+
+        pointwise_template = idata.log_likelihood['obs'].isel(chain=0, draw=0, drop=True)
+        loo_i = pointwise_template.copy(data=loo_i_values).rename('loo_i')
+        pareto_k = pointwise_template.copy(data=pareto_k_values).rename('pareto_shape')
+
+        return az.ELPDData(
+            data=[
+                elpd_loo,
+                loo_se,
+                p_loo,
+                n_samples,
+                n_data_points,
+                warn_mg,
+                loo_i,
+                pareto_k,
+                scale,
+                good_k,
+            ],
+            index=[
+                'elpd_loo',
+                'se',
+                'p_loo',
+                'n_samples',
+                'n_data_points',
+                'warning',
+                'loo_i',
+                'pareto_k',
+                'scale',
+                'good_k',
+            ],
         )
 
     @property

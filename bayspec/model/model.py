@@ -21,6 +21,20 @@ from ..util.prior import unif
 from ..util.tools import SuperDict, cached_property, json_dump, trapz_1d, trapz_2d
 
 
+def _spectrum_ratio(spectrum, counts):
+    """Divide a spectrum by model counts, leaving zero-count bins undefined."""
+
+    spectrum = np.asarray(spectrum, dtype=float)
+    counts = np.asarray(counts, dtype=float)
+
+    return np.divide(
+        spectrum,
+        counts,
+        out=np.full_like(spectrum, np.nan),
+        where=counts != 0,
+    )
+
+
 class Model:
     """Base class for a spectral model component.
 
@@ -484,14 +498,15 @@ class Model:
         """
 
         return [
-            pht / cts for (cts, pht) in zip(self.conv_ctsspec, self.phtspec_at_rsp, strict=False)
+            _spectrum_ratio(pht, cts)
+            for (cts, pht) in zip(self.conv_ctsspec, self.phtspec_at_rsp, strict=False)
         ]
 
     @property
     def re_cts_to_pht(self):
 
         return [
-            pht / cts
+            _spectrum_ratio(pht, cts)
             for (cts, pht) in zip(self.conv_re_ctsspec, self.re_phtspec_at_rsp, strict=False)
         ]
 
@@ -499,14 +514,15 @@ class Model:
     def cts_to_flx(self):
 
         return [
-            flx / cts for (cts, flx) in zip(self.conv_ctsspec, self.flxspec_at_rsp, strict=False)
+            _spectrum_ratio(flx, cts)
+            for (cts, flx) in zip(self.conv_ctsspec, self.flxspec_at_rsp, strict=False)
         ]
 
     @property
     def re_cts_to_flx(self):
 
         return [
-            flx / cts
+            _spectrum_ratio(flx, cts)
             for (cts, flx) in zip(self.conv_re_ctsspec, self.re_flxspec_at_rsp, strict=False)
         ]
 
@@ -514,14 +530,15 @@ class Model:
     def cts_to_erg(self):
 
         return [
-            erg / cts for (cts, erg) in zip(self.conv_ctsspec, self.ergspec_at_rsp, strict=False)
+            _spectrum_ratio(erg, cts)
+            for (cts, erg) in zip(self.conv_ctsspec, self.ergspec_at_rsp, strict=False)
         ]
 
     @property
     def re_cts_to_erg(self):
 
         return [
-            erg / cts
+            _spectrum_ratio(erg, cts)
             for (cts, erg) in zip(self.conv_re_ctsspec, self.re_ergspec_at_rsp, strict=False)
         ]
 
