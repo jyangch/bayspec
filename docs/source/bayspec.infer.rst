@@ -62,6 +62,66 @@ this eager calculation; inspect ``waic.warning``, ``loo.warning``, and
 ``overflow encountered in ...`` are also suppressed during this eager
 calculation; other runtime warnings remain visible.
 
+Machine-readable information criteria
+-------------------------------------
+
+``analyzer.ic`` packages unrounded information criteria in a plain dictionary.
+Use ``save_ic`` to write this bundle independently of the display tables:
+
+.. code:: python
+
+   post.ic["criteria"]["BIC"]["value"]
+   post.ic["criteria"]["WAIC"]["value"]
+   post.ic["criteria"]["lnZ"]["value"]
+   post.save_ic("results/pl/ic.json")
+
+   import json
+
+   with open("results/pl/ic.json", encoding="utf-8") as stream:
+       pl_ic = json.load(stream)
+   with open("results/cpl/ic.json", encoding="utf-8") as stream:
+       cpl_ic = json.load(stream)
+
+The dictionaries can be passed directly to a separately defined comparison
+function. ``Posterior`` bundles contain ``AIC``, ``AICc``, ``BIC``, ``WAIC``,
+``LOOIC``, and ``lnZ`` under ``criteria``; ``Bootstrap`` bundles contain only
+``AIC``, ``AICc``, and ``BIC``. Each criterion has a numeric ``value`` and a
+``higher_is_better`` flag. No model-selection threshold is applied on export.
+
+For WAIC and LOOIC, ``value``, ``se``, and ``pointwise`` are all on the
+lower-is-better deviance scale (``-2 * ELPD``). The bundle also preserves
+``p_waic`` / ``p_loo`` and ``warning``; LOOIC includes ``pareto_k`` and
+``good_k``. The pointwise arrays allow a comparison function to calculate
+paired differences and their standard error without loading posterior draws.
+The standard error of a difference must be calculated from these paired
+contributions, not by combining the two individual standard errors.
+
+Evidence is stored as ``lnZ.value`` and ``lnZ.error``, both on natural-log
+scale. ``lnZ.error`` is the nested-sampling uncertainty, whereas predictive
+criteria's ``se`` describes uncertainty across observations. Larger ``lnZ``
+is preferred. Unavailable evidence (for example, after emcee) remains
+``null`` and must not be treated as zero.
+
+The JSON also records its ``schema_version``, analyzer/sampler type, sample
+and parameter counts, model expressions, and ordered data units. Each unit
+contains its statistic, weight, channel energy bins in keV, and a half-open
+``slice`` into the pointwise arrays. This assists channel alignment but does
+not prove that two files describe identical observations: the comparison
+function's caller must ensure the same input data, likelihood convention,
+and channel selection/grouping were used.
+
+The bundle uses standard JSON: missing/undefined numeric entries are
+``null``, and positive/negative infinities are the strings ``"Infinity"``
+and ``"-Infinity"``. Thus an undefined Pareto-k remains distinct from an
+infinite, unreliable one. For numeric diagnostic arrays,
+``np.asarray(values, dtype=float)`` restores ``null`` as NaN and the infinity
+strings as floating-point infinities. Comparison functions must check for
+unavailable/non-finite scores and diagnostic warnings before ranking models.
+
+``post.save(directory)`` additionally writes ``post_ic_summary.json``;
+``bootstrap.save(directory)`` writes ``boot_ic_summary.json``. The existing
+``post_IC.json`` / ``boot_IC.json`` files retain their formatted table layout.
+
 Submodules
 ----------
 

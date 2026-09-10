@@ -24,6 +24,19 @@ from ..util.tools import clear_memoized, json_dump, memoized
 from .infer import BayesInfer, Infer, MaxLikeFit
 
 
+def _ic_number(value):
+    """Represent a scalar in JSON without losing infinite diagnostics."""
+
+    if value is None:
+        return None
+    value = float(value)
+    if np.isnan(value):
+        return None
+    if np.isinf(value):
+        return 'Infinity' if value > 0 else '-Infinity'
+    return value
+
+
 class SampleAnalyzer(Infer):
     """Wrap an :class:`Infer` with posterior-/bootstrap-driven summary views.
 
@@ -398,13 +411,75 @@ class SampleAnalyzer(Infer):
 
         return Info.from_dict(all_IC)
 
+    @property
+    def ic(self):
+        """Machine-readable criteria and fitted-channel ordering.
+
+        ``criteria`` contains unrounded values and optimization directions.
+        Each data unit's half-open ``slice`` indexes the predictive criteria's
+        pointwise arrays. Channel bins are in keV. This metadata assists
+        alignment; callers must still verify that fits use the same data.
+
+        Missing or undefined numbers are ``None``; infinities are the strings
+        ``'Infinity'`` and ``'-Infinity'`` so the bundle is valid JSON.
+        """
+
+        par_now = [par.val for par in self.free_par.values()]
+        try:
+            criteria = {
+                name: {'value': _ic_number(getattr(self, name.lower())), 'higher_is_better': False}
+                for name in ('AIC', 'AICc', 'BIC')
+            }
+        finally:
+            self.at_par(par_now)
+
+        data = []
+        start = 0
+        for pair_index, pair in enumerate(self.Pair):
+            for name, unit in pair.data.data.items():
+                stop = start + int(unit.npoint)
+                data.append(
+                    {
+                        'pair': pair_index,
+                        'name': name,
+                        'stat': unit.stat,
+                        'weight': _ic_number(unit.weight),
+                        'slice': [start, stop],
+                        'channel_bins': np.asarray(unit.rsp_chbin).tolist(),
+                    }
+                )
+                start = stop
+
+        return {
+            'schema_version': 1,
+            'analyzer': type(self).__name__,
+            'n_params': int(self.free_nparams),
+            'n_data_points': int(self.npoint),
+            'n_samples': int(self.param_sample.shape[0]),
+            'sampler_type': getattr(self, 'sampler_type', None),
+            'models': [pair.model.expr for pair in self.Pair],
+            'data': data,
+            'criteria': criteria,
+        }
+
+    def save_ic(self, filepath):
+        """Save :attr:`ic` as JSON, readable with ``json.load``.
+
+        Args:
+            filepath: Output filename (string or path-like). Missing parent
+                directories are created. Existing files are overwritten.
+        """
+
+        json_dump(self.ic, filepath)
+
     def save(self, savepath):
-        """Dump free-parameter, statistic, and IC tables under ``savepath``.
+        """Dump summary tables and a machine-readable IC bundle.
 
         Args:
             savepath: Directory path. Created if missing.
         """
 
+        savepath = os.fspath(savepath)
         if not os.path.exists(savepath):
             os.makedirs(savepath)
 
@@ -413,6 +488,7 @@ class SampleAnalyzer(Infer):
         )
         json_dump(self.stat_info.data_list_dict, savepath + f'/{self.save_prefix}_stat.json')
         json_dump(self.IC_info.data_list_dict, savepath + f'/{self.save_prefix}_IC.json')
+        self.save_ic(os.path.join(savepath, f'{self.save_prefix}_ic_summary.json'))
 
     def __str__(self):
 
@@ -714,6 +790,43 @@ class Posterior(SampleAnalyzer):
         """Nested-sampler uncertainty on :attr:`lnZ`, or ``None``."""
 
         return getattr(self, 'logevidence_err', None)
+
+    @property
+    def ic(self):
+        """Include WAIC, LOOIC, evidence, and their comparison diagnostics.
+
+        WAIC/LOOIC ``value``, ``se``, and ``pointwise`` use deviance scale
+        (``-2 * ELPD``); smaller is better. ``lnZ`` is on natural-log scale
+        and larger is better. Its ``error`` is the nested-sampling evidence
+        uncertainty, not the predictive criteria's data-based standard error.
+        """
+
+        bundle = super().ic
+        criteria = bundle['criteria']
+        for name, result, elpd, penalty, pointwise in (
+            ('WAIC', self.waic(), 'elpd_waic', 'p_waic', 'waic_i'),
+            ('LOOIC', self.loo(), 'elpd_loo', 'p_loo', 'loo_i'),
+        ):
+            criteria[name] = {
+                'value': _ic_number(-2.0 * result[elpd]),
+                'se': _ic_number(2.0 * result.se),
+                'scale': 'deviance',
+                'higher_is_better': False,
+                penalty: _ic_number(result[penalty]),
+                'warning': bool(result.warning),
+                'pointwise': [_ic_number(value) for value in -2.0 * np.asarray(result[pointwise])],
+            }
+
+        loo = self.loo()
+        criteria['LOOIC']['pareto_k'] = [_ic_number(value) for value in np.asarray(loo.pareto_k)]
+        criteria['LOOIC']['good_k'] = _ic_number(loo.good_k)
+        criteria['lnZ'] = {
+            'value': _ic_number(self.lnZ),
+            'error': _ic_number(self.lnZ_err),
+            'scale': 'log',
+            'higher_is_better': True,
+        }
+        return bundle
 
     @property
     def all_IC(self):
