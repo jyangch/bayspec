@@ -87,7 +87,7 @@ bayspec.util.tools module
 -------------------------
 
 Model selection from exported information criteria
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``select_model`` accepts a mapping from model names to ``ic_criteria`` bundles,
 including dictionaries loaded from ``post_ic_criteria.json``:
@@ -102,7 +102,7 @@ including dictionaries loaded from ``post_ic_criteria.json``:
        with open(f'{model}/post_ic_criteria.json', encoding='utf-8') as stream:
            ic_by_model[model] = json.load(stream)
 
-   best_model = select_model(ic_by_model, criterion='WAIC', threshold=2.0)
+   best_model = select_model(ic_by_model, criterion='WAIC')
 
 Only the requested criterion must be present in every model's bundle.
 Current Analyzer exports omit LOOIC, even after explicit ``post.loo()`` calls;
@@ -114,27 +114,83 @@ excluded, and no alternative criterion is substituted.
 
 The score is the criterion value when larger is better (e.g. lnZ), or its
 negative when smaller is better (e.g. BIC, WAIC, LOOIC). No rescaling is applied:
-the threshold is in the chosen criterion's native units. Candidates are
-strictly less than the threshold below the global best score. The selected
-candidate has the fewest parameters; ties prefer the highest score, then the
-lexicographically smallest model name, independently of input order.
+the threshold is in the chosen criterion's native units. ``threshold=None``
+selects these defaults; an explicit positive finite value overrides them:
+
+.. list-table:: Default selection tolerances
+   :header-rows: 1
+
+   * - Criterion
+     - Threshold
+     - Difference error
+   * - AIC / AICc
+     - 2
+     - Not used
+   * - BIC
+     - ``ln(10)`` (about 2.30)
+     - Not used
+   * - lnZ
+     - ``ln(10) / 2`` (about 1.15)
+     - Independent evidence integration errors
+   * - WAIC / LOOIC
+     - 8 on deviance scale
+     - Paired pointwise error
+
+Other criteria require an explicit threshold. The automatic WAIC/LOOIC
+thresholds require ``scale='deviance'`` and ``higher_is_better=False``;
+the automatic lnZ threshold requires ``scale='log'`` and
+``higher_is_better=True``.
+
+The lnZ tolerance is the lower boundary of Jeffreys' "substantial" evidence
+category; BIC uses the corresponding doubled value under the Bayes-factor
+approximation. The LOOIC tolerance converts the ``loo`` FAQ's small-difference
+heuristic of 4 ELPD units to 8 deviance units. WAIC adopts that tolerance on
+the same scale. This is an engineering default for WAIC, not a separately
+validated universal cutoff or an ArviZ-prescribed significance threshold.
+See the `Jeffreys scale table
+<https://revbayes.github.io/tutorials/model_selection_bayes_factors/bf_intro.html>`_
+and the `loo cross-validation FAQ
+<https://mc-stan.org/loo/articles/online-only/faq.html>`_.
+
+First compare every model with the global highest-score model. A model enters
+the candidate set if either of these conditions holds:
+
+.. code-block:: python
+
+   delta < threshold
+   delta <= sigma * delta_error  # WAIC, LOOIC, and lnZ only
+
+Here ``delta = highest_score - model_score``. ``sigma`` defaults to 2
+and must be positive and finite. The fixed-threshold boundary is strict;
+the error boundary is inclusive. Models without error estimates use only
+the fixed threshold. Among candidates, select the fewest parameters, then
+the highest score, then the lexicographically smallest model name,
+independently of input order. Neither criterion values nor scores are
+modified by the errors; the errors change candidate membership.
 
 Missing or nonfinite values, mismatched data-point counts, optimization
 directions, or scales raise ``ValueError``. Data-unit metadata is not checked,
 including when it is present in older bundles. Identical input data, comparable
 likelihoods, and matching channel ordering remain the caller's responsibility.
-Diagnostic warnings are reported without excluding models. Neither
-uncertainties nor penalties are added to the selection score.
+Diagnostic warnings or incomplete predictive diagnostics are reported without
+automatically excluding models. They set ``selection_status='provisional'``
+for the overall selection, even if the affected model is not selected.
+Otherwise the status is ``'selected'``: this is not a reliability guarantee.
+Penalties are already included in criterion values and are not added again.
 
-Use ``return_details=True`` to inspect predictive diagnostics and paired
-differences without changing that selection rule:
+Use ``return_details=True`` to inspect diagnostics and both sets of
+comparisons. Errors participate in selection even when it is false;
+the option changes the output format, not the selection rule:
 
 .. code-block:: python
 
-   comparison = select_model(ic_by_model, 'WAIC', threshold=2.0, return_details=True)
+   comparison = select_model(ic_by_model, 'WAIC', return_details=True)
    comparison['best_model']
    comparison['highest_score_model']
    comparison['candidate_models']
+   comparison['threshold']
+   comparison['sigma']
+   comparison['selection_status']
    comparison['models']['CPL']['diagnostics']
 
    selected = comparison['comparisons']['selected']
@@ -163,11 +219,20 @@ using the same variance convention as ArviZ. The saved pointwise values are
 already on deviance scale; no further factor of two is applied. This is a
 paired, data-based standard error, not the quadrature sum of the individual
 criterion errors, not a Monte Carlo error, and not a correction for bias.
-Missing/nonfinite/misaligned pointwise arrays or inconsistent pointwise sums
-raise ``ValueError`` in detailed predictive comparisons. With fewer than two
-channels, ``delta_error`` is ``None`` and the comparison lacks enough information
-to assess uncertainty. For BIC, lnZ, and other nonpredictive criteria, no
-difference error is estimated.
+Missing/nonfinite/misaligned pointwise arrays, inconsistent pointwise sums,
+or fewer than two channels raise ``ValueError`` for WAIC/LOOIC selection,
+whether or not detailed output is requested. The individual criterion's
+``error`` field is not substituted for the paired difference error.
+
+For lnZ, each bundle must provide a finite, nonnegative ``error``. Assuming
+independent evidence calculations, the difference error is
+``hypot(error_model, error_reference)``. This is a numerical integration
+uncertainty, not uncertainty across observations and not prior sensitivity.
+Correlated evidence estimates require covariance information that this
+interface does not accept. A comparison of a model with itself has zero
+error, not ``sqrt(2)`` times its evidence error. Missing or invalid errors
+raise ``ValueError`` rather than silently becoming zero. For AIC, AICc, BIC,
+and custom criteria, no difference error is estimated.
 
 Diagnostic ``status`` is ``no_warning``, ``warning``, or ``insufficient`` for
 predictive criteria, and ``not_assessed`` otherwise. ``reasons`` explains the
@@ -176,8 +241,8 @@ it does not prove convergence or reliable predictive inference. WAIC uses its
 stored warning flag. LOOIC additionally checks Pareto-k against ``good_k`` and
 reports zero-based channel indices for high k, nearly constant likelihoods,
 PSIS failures, and unexplained undefined k (``unexplained_k_channels``).
-Near-constant raw-weight channels
-are not treated as failed PSIS fits. Legacy bundles with unexplained null k
+Near-constant raw-weight channels are not treated as failed PSIS fits.
+Legacy bundles with unexplained null k
 values are marked as diagnostically insufficient, unless another diagnostic
 already warrants a warning.
 
@@ -185,8 +250,11 @@ already warrants a warning.
 An error can still be calculated when that status is ``warning`` or
 ``insufficient``, but is not thereby certified reliable. It is not a
 significance decision: small samples, outliers, and closely matched models
-can make normal approximations misleading. The selection threshold is never
-replaced by a difference/error ratio.
+can make normal approximations misleading. Retaining a model because its
+difference is small relative to its error means it is not clearly separated
+by this rule; it does not establish model equivalence. Choosing the simpler
+candidate is a decision preference. For lnZ, ``comparison_status`` remains
+``not_assessed`` because predictive reliability diagnostics do not apply.
 
 .. automodule:: bayspec.util.tools
    :members:

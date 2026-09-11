@@ -1,6 +1,9 @@
 <p align="center">
   <a href="https://pypi.org/project/bayspec/">
-    <img src="https://raw.githubusercontent.com/jyangch/bayspec/main/docs/source/_static/logo.svg" alt="bayspec" height="72">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/jyangch/bayspec/main/docs/source/_static/logo-dark.svg">
+      <img src="https://raw.githubusercontent.com/jyangch/bayspec/main/docs/source/_static/logo.svg" alt="BaySpec" width="360">
+    </picture>
   </a>
 </p>
 

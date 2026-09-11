@@ -49,7 +49,6 @@ exclude_patterns = []
 
 html_theme = 'furo'
 html_title = f'BaySpec {release}'
-html_logo = '_static/logo.svg'
 html_static_path = ['_static']
 html_extra_path = ['_static']
 html_css_files = ['custom.css']
@@ -58,6 +57,8 @@ pygments_style = 'friendly'
 pygments_dark_style = 'monokai'
 
 html_theme_options = {
+    'light_logo': 'logo.svg',
+    'dark_logo': 'logo-dark.svg',
     'navigation_with_keys': True,
     'top_of_page_buttons': ['view', 'edit'],
     'sidebar_hide_name': True,
