@@ -525,6 +525,11 @@ class Posterior(SampleAnalyzer):
                 message=r'^overflow encountered in .*',
                 category=RuntimeWarning,
             )
+            warnings.filterwarnings(
+                'ignore',
+                message=r'^divide by zero encountered in .*',
+                category=RuntimeWarning,
+            )
 
             self.waic()
 
