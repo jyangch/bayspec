@@ -50,6 +50,13 @@ Posterior draws are ranked by ``logprob_sample``; bootstrap draws are ranked
 by ``loglike_sample``. Sample files written by older versions include a final
 score column and must be regenerated or converted before loading.
 
+``Posterior.par_best`` remains the highest-posterior draw. In contrast,
+``Posterior.max_loglike`` is the maximum of ``loglike_sample``, used by
+AIC, AICc, and BIC without changing the current parameters. With nonuniform
+priors, these two summaries can correspond to different draws. The sampled
+maximum is not a separately optimized maximum over parameter space.
+``Bootstrap.max_loglike`` continues to evaluate the likelihood at ``par_truth``.
+
 Constructing ``Posterior`` also calculates and caches its default WAIC result.
 PSIS-LOO is computed only on an explicit ``post.loo()`` call, not during
 initialization, display, or saving. ``Posterior.IC_info`` reports the
@@ -119,13 +126,11 @@ criteria's ``error`` describes uncertainty across observations. Larger ``lnZ``
 is preferred. Unavailable evidence (for example, after emcee) remains
 ``null`` and must not be treated as zero.
 
-The JSON also records its analyzer/sampler type, sample
-and parameter counts, model expressions, and ordered data units. Each unit
-contains its statistic, weight, channel energy bins in keV, and a half-open
-``slice`` into the pointwise arrays. This assists channel alignment but does
-not prove that two files describe identical observations: the comparison
-function's caller must ensure the same input data, likelihood convention,
-and channel selection/grouping were used.
+The JSON also records its analyzer/sampler type and sample, parameter, and
+data-point counts. Model expressions and data-unit metadata are not exported.
+The comparison function's caller must ensure the same input data, comparable
+likelihood conventions, and identical channel selection, grouping, and ordering
+for paired pointwise comparisons.
 
 The bundle uses standard JSON: missing/undefined numeric entries are
 ``null``, and positive/negative infinities are the strings ``"Infinity"``

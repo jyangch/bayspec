@@ -14,16 +14,6 @@ def make_ic(value, n_params=2, criterion='WAIC'):
     return {
         'n_params': n_params,
         'n_data_points': 2,
-        'data': [
-            {
-                'pair': 0,
-                'name': 'detector',
-                'stat': 'cstat',
-                'weight': 1.0,
-                'slice': [0, 2],
-                'channel_bins': [[1.0, 2.0], [2.0, 3.0]],
-            }
-        ],
         'criteria': {
             criterion: {
                 'value': value,
@@ -95,7 +85,7 @@ def test_parameter_count_must_be_nonnegative_integer(n_params):
         tools.select_model({'model': make_ic(10, n_params)})
 
 
-@pytest.mark.parametrize('field', ['data', 'n_data_points', 'n_params', 'criteria'])
+@pytest.mark.parametrize('field', ['n_data_points', 'n_params', 'criteria'])
 def test_missing_required_metadata_is_reported(field):
     bundle = make_ic(10)
     del bundle[field]
@@ -140,17 +130,20 @@ def test_inconsistent_score_conventions_are_rejected(field):
         tools.select_model(bundles)
 
 
-@pytest.mark.parametrize('field', ['weight', 'stat', 'channel_bins', 'n_data_points'])
-def test_mismatched_data_metadata_is_rejected(field):
+def test_mismatched_data_point_counts_are_rejected():
     bundles = {'a': make_ic(10), 'b': make_ic(11)}
-    if field == 'n_data_points':
-        bundles['b'][field] = 3
-    elif field == 'channel_bins':
-        bundles['b']['data'][0][field].reverse()
-    else:
-        bundles['b']['data'][0][field] = 2 if field == 'weight' else 'pstat'
-    with pytest.raises(ValueError, match='data'):
+    bundles['b']['n_data_points'] = 3
+    with pytest.raises(ValueError, match='n_data_points'):
         tools.select_model(bundles)
+
+
+@pytest.mark.parametrize('return_details', [False, True])
+def test_legacy_data_metadata_is_ignored(return_details):
+    bundles = {'a': predictive_ic([4.0, 6.0]), 'b': predictive_ic([4.0, 7.0])}
+    expected = tools.select_model(bundles, return_details=return_details)
+    bundles['a']['data'] = [{'stat': 'cstat', 'weight': 1}]
+    bundles['b']['data'] = [{'stat': 'pgstat', 'weight': 2}]
+    assert tools.select_model(bundles, return_details=return_details) == expected
 
 
 @pytest.mark.parametrize('bundles', [{}, [], {'': make_ic(10)}, {1: make_ic(10)}])
@@ -254,7 +247,11 @@ def test_loo_diagnostics_distinguish_undefined_tail_provenance(k, constant, fail
         psis_failed=[failed, False],
     )
     result = tools.select_model({'model': bundle}, 'LOOIC', return_details=True)
-    assert result['models']['model']['diagnostics']['status'] == status
+    diagnostic = result['models']['model']['diagnostics']
+    assert diagnostic['status'] == status
+    assert diagnostic['unexplained_k_channels'] == (
+        [0] if k is None and not constant and not failed else []
+    )
 
 
 def test_legacy_null_pareto_k_has_insufficient_diagnostics():
@@ -300,8 +297,6 @@ def test_invalid_pointwise_data_cannot_produce_comparison_errors(pointwise):
 def test_one_channel_does_not_claim_zero_uncertainty():
     bundle = predictive_ic([3.0])
     bundle['n_data_points'] = 1
-    bundle['data'][0]['slice'] = [0, 1]
-    bundle['data'][0]['channel_bins'] = [[1.0, 2.0]]
     result = tools.select_model({'model': bundle}, return_details=True)
     for comparison in result['comparisons'].values():
         assert comparison['models']['model']['delta_error'] is None

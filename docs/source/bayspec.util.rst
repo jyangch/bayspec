@@ -119,11 +119,12 @@ strictly less than the threshold below the global best score. The selected
 candidate has the fewest parameters; ties prefer the highest score, then the
 lexicographically smallest model name, independently of input order.
 
-Missing or nonfinite values and mismatched data metadata raise ``ValueError``.
-Matching metadata alone does not prove identical input data or comparable
-likelihoods; these remain the caller's responsibility. Diagnostic warnings are
-reported without excluding models. Neither uncertainties nor penalties are
-added to the selection score.
+Missing or nonfinite values, mismatched data-point counts, optimization
+directions, or scales raise ``ValueError``. Data-unit metadata is not checked,
+including when it is present in older bundles. Identical input data, comparable
+likelihoods, and matching channel ordering remain the caller's responsibility.
+Diagnostic warnings are reported without excluding models. Neither
+uncertainties nor penalties are added to the selection score.
 
 Use ``return_details=True`` to inspect predictive diagnostics and paired
 differences without changing that selection rule:
@@ -174,7 +175,8 @@ findings. ``no_warning`` means only that the available checks raised no warning;
 it does not prove convergence or reliable predictive inference. WAIC uses its
 stored warning flag. LOOIC additionally checks Pareto-k against ``good_k`` and
 reports zero-based channel indices for high k, nearly constant likelihoods,
-PSIS failures, and unexplained undefined k. Near-constant raw-weight channels
+PSIS failures, and unexplained undefined k (``unexplained_k_channels``).
+Near-constant raw-weight channels
 are not treated as failed PSIS fits. Legacy bundles with unexplained null k
 values are marked as diagnostically insufficient, unless another diagnostic
 already warrants a warning.

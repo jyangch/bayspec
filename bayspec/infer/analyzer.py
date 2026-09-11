@@ -293,11 +293,9 @@ class SampleAnalyzer(Infer):
 
     @property
     def max_loglike(self):
-        """Log-likelihood evaluated at the best-fit parameter vector."""
+        """Maximum log-likelihood among samples."""
 
-        self.at_par(self.par_best)
-
-        return self.loglike
+        return float(np.max(self.loglike_sample))
 
     @property
     def aic(self):
@@ -418,12 +416,11 @@ class SampleAnalyzer(Infer):
 
     @property
     def ic_criteria(self):
-        """Machine-readable criteria and fitted-channel ordering.
+        """Machine-readable criteria and basic fit metadata.
 
         ``criteria`` contains unrounded values and optimization directions.
-        Each data unit's half-open ``slice`` indexes the predictive criteria's
-        pointwise arrays. Channel bins are in keV. This metadata assists
-        alignment; callers must still verify that fits use the same data.
+        Callers must ensure that compared fits use the same data, comparable
+        likelihoods, and the same channel ordering for pointwise comparisons.
 
         Missing or undefined numbers are ``None``; infinities are the strings
         ``'Infinity'`` and ``'-Infinity'`` so the bundle is valid JSON.
@@ -433,23 +430,6 @@ class SampleAnalyzer(Infer):
             name: {'value': self._format_ic(getattr(self, name.lower())), 'higher_is_better': False}
             for name in ('AIC', 'AICc', 'BIC')
         }
-
-        data = []
-        start = 0
-        for pair_index, pair in enumerate(self.Pair):
-            for name, unit in pair.data.data.items():
-                stop = start + int(unit.npoint)
-                data.append(
-                    {
-                        'pair': pair_index,
-                        'name': name,
-                        'stat': unit.stat,
-                        'weight': self._format_ic(unit.weight),
-                        'slice': [start, stop],
-                        'channel_bins': np.asarray(unit.rsp_chbin).tolist(),
-                    }
-                )
-                start = stop
 
         return {
             'analyzer': type(self).__name__,

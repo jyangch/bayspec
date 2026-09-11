@@ -415,12 +415,12 @@ def _ic_diagnostics(result, criterion, npoint):
         return diagnostic
 
     reasons = diagnostic['reasons']
-    flag = result.get('warning')
-    incomplete = not isinstance(flag, (bool, np.bool_))
-    warned = bool(flag) if not incomplete else False
+    warning_flag = result.get('warning')
+    incomplete = not isinstance(warning_flag, (bool, np.bool_))
+    has_warning = bool(warning_flag) if not incomplete else False
     if incomplete:
         reasons.append('The criterion warning flag is missing or invalid.')
-    if warned:
+    if has_warning:
         reasons.append(f'{criterion} reports a diagnostic warning.')
 
     if criterion == 'LOOIC':
@@ -439,35 +439,40 @@ def _ic_diagnostics(result, criterion, npoint):
         if masks['nearly_constant'].any():
             reasons.append('Nearly constant channels used raw weights; no Pareto tail was fitted.')
         if masks['psis_failed'].any():
-            warned = True
+            has_warning = True
             reasons.append(
                 'PSIS failed on nonconstant channels; raw-weight fallback is unreliable.'
             )
 
         try:
-            k = np.asarray(result.get('pareto_k'), dtype=float)
+            pareto_k = np.asarray(result.get('pareto_k'), dtype=float)
             good_k = float(result.get('good_k'))
-            valid_k = k.shape == (npoint,) and np.isfinite(good_k)
+            k_metadata_valid = pareto_k.shape == (npoint,) and np.isfinite(good_k)
         except (TypeError, ValueError):
-            valid_k = False
-        if not valid_k:
+            k_metadata_valid = False
+        if not k_metadata_valid:
             incomplete = True
             reasons.append('Pareto-k values or their diagnostic threshold are missing or invalid.')
         else:
-            high_k = k > good_k
-            unknown = (np.isnan(k) | np.isneginf(k)) & ~(
+            high_k = pareto_k > good_k
+            unexplained_k = (np.isnan(pareto_k) | np.isneginf(pareto_k)) & ~(
                 masks['nearly_constant'] | masks['psis_failed']
             )
             diagnostic['high_k_channels'] = np.flatnonzero(high_k).tolist()
-            diagnostic['undefined_k_channels'] = np.flatnonzero(unknown).tolist()
+            diagnostic['unexplained_k_channels'] = np.flatnonzero(unexplained_k).tolist()
             if high_k.any():
-                warned = True
+                has_warning = True
                 reasons.append('Pareto-k exceeds good_k on one or more channels.')
-            if unknown.any():
+            if unexplained_k.any():
                 incomplete = True
                 reasons.append('Undefined Pareto-k values have no recorded fallback explanation.')
 
-    diagnostic['status'] = 'warning' if warned else 'insufficient' if incomplete else 'no_warning'
+    if has_warning:
+        diagnostic['status'] = 'warning'
+    elif incomplete:
+        diagnostic['status'] = 'insufficient'
+    else:
+        diagnostic['status'] = 'no_warning'
     return diagnostic
 
 
@@ -497,12 +502,13 @@ def select_model(ic_by_model, criterion='WAIC', threshold=2.0, *, return_details
 
     Raises:
         ValueError: Empty/invalid input, missing or nonfinite criterion values,
-            invalid parameter counts or threshold, or inconsistent data/scale.
+            invalid parameter counts or threshold, or inconsistent point counts,
+            optimization directions, or scales.
 
     Notes:
-        Matching ``data`` and ``n_data_points`` metadata is required, but does
-        not prove identical input counts, backgrounds, or responses. Callers
-        must ensure the fits use the same data and comparable likelihoods.
+        Matching ``n_data_points``, optimization directions, and scales are
+        required. Data metadata is not checked. Callers must ensure the fits
+        use the same data, comparable likelihoods, and identical channel ordering.
         Criterion diagnostic warnings are emitted without excluding models.
         Only the requested criterion is required. Missing LOOIC does not affect
         comparisons using other criteria; requesting an absent criterion raises
@@ -538,29 +544,32 @@ def select_model(ic_by_model, criterion='WAIC', threshold=2.0, *, return_details
 
     scores = {}
     nparams = {}
-    reference = None
+    n_data_points = None
+    common_higher_is_better = None
+    common_scale = None
     for model in sorted(ic_by_model):
         bundle = ic_by_model[model]
 
         try:
             nparam = bundle['n_params']
-            npoint = bundle['n_data_points']
-            data = bundle['data']
+            model_n_data_points = bundle['n_data_points']
             result = bundle['criteria'][criterion]
             value = result['value']
-            higher = result['higher_is_better']
+            higher_is_better = result['higher_is_better']
             scale = result.get('scale')
         except (KeyError, TypeError) as exc:
             raise ValueError(f'{model}: missing or invalid {criterion} metadata: {exc}') from exc
 
-        if not isinstance(higher, (bool, np.bool_)):
+        if not isinstance(higher_is_better, (bool, np.bool_)):
             raise ValueError(f'{model}: {criterion} higher_is_better must be boolean')
         if isinstance(nparam, bool) or not isinstance(nparam, Integral) or nparam < 0:
             raise ValueError(f'{model}: n_params must be a nonnegative integer')
-        if isinstance(npoint, bool) or not isinstance(npoint, Integral) or npoint < 0:
+        if (
+            isinstance(model_n_data_points, bool)
+            or not isinstance(model_n_data_points, Integral)
+            or model_n_data_points < 0
+        ):
             raise ValueError(f'{model}: n_data_points must be a nonnegative integer')
-        if not isinstance(data, list):
-            raise ValueError(f'{model}: data must be an ordered list of data-unit metadata')
         try:
             if isinstance(value, (bool, np.bool_)):
                 raise ValueError
@@ -570,14 +579,16 @@ def select_model(ic_by_model, criterion='WAIC', threshold=2.0, *, return_details
         if not np.isfinite(value):
             raise ValueError(f'{model}: {criterion} value must be finite')
 
-        if reference is None:
-            reference = (data, npoint, higher, scale)
+        if n_data_points is None:
+            n_data_points = model_n_data_points
+            common_higher_is_better = higher_is_better
+            common_scale = scale
         else:
-            if data != reference[0] or npoint != reference[1]:
-                raise ValueError(f'{model}: data metadata differs between models')
-            if higher != reference[2]:
+            if model_n_data_points != n_data_points:
+                raise ValueError(f'{model}: n_data_points differs between models')
+            if higher_is_better != common_higher_is_better:
                 raise ValueError(f'{model}: {criterion} higher_is_better differs between models')
-            if scale != reference[3]:
+            if scale != common_scale:
                 raise ValueError(f'{model}: {criterion} scale differs between models')
 
         if result.get('warning', False):
@@ -587,7 +598,7 @@ def select_model(ic_by_model, criterion='WAIC', threshold=2.0, *, return_details
                 stacklevel=2,
             )
 
-        scores[model] = value if higher else -value
+        scores[model] = value if higher_is_better else -value
         nparams[model] = int(nparam)
 
     best_score = max(scores.values())
@@ -608,7 +619,7 @@ def select_model(ic_by_model, criterion='WAIC', threshold=2.0, *, return_details
                 values = np.asarray(result.get('pointwise'), dtype=float)
             except (TypeError, ValueError) as exc:
                 raise ValueError(f'{model}: invalid {criterion} pointwise values') from exc
-            if values.shape != (npoint,) or not np.isfinite(values).all():
+            if values.shape != (n_data_points,) or not np.isfinite(values).all():
                 raise ValueError(
                     f'{model}: {criterion} pointwise values must be finite and aligned'
                 )
@@ -619,7 +630,7 @@ def select_model(ic_by_model, criterion='WAIC', threshold=2.0, *, return_details
             'value': float(result['value']),
             'score': scores[model],
             'n_params': nparams[model],
-            'diagnostics': _ic_diagnostics(result, criterion, npoint),
+            'diagnostics': _ic_diagnostics(result, criterion, n_data_points),
         }
 
     comparisons = {}
@@ -633,17 +644,16 @@ def select_model(ic_by_model, criterion='WAIC', threshold=2.0, *, return_details
                     record['diagnostics']['status'],
                     models[reference_model]['diagnostics']['status'],
                 )
-                status = (
-                    'warning'
-                    if 'warning' in statuses
-                    else 'insufficient'
-                    if 'insufficient' in statuses or npoint < 2
-                    else 'no_warning'
-                )
-                if npoint >= 2:
+                if 'warning' in statuses:
+                    status = 'warning'
+                elif 'insufficient' in statuses or n_data_points < 2:
+                    status = 'insufficient'
+                else:
+                    status = 'no_warning'
+                if n_data_points >= 2:
                     with np.errstate(over='ignore', invalid='ignore'):
                         difference = pointwise[model] - pointwise[reference_model]
-                        error = float(np.sqrt(npoint * np.var(difference, ddof=0)))
+                        error = float(np.sqrt(n_data_points * np.var(difference, ddof=0)))
                     if not np.isfinite(error):
                         raise ValueError(
                             f'{model}: {criterion} pointwise difference error is nonfinite'

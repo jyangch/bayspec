@@ -55,6 +55,7 @@ def make_posterior(param_sample, pointwise, sampler_type='nested', nwalkers=None
     post = object.__new__(Posterior)
     post.param_sample = np.asarray(param_sample, dtype=float)
     post.pointwise_loglike_sample = np.asarray(pointwise, dtype=float)
+    post.loglike_sample = post.pointwise_loglike_sample.sum(axis=1)
     post._free_nparams = post.param_sample.shape[1]
     post._free_plabels = [f'theta_{i + 1}' for i in range(post.free_nparams)]
     post._free_par = SuperDict((str(i + 1), Value(7.0)) for i in range(post.free_nparams))
@@ -535,7 +536,7 @@ def make_ic_posterior(pointwise=None):
     return post
 
 
-def test_ic_bundle_contains_unrounded_numeric_criteria_and_channel_order():
+def test_ic_bundle_contains_unrounded_numeric_criteria_without_data_metadata():
     post = make_ic_posterior()
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
@@ -544,10 +545,8 @@ def test_ic_bundle_contains_unrounded_numeric_criteria_and_channel_order():
     assert bundle['n_params'] == 1
     assert bundle['n_data_points'] == 6
     assert bundle['n_samples'] == 200
-    assert bundle['models'] == ['pl']
-    assert [unit['name'] for unit in bundle['data']] == ['detector_a', 'detector_b']
-    assert [unit['slice'] for unit in bundle['data']] == [[0, 3], [3, 6]]
-    assert bundle['data'][1]['channel_bins'] == [[4.0, 5.0], [5.0, 6.0], [6.0, 7.0]]
+    assert 'models' not in bundle
+    assert 'data' not in bundle
     criteria = bundle['criteria']
     assert list(criteria) == ['AIC', 'AICc', 'BIC', 'WAIC', 'lnZ']
     assert criteria['AIC']['value'] == post.aic
@@ -569,6 +568,16 @@ def test_ic_bundle_contains_unrounded_numeric_criteria_and_channel_order():
     assert criteria['lnZ']['value'] == -12.3456789
     assert criteria['lnZ']['error'] == 0.123456789
     assert criteria['lnZ']['higher_is_better']
+
+
+def test_ic_export_does_not_traverse_unused_data_metadata():
+    post = make_ic_posterior()
+    post.Pair[0].data = object()
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        bundle = post.ic_criteria
+    assert bundle['criteria']['WAIC']['value'] == -2 * post.waic().elpd_waic
+    assert 'data' not in bundle
 
 
 def test_ic_criteria_omits_explicit_loo_diagnostics_and_preserves_missing_evidence(tmp_path):
