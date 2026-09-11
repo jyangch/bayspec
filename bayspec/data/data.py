@@ -938,7 +938,7 @@ class DataUnit:
             notc: Optional noticing windows in channel energy.
             grpg: Optional grouping rule dict. The default threshold method
                 accepts ``min_evt``/``min_nevt``/``min_sigma``/``max_bin``.
-                Set ``method='optimal'`` for HEASP-compatible optimal grouping;
+                Set ``method='optimal'`` for optimal grouping within valid channels;
                 the same thresholds can then make the optimal bins coarser.
             rebn: Optional rebinning rule dict accepting
                 ``min_evt``/``min_nevt``/``min_sigma``/``max_bin``.

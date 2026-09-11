@@ -15,15 +15,26 @@ bayspec.data.data module
 Optimal grouping
 ~~~~~~~~~~~~~~~~
 
-``DataUnit`` supports the Kaastra--Bleeker optimal grouping implemented by
-HEASP/``ftgrouppha``::
+``DataUnit`` supports Kaastra--Bleeker optimal grouping based on the
+HEASP/``ftgrouppha`` width calculation::
 
    unit = DataUnit(src=src, rsp=rsp, grpg={'method': 'optimal'})
 
 The calculation uses the observed source-region counts and the response FWHM;
-the background is not subtracted when determining the optimal width. Widths
-are calculated from the complete observed channel array, as in HEASP, while
-quality and noticing gaps prevent groups from crossing excluded channels.
+the background is not subtracted when determining the optimal width. Quality
+and noticing selection is applied before estimating widths. All selected,
+quality-good channels in a unit share the resolution-element estimate
+``R = 1 + sum(1 / FWHM)``. Each local FWHM count window is clipped to its
+contiguous valid interval, retaining original channel coordinates; excluded
+counts cannot affect widths or grouping. The factor ``1.314`` is retained at
+clipped boundaries as an approximation. Count and window-boundary rounding
+remain half-away-from-zero, as in HEASP.
+
+Groups cannot cross quality or noticing gaps, and short boundary groups are
+retained. Changing ``notc`` recalculates automatic grouping. With every channel
+valid, the result matches HEASP; selected-range widths can differ because
+HEASP estimates widths using the full observed channel array. The response
+FWHM itself is still calculated from the full response.
 
 BaySpec thresholds can be applied on top of the optimal width::
 

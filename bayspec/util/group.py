@@ -86,8 +86,14 @@ def estimate_channel_fwhm(chbin, phbin, drm):
     return rsp_fwhm[idx]
 
 
-def calculate_optimal_bin_widths(rsp_fwhm, src_cts):
-    """Calculate HEASP-compatible Kaastra-Bleeker bin widths."""
+def calculate_optimal_bin_widths(rsp_fwhm, src_cts, valid=None):
+    """Calculate Kaastra-Bleeker widths using only selected channel counts.
+
+    Selected channels share one resolution-element count. Local FWHM windows
+    stay within contiguous valid runs, in original channel coordinates. With
+    all channels valid, the calculation reproduces HEASP. Excluded channels
+    receive a neutral width of one.
+    """
 
     rsp_fwhm = np.asarray(rsp_fwhm, dtype=float)
     src_cts = np.asarray(src_cts)
@@ -101,17 +107,25 @@ def calculate_optimal_bin_widths(rsp_fwhm, src_cts):
     if not np.all(np.isfinite(src_cts)):
         raise ValueError('counts must be finite for optimal grouping')
 
-    n_res = 1.0 + np.sum(1.0 / rsp_fwhm)
+    valid = np.ones(len(src_cts), dtype=bool) if valid is None else np.asarray(valid, dtype=bool)
+    if valid.shape != rsp_fwhm.shape:
+        raise ValueError('valid and FWHM must have the same length and shape')
+
+    n_res = 1.0 + np.sum(1.0 / rsp_fwhm[valid])
     log_n_res = np.log(n_res)
-    src_cts = np.array([_round_half_away_from_zero(value) for value in src_cts], dtype=int)
+    rounded_counts = np.zeros(len(src_cts), dtype=int)
+    rounded_counts[valid] = [_round_half_away_from_zero(value) for value in src_cts[valid]]
 
-    src_cts_per_res = np.empty(len(rsp_fwhm), dtype=float)
-    for i, width in enumerate(rsp_fwhm):
-        start = max(0, _round_half_away_from_zero(i - width / 2.0))
-        stop = min(len(rsp_fwhm) - 1, _round_half_away_from_zero(i + width / 2.0))
-        src_cts_per_res[i] = 1.314 * np.sum(src_cts[start : stop + 1])
+    src_cts_per_res = np.zeros(len(rsp_fwhm), dtype=float)
+    edges = np.flatnonzero(np.diff(np.r_[False, valid, False]))
+    for seg_start, seg_end in edges.reshape(-1, 2):
+        for i in range(seg_start, seg_end):
+            width = rsp_fwhm[i]
+            start = max(seg_start, _round_half_away_from_zero(i - width / 2.0))
+            stop = min(seg_end - 1, _round_half_away_from_zero(i + width / 2.0))
+            src_cts_per_res[i] = 1.314 * np.sum(rounded_counts[start : stop + 1])
 
-    opt_widths = rsp_fwhm.copy()
+    opt_widths = np.where(valid, rsp_fwhm, 1.0)
     for i, src_cts_res in enumerate(src_cts_per_res):
         arg = src_cts_res * (1.0 + 0.2 * log_n_res)
         if arg <= 0:
@@ -124,9 +138,9 @@ def calculate_optimal_bin_widths(rsp_fwhm, src_cts):
 
 
 def build_optimal_grouping(rsp_fwhm, src_cts, valid=None):
-    """Return OGIP grouping flags for HEASP-compatible optimal bins."""
+    """Return OGIP optimal grouping flags within valid channel runs."""
 
-    opt_widths = calculate_optimal_bin_widths(rsp_fwhm, src_cts)
+    opt_widths = calculate_optimal_bin_widths(rsp_fwhm, src_cts, valid=valid)
 
     if valid is None:
         valid = np.ones(len(opt_widths), dtype=bool)
@@ -280,7 +294,7 @@ def build_optimal_threshold_grouping(
     stat=None,
     valid=None,
 ):
-    """Apply BaySpec thresholds on top of HEASP-compatible optimal widths."""
+    """Apply BaySpec thresholds on top of selected-channel optimal widths."""
 
     if min_sigma is None and min_evt is None and min_nevt is None and max_bin is None:
         return build_optimal_grouping(rsp_fwhm, src_cts, valid=valid)
@@ -289,7 +303,7 @@ def build_optimal_threshold_grouping(
     bkg_cts = np.asarray(bkg_cts)
     bkg_err = np.asarray(bkg_err)
 
-    opt_widths = calculate_optimal_bin_widths(rsp_fwhm, src_cts)
+    opt_widths = calculate_optimal_bin_widths(rsp_fwhm, src_cts, valid=valid)
     valid = np.ones(len(src_cts), dtype=bool) if valid is None else np.asarray(valid, dtype=bool)
 
     if max_bin is None:
