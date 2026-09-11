@@ -505,18 +505,16 @@ def select_model(ic_by_model, criterion='WAIC', threshold=None, sigma=2.0):
             uses 2 for AIC/AICc, ln(10) for BIC, ln(10)/2 for log-scale lnZ,
             and 8 for deviance-scale WAIC/LOOIC. Other criteria require a value.
         sigma: Positive finite difference-error multiplier (default 2).
-        return_details: Include diagnostics and comparisons with both the
-            selected model and the highest-score model.
 
     Returns:
-        The selected name, or selection metadata, ``models`` diagnostics, and
-        ``comparisons`` grouped as ``selected`` and ``highest_score``.
+        A dictionary containing ``best_model``, selection metadata, ``models``
+        diagnostics, and ``comparisons`` grouped as ``selected`` and ``highest_score``.
         Each group has a ``reference_model`` and per-model ``models`` records;
         positive ``delta`` means worse than that reference.
 
     Raises:
         ValueError: Invalid inputs or inconsistent point counts, directions,
-            scales, or pointwise sums, regardless of ``return_details``.
+            scales, or pointwise sums.
 
     Notes:
         Callers must ensure identical data/channel ordering and comparable

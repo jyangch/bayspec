@@ -102,7 +102,8 @@ including dictionaries loaded from ``post_ic_criteria.json``:
        with open(f'{model}/post_ic_criteria.json', encoding='utf-8') as stream:
            ic_by_model[model] = json.load(stream)
 
-   best_model = select_model(ic_by_model, criterion='WAIC')
+   comparison = select_model(ic_by_model, criterion='WAIC')
+   best_model = comparison['best_model']
 
 Only the requested criterion must be present in every model's bundle.
 Current Analyzer exports omit LOOIC, even after explicit ``post.loo()`` calls;
@@ -178,13 +179,13 @@ for the overall selection, even if the affected model is not selected.
 Otherwise the status is ``'selected'``: this is not a reliability guarantee.
 Penalties are already included in criterion values and are not added again.
 
-Use ``return_details=True`` to inspect diagnostics and both sets of
-comparisons. Errors participate in selection even when it is false;
-the option changes the output format, not the selection rule:
+``select_model`` always returns a dictionary containing the selected model,
+diagnostics, and both sets of comparisons. Read ``best_model`` when only the
+selected model name is needed:
 
 .. code-block:: python
 
-   comparison = select_model(ic_by_model, 'WAIC', return_details=True)
+   comparison = select_model(ic_by_model, 'WAIC')
    comparison['best_model']
    comparison['highest_score_model']
    comparison['candidate_models']

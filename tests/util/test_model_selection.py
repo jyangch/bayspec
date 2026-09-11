@@ -47,9 +47,9 @@ def test_selection_uses_native_units_and_strict_global_threshold(criterion):
         )
     }
 
-    assert tools.select_model(bundles, criterion, threshold=2.0) == 'simpler'
-    assert tools.select_model(bundles, criterion, threshold=1.0) == 'best_score'
-    assert tools.select_model(bundles, criterion, threshold=3.1) == 'outside'
+    assert tools.select_model(bundles, criterion, threshold=2.0)['best_model'] == 'simpler'
+    assert tools.select_model(bundles, criterion, threshold=1.0)['best_model'] == 'best_score'
+    assert tools.select_model(bundles, criterion, threshold=3.1)['best_model'] == 'outside'
 
 
 def test_equal_parameter_counts_prefer_score_then_name_in_any_input_order():
@@ -57,16 +57,25 @@ def test_equal_parameter_counts_prefer_score_then_name_in_any_input_order():
     original = deepcopy(bundles)
 
     for names in permutations(bundles):
-        assert tools.select_model({name: bundles[name] for name in names}) == 'A'
+        assert tools.select_model({name: bundles[name] for name in names})['best_model'] == 'A'
     assert bundles == original
 
 
 def test_candidate_with_fewer_parameters_beats_better_score():
-    assert tools.select_model({'complex': make_ic(10, 3), 'simple': make_ic(11, 2)}) == 'simple'
+    bundles = {'complex': make_ic(10, 3), 'simple': make_ic(11, 2)}
+    assert tools.select_model(bundles)['best_model'] == 'simple'
 
 
-def test_single_model_is_selected():
-    assert tools.select_model({'only': make_ic(10)}) == 'only'
+def test_single_model_returns_selection_and_comparisons():
+    result = tools.select_model({'only': make_ic(10)})
+    assert result['best_model'] == 'only'
+    assert result['highest_score_model'] == 'only'
+    assert result['candidate_models'] == ['only']
+    assert result['models']['only']['diagnostics']['status'] == 'no_warning'
+    for comparison in result['comparisons'].values():
+        assert comparison['reference_model'] == 'only'
+        assert comparison['models']['only']['delta'] == 0.0
+        assert comparison['models']['only']['delta_error'] == 0.0
 
 
 def test_diagnostic_warning_does_not_exclude_model():
@@ -74,7 +83,7 @@ def test_diagnostic_warning_does_not_exclude_model():
     bundles['warned']['criteria']['WAIC']['warning'] = True
 
     with pytest.warns(UserWarning, match=r'warned.*WAIC'):
-        assert tools.select_model(bundles) == 'warned'
+        assert tools.select_model(bundles)['best_model'] == 'warned'
 
 
 @pytest.mark.parametrize('value', [None, np.nan, np.inf, -np.inf, 'Infinity', '-Infinity', 'bad'])
@@ -109,9 +118,8 @@ def test_missing_criterion_is_reported():
 
 
 @pytest.mark.parametrize('criterion', ['WAIC', 'BIC', 'lnZ'])
-@pytest.mark.parametrize('return_details', [False, True])
 @pytest.mark.parametrize('partial_loo', [False, True])
-def test_other_criteria_do_not_require_looic(criterion, return_details, partial_loo):
+def test_other_criteria_do_not_require_looic(criterion, partial_loo):
     bundles = {'a': make_ic(10, criterion=criterion), 'b': make_ic(11, criterion=criterion)}
     if criterion == 'WAIC':
         bundles = {'a': predictive_ic([4.0, 6.0]), 'b': predictive_ic([4.0, 7.0])}
@@ -119,17 +127,16 @@ def test_other_criteria_do_not_require_looic(criterion, return_details, partial_
         bundles['a']['criteria']['LOOIC'] = {'value': None, 'warning': True}
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter('always')
-        result = tools.select_model(bundles, criterion, return_details=return_details)
+        result = tools.select_model(bundles, criterion)
     expected = 'b' if criterion == 'lnZ' else 'a'
-    assert (result['best_model'] if return_details else result) == expected
+    assert result['best_model'] == expected
     assert caught == []
 
 
-@pytest.mark.parametrize('return_details', [False, True])
-def test_explicit_looic_selection_rejects_model_missing_looic(return_details):
+def test_explicit_looic_selection_rejects_model_missing_looic():
     bundles = {'a': predictive_ic([4.0, 6.0], criterion='LOOIC'), 'b': make_ic(11)}
     with pytest.raises(ValueError, match=r'b:.*LOOIC'):
-        tools.select_model(bundles, 'LOOIC', return_details=return_details)
+        tools.select_model(bundles, 'LOOIC')
 
 
 @pytest.mark.parametrize('field', ['higher_is_better', 'scale'])
@@ -147,13 +154,12 @@ def test_mismatched_data_point_counts_are_rejected():
         tools.select_model(bundles)
 
 
-@pytest.mark.parametrize('return_details', [False, True])
-def test_legacy_data_metadata_is_ignored(return_details):
+def test_legacy_data_metadata_is_ignored():
     bundles = {'a': predictive_ic([4.0, 6.0]), 'b': predictive_ic([4.0, 7.0])}
-    expected = tools.select_model(bundles, return_details=return_details)
+    expected = tools.select_model(bundles)
     bundles['a']['data'] = [{'stat': 'cstat', 'weight': 1}]
     bundles['b']['data'] = [{'stat': 'pgstat', 'weight': 2}]
-    assert tools.select_model(bundles, return_details=return_details) == expected
+    assert tools.select_model(bundles) == expected
 
 
 @pytest.mark.parametrize('bundles', [{}, [], {'': make_ic(10)}, {1: make_ic(10)}])
@@ -183,7 +189,7 @@ def test_details_use_paired_errors_for_both_references(criterion):
         'third': predictive_ic([6.0, 6.0], 4, criterion),
     }
     original = deepcopy(bundles)
-    result = tools.select_model(bundles, criterion, return_details=True)
+    result = tools.select_model(bundles, criterion)
 
     assert result['best_model'] == 'simple'
     assert result['highest_score_model'] == 'complex'
@@ -205,18 +211,15 @@ def test_details_use_paired_errors_for_both_references(criterion):
     assert highest['models']['third']['delta_error'] == pytest.approx(np.sqrt(18.0))
     assert result['models']['simple']['diagnostics']['status'] == 'no_warning'
     assert selected['models']['complex']['comparison_status'] == 'no_warning'
-    assert tools.select_model(bundles, criterion) == result['best_model']
+    assert tools.select_model(bundles, criterion) == result
     assert bundles == original
     assert json.loads(json.dumps(result, allow_nan=False)) == result
-    assert (
-        tools.select_model(dict(reversed(list(bundles.items()))), criterion, return_details=True)
-        == result
-    )
+    assert tools.select_model(dict(reversed(list(bundles.items()))), criterion) == result
 
 
 def test_constant_pointwise_difference_has_zero_paired_error():
     bundles = {'A': predictive_ic([1.0, 100.0]), 'B': predictive_ic([2.0, 101.0])}
-    result = tools.select_model(bundles, threshold=2.0, return_details=True)
+    result = tools.select_model(bundles, threshold=2.0)
     highest = result['comparisons']['highest_score']
     assert highest['models']['B']['delta'] == 2.0
     assert highest['models']['B']['delta_error'] == 0.0
@@ -232,7 +235,7 @@ def test_waic_diagnostic_status(flag, status):
     bundle['criteria']['WAIC']['warning'] = flag
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        result = tools.select_model({'model': bundle}, return_details=True)
+        result = tools.select_model({'model': bundle})
     diagnostic = result['models']['model']['diagnostics']
     assert diagnostic['status'] == status
     assert result['selection_status'] == ('selected' if status == 'no_warning' else 'provisional')
@@ -259,7 +262,7 @@ def test_loo_diagnostics_distinguish_undefined_tail_provenance(k, constant, fail
     )
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter('always')
-        result = tools.select_model({'model': bundle}, 'LOOIC', return_details=True)
+        result = tools.select_model({'model': bundle}, 'LOOIC')
     assert bool(caught) == (status != 'no_warning')
     diagnostic = result['models']['model']['diagnostics']
     assert diagnostic['status'] == status
@@ -275,7 +278,7 @@ def test_legacy_null_pareto_k_has_insufficient_diagnostics():
     del result['nearly_constant']
     del result['psis_failed']
     with pytest.warns(UserWarning, match='provisional'):
-        details = tools.select_model({'model': bundle}, 'LOOIC', return_details=True)
+        details = tools.select_model({'model': bundle}, 'LOOIC')
     assert details['models']['model']['diagnostics']['status'] == 'insufficient'
 
 
@@ -287,7 +290,7 @@ def test_reference_warning_is_scoped_to_each_comparison_group():
     }
     bundles['complex']['criteria']['WAIC']['warning'] = True
     with pytest.warns(UserWarning):
-        result = tools.select_model(bundles, return_details=True)
+        result = tools.select_model(bundles)
     assert result['best_model'] == 'simple'
     assert result['models']['simple']['diagnostics']['status'] == 'no_warning'
     highest = result['comparisons']['highest_score']['models']
@@ -302,20 +305,18 @@ def test_reference_warning_is_scoped_to_each_comparison_group():
 @pytest.mark.parametrize(
     'pointwise', [None, [1.0], [[1.0, 2.0]], [1.0, None], [1.0, np.inf], [1.0, 9.0]]
 )
-@pytest.mark.parametrize('return_details', [False, True])
-def test_invalid_pointwise_data_cannot_produce_comparison_errors(pointwise, return_details):
+def test_invalid_pointwise_data_cannot_produce_comparison_errors(pointwise):
     bundle = predictive_ic([1.0, 2.0])
     bundle['criteria']['WAIC']['pointwise'] = pointwise
     with pytest.raises(ValueError, match='pointwise'):
-        tools.select_model({'model': bundle}, return_details=return_details)
+        tools.select_model({'model': bundle})
 
 
-@pytest.mark.parametrize('return_details', [False, True])
-def test_one_channel_cannot_support_uncertainty_aware_selection(return_details):
+def test_one_channel_cannot_support_uncertainty_aware_selection():
     bundle = predictive_ic([3.0])
     bundle['n_data_points'] = 1
     with pytest.raises(ValueError, match='at least two'):
-        tools.select_model({'model': bundle}, return_details=return_details)
+        tools.select_model({'model': bundle})
 
 
 @pytest.mark.parametrize('criterion', ['AIC', 'AICc', 'BIC'])
@@ -324,7 +325,6 @@ def test_nonpredictive_details_do_not_invent_uncertainties(criterion):
     result = tools.select_model(
         {'complex': make_ic(10, 3, criterion), 'simple': make_ic(simple_value, 2, criterion)},
         criterion,
-        return_details=True,
     )
     assert result['best_model'] == 'simple'
     assert result['highest_score_model'] == 'complex'
@@ -338,7 +338,7 @@ def test_nonpredictive_details_do_not_invent_uncertainties(criterion):
 
 def test_equal_scores_keep_name_tiebreak_for_highest_and_parameter_tiebreak_for_selected():
     bundles = {'A': predictive_ic([1.0, 9.0], 3), 'Z': predictive_ic([2.0, 8.0], 2)}
-    result = tools.select_model(bundles, return_details=True)
+    result = tools.select_model(bundles)
     assert result['best_model'] == 'Z'
     assert result['highest_score_model'] == 'A'
     assert result['comparisons']['selected']['models']['A']['delta'] == 0.0
@@ -368,28 +368,27 @@ def test_criterion_specific_defaults_and_explicit_override(criterion, threshold,
         'inside': make_ic(sign * inside, 2, criterion),
         'outside': make_ic(sign * outside, 1, criterion),
     }
-    assert tools.select_model(bundles, criterion) == 'inside'
-    result = tools.select_model(bundles, criterion, threshold=None, return_details=True)
+    result = tools.select_model(bundles, criterion)
+    assert tools.select_model(bundles, criterion, threshold=None) == result
     assert result['best_model'] == 'inside'
     assert result['candidate_models'] == ['highest', 'inside']
     assert result['threshold'] == pytest.approx(threshold)
     assert result['sigma'] == 2.0
-    assert tools.select_model(bundles, criterion, threshold=inside / 2) == 'highest'
+    assert tools.select_model(bundles, criterion, threshold=inside / 2)['best_model'] == 'highest'
 
 
 @pytest.mark.parametrize('criterion', ['WAIC', 'LOOIC'])
-@pytest.mark.parametrize('return_details', [False, True])
-def test_paired_error_keeps_model_outside_fixed_threshold(criterion, return_details):
+def test_paired_error_keeps_model_outside_fixed_threshold(criterion):
     bundles = {
         'complex': predictive_ic([0.0, 0.0], 3, criterion),
         'simple': predictive_ic([9.0, 1.0], 2, criterion),
     }
-    result = tools.select_model(bundles, criterion, return_details=return_details)
-    assert (result['best_model'] if return_details else result) == 'simple'
-    assert tools.select_model(bundles, criterion, sigma=1.0) == 'complex'
+    result = tools.select_model(bundles, criterion)
+    assert result['best_model'] == 'simple'
+    assert tools.select_model(bundles, criterion, sigma=1.0)['best_model'] == 'complex'
     # Keep the same total difference but remove its pointwise uncertainty.
     bundles['simple']['criteria'][criterion]['pointwise'] = [5.0, 5.0]
-    assert tools.select_model(bundles, criterion) == 'complex'
+    assert tools.select_model(bundles, criterion)['best_model'] == 'complex'
 
 
 def test_lnz_errors_participate_in_selection_and_both_comparison_groups():
@@ -401,8 +400,8 @@ def test_lnz_errors_participate_in_selection_and_both_comparison_groups():
     bundles['complex']['criteria']['lnZ']['error'] = 3.0
     bundles['simple']['criteria']['lnZ']['error'] = 4.0
     original = deepcopy(bundles)
-    result = tools.select_model(bundles, 'lnZ', return_details=True)
-    assert result['best_model'] == tools.select_model(bundles, 'lnZ') == 'simple'
+    result = tools.select_model(bundles, 'lnZ')
+    assert result['best_model'] == 'simple'
     assert result['candidate_models'] == ['complex', 'simple']
     highest = result['comparisons']['highest_score']['models']
     selected = result['comparisons']['selected']['models']
@@ -414,10 +413,7 @@ def test_lnz_errors_participate_in_selection_and_both_comparison_groups():
     assert selected['outside']['delta_error'] == 4.0
     assert highest['complex']['delta_error'] == selected['simple']['delta_error'] == 0.0
     for names in permutations(bundles):
-        assert (
-            tools.select_model({name: bundles[name] for name in names}, 'lnZ', return_details=True)
-            == result
-        )
+        assert tools.select_model({name: bundles[name] for name in names}, 'lnZ') == result
     assert json.loads(json.dumps(result, allow_nan=False)) == result
     assert bundles == original
 
@@ -427,16 +423,15 @@ def test_error_boundary_is_inclusive(gap, expected):
     bundles = {'complex': make_ic(0.0, 3, 'lnZ'), 'simple': make_ic(-gap, 2, 'lnZ')}
     bundles['complex']['criteria']['lnZ']['error'] = 3.0
     bundles['simple']['criteria']['lnZ']['error'] = 4.0
-    assert tools.select_model(bundles, 'lnZ') == expected
+    assert tools.select_model(bundles, 'lnZ')['best_model'] == expected
 
 
 @pytest.mark.parametrize('error', [None, -1, np.nan, np.inf, 'bad', True])
-@pytest.mark.parametrize('return_details', [False, True])
-def test_lnz_requires_valid_error_even_without_details(error, return_details):
+def test_lnz_requires_valid_error(error):
     bundle = make_ic(0.0, criterion='lnZ')
     bundle['criteria']['lnZ']['error'] = error
     with pytest.raises(ValueError, match=r'lnZ.*error'):
-        tools.select_model({'model': bundle}, 'lnZ', return_details=return_details)
+        tools.select_model({'model': bundle}, 'lnZ')
 
 
 def test_lnz_missing_error_is_not_treated_as_zero():
@@ -456,14 +451,14 @@ def test_custom_criterion_requires_explicit_threshold():
     bundles = {'complex': make_ic(0.0, 3, 'custom'), 'simple': make_ic(1.0, 2, 'custom')}
     with pytest.raises(ValueError, match='threshold'):
         tools.select_model(bundles, 'custom')
-    assert tools.select_model(bundles, 'custom', threshold=2.0) == 'simple'
+    assert tools.select_model(bundles, 'custom', threshold=2.0)['best_model'] == 'simple'
 
 
 def test_lnz_error_combination_does_not_overflow_when_result_is_finite():
     bundles = {'a': make_ic(0.0, criterion='lnZ'), 'b': make_ic(-1.0, criterion='lnZ')}
     bundles['a']['criteria']['lnZ']['error'] = 3e200
     bundles['b']['criteria']['lnZ']['error'] = 4e200
-    result = tools.select_model(bundles, 'lnZ', return_details=True)
+    result = tools.select_model(bundles, 'lnZ')
     assert result['comparisons']['highest_score']['models']['b']['delta_error'] == pytest.approx(
         5e200
     )
@@ -487,11 +482,13 @@ def test_predictive_selection_does_not_use_individual_criterion_errors(criterion
     }
     for bundle in bundles.values():
         bundle['criteria'][criterion]['error'] = 1000.0
-    assert tools.select_model(bundles, criterion) == 'complex'
+    assert tools.select_model(bundles, criterion)['best_model'] == 'complex'
 
 
-def test_bad_diagnostics_warn_even_without_detailed_output():
+def test_bad_diagnostics_warn_and_mark_selection_provisional():
     bundle = make_ic(1.0, criterion='LOOIC')
     bundle['criteria']['LOOIC']['pareto_k'] = [0.9, 0.1]
     with pytest.warns(UserWarning, match='provisional'):
-        assert tools.select_model({'model': bundle}, 'LOOIC') == 'model'
+        result = tools.select_model({'model': bundle}, 'LOOIC')
+    assert result['best_model'] == 'model'
+    assert result['selection_status'] == 'provisional'

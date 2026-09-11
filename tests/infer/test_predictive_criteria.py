@@ -637,8 +637,8 @@ def test_ic_files_support_paired_waic_comparison_without_posterior(tmp_path):
     tools = import_module('bayspec.util.tools')
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        assert tools.select_model({'left': first, 'right': second}, 'WAIC') == 'left'
-        details = tools.select_model({'left': first, 'right': second}, 'WAIC', return_details=True)
+        details = tools.select_model({'left': first, 'right': second}, 'WAIC')
+    assert details['best_model'] == 'left'
     assert details['comparisons']['highest_score']['models']['right'][
         'delta_error'
     ] == pytest.approx(np.sqrt(6 * (2 * shift).var()))
