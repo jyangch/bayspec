@@ -64,5 +64,12 @@ tests/
 bayspec/docs/katu/
 bayspec/docs/zxhsync/
 
-# Local-only docs and Claude Code project config
-docs/
+# Generated documentation
+/docs/build/
+/docs/_build/
+/docs/**/.doctrees/
+
+# Local documentation notes and plans
+/docs/design/
+/docs/docstring-standard.md
+/docs/superpowers/
