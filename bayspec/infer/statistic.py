@@ -105,6 +105,19 @@ def poisson_relative_loglike(count, mean):
     if mean == 0.0:
         return -np.inf
 
+    if mean < 0.5 * count or count < 0.5 * mean:
+        # Use a ratio no larger than one to avoid overflow and loss in ratio - 1.
+        ratio = min(mean, count) / max(mean, count)
+        if ratio >= np.finfo(np.float64).tiny:
+            log_ratio = np.log(ratio)
+            if mean > count:
+                log_ratio = -log_ratio
+        else:
+            log_ratio = np.log(mean) - np.log(count)
+        if mean < count:
+            return count * (log_ratio + 1.0 - ratio)
+        return count * log_ratio - mean + count
+
     delta = (mean - count) / count
     if np.abs(delta) < 1e-4:
         return (
@@ -113,10 +126,7 @@ def poisson_relative_loglike(count, mean):
             * delta
             * (0.5 - delta / 3.0 + delta * delta / 4.0 - delta * delta * delta / 5.0)
         )
-    if delta != np.inf and delta != -np.inf and delta > -1.0:
-        return -count * (delta - np.log1p(delta))
-
-    return count * (np.log(mean) - np.log(count)) - mean + count
+    return -count * (delta - np.log1p(delta))
 
 
 @nb.njit(cache=True, fastmath=True)
@@ -253,30 +263,60 @@ def _pgstat_core(S, B, m, ts, tb, sigma_B):
         mi = m[i]
         sigma = sigma_B[i]
 
-        bb = ts * sigma * sigma - tb * bi + tb * tb * mi
-        cc = ts * sigma * sigma * mi - si * sigma * sigma - tb * bi * mi
-        dd = np.sqrt(bb * bb - 4.0 * aa * cc)
+        if si == 0.0 and sigma > 0.0 and mi >= 0.0:
+            # Profile the zero-count likelihood directly, avoiding b + mi cancellation.
+            ratio = ts / tb
+            expected = ts * mi + ratio * bi
+            variance = (ratio * sigma) ** 2
 
-        sgn = 1.0
-        if bb < 0.0:
-            sgn = -1.0
+            if expected <= variance:
+                z = (bi + tb * mi) / sigma
+                logli = -0.5 * z * z
+            else:
+                logli = -expected + 0.5 * variance
 
-        qq = -0.5 * (bb + sgn * dd)
+        elif si > 0.0 and sigma > 0.0 and mi >= 0.0:
+            # Solve for the total source-region mean instead of the background rate.
+            error = (ts / tb) * sigma
+            expected = ts * mi + (ts / tb) * bi
+            variance = error * error
+            coefficient = variance - expected
+            discriminant = np.hypot(coefficient, 2.0 * np.sqrt(si) * error)
 
-        b1 = qq / aa
-        b2 = cc / qq if qq != 0.0 else 0.0
-        b = b1 if b1 > 0.0 else b2
+            if coefficient >= 0.0:
+                mu_s = si * (variance / (0.5 * coefficient + 0.5 * discriminant))
+            else:
+                mu_s = 0.5 * discriminant - 0.5 * coefficient
 
-        mu_s = ts * (b + mi)
+            z = ((expected - si) / (mu_s + variance)) * error
+            logli = poisson_relative_loglike(si, mu_s) - 0.5 * z * z
 
-        pois_logli = poisson_relative_loglike(si, mu_s)
+        else:
+            bb = ts * sigma * sigma - tb * bi + tb * tb * mi
+            cc = ts * sigma * sigma * mi - si * sigma * sigma - tb * bi * mi
+            dd = np.sqrt(bb * bb - 4.0 * aa * cc)
 
-        gauss_logli = 0.0
-        if sigma != 0.0:
-            z = (bi - tb * b) / sigma
-            gauss_logli = -0.5 * z * z
+            sgn = 1.0
+            if bb < 0.0:
+                sgn = -1.0
 
-        logli = pois_logli + gauss_logli
+            qq = -0.5 * (bb + sgn * dd)
+
+            b1 = qq / aa
+            b2 = cc / qq if qq != 0.0 else 0.0
+            b = b1 if b1 > 0.0 else b2
+
+            mu_s = ts * (b + mi)
+
+            pois_logli = poisson_relative_loglike(si, mu_s)
+
+            gauss_logli = 0.0
+            if sigma != 0.0:
+                z = (bi - tb * b) / sigma
+                gauss_logli = -0.5 * z * z
+
+            logli = pois_logli + gauss_logli
+
         delta = si / ts - bi / tb - mi
         sign = 0.0
         if delta > 0.0:
