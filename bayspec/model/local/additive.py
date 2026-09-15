@@ -123,7 +123,7 @@ class cpl(Additive):
             Ep = 10**logEp
 
             if not alpha > -2:
-                return np.nan if scalar else np.ones_like(E) * np.nan
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
             Ec = Ep / (2 + alpha)
 
@@ -208,7 +208,7 @@ class sbpl(Additive):
             Ep = 10**logEp
 
             if not (alpha1 > -2 and alpha2 < -2):
-                return np.nan if scalar else np.ones_like(E) * np.nan
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
             Eb = Ep / (10 ** (delta * np.arctanh((alpha1 + alpha2 + 4) / (alpha1 - alpha2))))
 
@@ -258,7 +258,7 @@ class sbpl(Additive):
             Ep = 10**logEp
 
             if not (alpha1 > -2 and alpha2 < -2):
-                return np.nan if scalar else np.ones_like(E) * np.nan
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
             Eb = Ep / (10 ** (delta * np.arctanh((alpha1 + alpha2 + 4) / (alpha1 - alpha2))))
 
@@ -351,7 +351,7 @@ class csbpl(Additive):
             Ep = 10**logEp
 
             if not alpha2 > -2:
-                return np.nan if scalar else np.ones_like(E) * np.nan
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
             Ec = Ep / (2 + alpha2)
 
@@ -380,10 +380,17 @@ class csbpl(Additive):
 
 
 class dsbpl(Additive):
-    """Double smoothly broken power law (three segments, two smooth breaks)."""
+    """Double smoothly broken power law (three segments, two smooth breaks).
+
+    With ``vfv_peak=True`` (default), ``Ep`` is the exact peak of the full
+    rest-frame ``E**2 N(E)`` spectrum; the observed peak is ``Ep / (1 + z)``.
+    This mode requires ``alpha1 >= alpha2 > -2 > beta``, positive
+    smoothness values, and a finite second break satisfying the peak condition.
+    Set ``vfv_peak=False`` to use the original two-break parameterization.
+    """
 
     def __init__(self):
-        """Initialise double sbpl with three indices and two breaks."""
+        """Initialise double sbpl; params switch on ``vfv_peak`` config."""
 
         self.expr = 'dsbpl'
         self.comment = 'double smoothly broken power-law model'
@@ -391,16 +398,36 @@ class dsbpl(Additive):
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
         self.config['pivot_energy'] = Cfg(1.0)
+        self.config['vfv_peak'] = Cfg(True)
         self.config['smoothness1'] = Cfg(0.3)
         self.config['smoothness2'] = Cfg(0.3)
 
-        self.params = OrderedDict()
-        self.params[r'$\alpha_1$'] = Par(1, unif(-6, 4))
-        self.params[r'$\alpha_2$'] = Par(-1, unif(-6, 4))
-        self.params[r'$\alpha_3$'] = Par(-3, unif(-6, 4))
-        self.params[r'log$E_{b1}$'] = Par(1, unif(-1, 3))
-        self.params[r'log$E_{b2}$'] = Par(2, unif(0, 4))
-        self.params[r'log$A$'] = Par(0, unif(-10, 10))
+    @cached_property(lambda self: self.config['vfv_peak'].value)
+    def params(self):
+        """Return the parameter dict chosen by the ``vfv_peak`` config flag."""
+
+        params = OrderedDict()
+
+        if self.config['vfv_peak'].value:
+            params[r'$\alpha_1$'] = Par(1, unif(-2, 2))
+            params[r'$\alpha_2$'] = Par(-1, unif(-2, 2))
+            params[r'$\beta$'] = Par(-3, unif(-6, -2))
+            params[r'log$E_b$'] = Par(1, unif(-1, 3))
+            params[r'log$E_p$'] = Par(2, unif(0, 4))
+            params[r'log$A$'] = Par(0, unif(-10, 10))
+
+        elif not self.config['vfv_peak'].value:
+            params[r'$\alpha_1$'] = Par(1, unif(-6, 4))
+            params[r'$\alpha_2$'] = Par(-1, unif(-6, 4))
+            params[r'$\alpha_3$'] = Par(-3, unif(-6, 4))
+            params[r'log$E_{b1}$'] = Par(1, unif(-1, 3))
+            params[r'log$E_{b2}$'] = Par(2, unif(0, 4))
+            params[r'log$A$'] = Par(0, unif(-10, 10))
+
+        else:
+            raise ValueError('Invalid value for vfv_peak config.')
+
+        return params
 
     @staticmethod
     def _log_cosh(q):
@@ -412,24 +439,45 @@ class dsbpl(Additive):
 
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
+        peak = self.config['vfv_peak'].value
         delta1 = self.config['smoothness1'].value
         delta2 = self.config['smoothness2'].value
 
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
-        alpha3 = self.params[r'$\alpha_3$'].value
-        logEb1 = self.params[r'log$E_{b1}$'].value
-        logEb2 = self.params[r'log$E_{b2}$'].value
-        logA = self.params[r'log$A$'].value
-
-        Eb1 = 10.0**logEb1
-        Eb2 = 10.0**logEb2
-        Amp = 10.0**logA
 
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar:
             E = E[np.newaxis]
+
+        if peak:
+            alpha3 = self.params[r'$\beta$'].value
+            logEb1 = self.params[r'log$E_b$'].value
+            logEp = self.params[r'log$E_p$'].value
+
+            if not (alpha1 >= alpha2 > -2 > alpha3 and delta1 > 0 and delta2 > 0):
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
+
+            q1 = (logEp - logEb1) / delta1
+            c = (alpha1 - alpha2) * np.exp(-np.logaddexp(0.0, 2.0 * q1))
+            numerator = alpha2 + 2.0 + c
+            denominator = -alpha3 - 2.0 - c
+            if denominator <= 0:
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
+
+            logEb2 = logEp - 0.5 * delta2 * (np.log(numerator) - np.log(denominator))
+
+        else:
+            alpha3 = self.params[r'$\alpha_3$'].value
+            logEb1 = self.params[r'log$E_{b1}$'].value
+            logEb2 = self.params[r'log$E_{b2}$'].value
+
+        Eb1 = 10.0**logEb1
+        Eb2 = 10.0**logEb2
+
+        logA = self.params[r'log$A$'].value
+        Amp = 10.0**logA
 
         zi = 1.0 + redshift
         E = E * zi
@@ -458,22 +506,42 @@ class dsbpl(Additive):
         """Return the local spectral slope of the dsbpl model at ``E``."""
 
         redshift = self.config['redshift'].value
+        peak = self.config['vfv_peak'].value
         delta1 = self.config['smoothness1'].value
         delta2 = self.config['smoothness2'].value
 
         alpha1 = self.params[r'$\alpha_1$'].value
         alpha2 = self.params[r'$\alpha_2$'].value
-        alpha3 = self.params[r'$\alpha_3$'].value
-        logEb1 = self.params[r'log$E_{b1}$'].value
-        logEb2 = self.params[r'log$E_{b2}$'].value
-
-        Eb1 = 10**logEb1
-        Eb2 = 10**logEb2
 
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar:
             E = E[np.newaxis]
+
+        if peak:
+            alpha3 = self.params[r'$\beta$'].value
+            logEb1 = self.params[r'log$E_b$'].value
+            logEp = self.params[r'log$E_p$'].value
+
+            if not (alpha1 >= alpha2 > -2 > alpha3 and delta1 > 0 and delta2 > 0):
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
+
+            q1 = (logEp - logEb1) / delta1
+            c = (alpha1 - alpha2) * np.exp(-np.logaddexp(0.0, 2.0 * q1))
+            numerator = alpha2 + 2.0 + c
+            denominator = -alpha3 - 2.0 - c
+            if denominator <= 0:
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
+
+            logEb2 = logEp - 0.5 * delta2 * (np.log(numerator) - np.log(denominator))
+
+        else:
+            alpha3 = self.params[r'$\alpha_3$'].value
+            logEb1 = self.params[r'log$E_{b1}$'].value
+            logEb2 = self.params[r'log$E_{b2}$'].value
+
+        Eb1 = 10**logEb1
+        Eb2 = 10**logEb2
 
         zi = 1 + redshift
         E = E * zi
@@ -681,7 +749,7 @@ class sb2pl(Additive):
             Ep = 10**logEp
 
             if not (alpha1 > -2 and alpha2 < -2):
-                return np.nan if scalar else np.ones_like(E) * np.nan
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
             Eb = Ep * (-(alpha1 + 2) / (alpha2 + 2)) ** (1 / ((alpha2 - alpha1) * omega))
 
@@ -693,7 +761,7 @@ class sb2pl(Additive):
             Eb = 10**logEb
 
             if not alpha1 > alpha2:
-                return np.nan if scalar else np.ones_like(E) * np.nan
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
         logA = self.params[r'log$A$'].value
         Amp = 10**logA
@@ -716,9 +784,7 @@ class csb2pl(Additive):
         """Initialise convex two-segment sbpl with cutoff; uses ``vfv_peak``."""
 
         self.expr = 'csb2pl'
-        self.comment = (
-            '2-segment smoothly broken power-law model (always convex) with high-energy cutoff'
-        )
+        self.comment = '2-segment smoothly broken power-law model (always convex) with high-energy cutoff'
 
         self.config = OrderedDict()
         self.config['redshift'] = Cfg(0.0)
@@ -771,14 +837,14 @@ class csb2pl(Additive):
             E = E[np.newaxis]
 
         if not alpha1 > alpha2:
-            return np.nan if scalar else np.ones_like(E) * np.nan
+            return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
         if peak:
             logEp = self.params[r'log$E_p$'].value
             Ep = 10**logEp
 
             if not alpha2 > -2:
-                return np.nan if scalar else np.ones_like(E) * np.nan
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
             Ec = Ep / (2 + alpha2)
 
@@ -792,9 +858,7 @@ class csb2pl(Additive):
         zi = 1 + redshift
         E = E * zi
 
-        f = ((E / Eb) ** (-alpha1 * omega) + (E / Eb) ** (-alpha2 * omega)) ** (
-            -1 / omega
-        ) * np.exp(-E / Ec)
+        f = ((E / Eb) ** (-alpha1 * omega) + (E / Eb) ** (-alpha2 * omega)) ** (-1 / omega) * np.exp(-E / Ec)
         fpiv = ((epiv / Eb) ** (-alpha1 * omega) + (epiv / Eb) ** (-alpha2 * omega)) ** (-1 / omega)
         phtspec = Amp * (f / fpiv)
 
@@ -849,7 +913,7 @@ class sb3pl(Additive):
             E = E[np.newaxis]
 
         if not alpha1 > alpha2 > alpha3:
-            return np.nan if scalar else np.ones_like(E) * np.nan
+            return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
         zi = 1 + redshift
         E = E * zi
@@ -956,12 +1020,10 @@ class sb4pl(Additive):
         E = E * zi
 
         if not alpha1 > alpha2 > alpha3 > alpha4:
-            return np.nan if scalar else np.ones_like(E) * np.nan
+            return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
         f = self._sb4pl(E, [alpha1, alpha2, alpha3, alpha4, Eb1, Eb2, Eb3, omega1, omega2, omega3])
-        fpiv = self._sb4pl(
-            epiv, [alpha1, alpha2, alpha3, alpha4, Eb1, Eb2, Eb3, omega1, omega2, omega3]
-        )
+        fpiv = self._sb4pl(epiv, [alpha1, alpha2, alpha3, alpha4, Eb1, Eb2, Eb3, omega1, omega2, omega3])
         phtspec = Amp * (f / fpiv)
 
         return phtspec[0] if scalar else phtspec
@@ -1016,9 +1078,7 @@ class sb4pl(Additive):
         omega3 = P[9]
 
         F123 = self._sb3pl(E, [alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2])
-        F4 = self._pl(E, [alpha4, Eb3]) * self._sb3pl(
-            Eb3, [alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2]
-        )
+        F4 = self._pl(E, [alpha4, Eb3]) * self._sb3pl(Eb3, [alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2])
         F1234 = (F123 ** (-omega3) + F4 ** (-omega3)) ** (-1 / omega3)
 
         return F1234
@@ -1074,9 +1134,7 @@ class band(Additive):
         i1 = Eb >= E
         i2 = Eb < E
         phtspec[i1] = Amp * (E[i1] / epiv) ** alpha * np.exp(-E[i1] / Ec)
-        phtspec[i2] = (
-            Amp * (Eb / epiv) ** (alpha - beta) * np.exp(beta - alpha) * (E[i2] / epiv) ** beta
-        )
+        phtspec[i2] = Amp * (Eb / epiv) ** (alpha - beta) * np.exp(beta - alpha) * (E[i2] / epiv) ** beta
 
         return phtspec[0] if scalar else phtspec
 
@@ -1134,13 +1192,7 @@ class cband(Additive):
         i1 = Eb >= E
         i2 = Eb < E
         phtspec[i1] = Amp * (E[i1] / epiv) ** alpha1 * np.exp(-E[i1] / Ec1)
-        phtspec[i2] = (
-            Amp
-            * (Eb / epiv) ** (alpha1 - alpha2)
-            * np.exp(alpha2 - alpha1)
-            * (E[i2] / epiv) ** alpha2
-            * np.exp(-E[i2] / Ec2)
-        )
+        phtspec[i2] = Amp * (Eb / epiv) ** (alpha1 - alpha2) * np.exp(alpha2 - alpha1) * (E[i2] / epiv) ** alpha2 * np.exp(-E[i2] / Ec2)
 
         return phtspec[0] if scalar else phtspec
 
@@ -1203,13 +1255,7 @@ class dband(Additive):
         i2 = (Eb1 < E) & (Eb2 >= E)
         i3 = Eb2 < E
         phtspec[i1] = Amp * (E[i1] / epiv) ** alpha1 * np.exp(-E[i1] / Ec1)
-        phtspec[i2] = (
-            Amp
-            * (Eb1 / epiv) ** (alpha1 - alpha2)
-            * np.exp(alpha2 - alpha1)
-            * (E[i2] / epiv) ** alpha2
-            * np.exp(-E[i2] / Ec2)
-        )
+        phtspec[i2] = Amp * (Eb1 / epiv) ** (alpha1 - alpha2) * np.exp(alpha2 - alpha1) * (E[i2] / epiv) ** alpha2 * np.exp(-E[i2] / Ec2)
         phtspec[i3] = (
             Amp
             * (Eb1 / epiv) ** (alpha1 - alpha2)
@@ -1310,9 +1356,7 @@ class mbb(Additive):
         if scalar:
             E = E[np.newaxis]
 
-        phtspec = self._func_nb(
-            E, redshift, kTmin, kTmax, m, Amp, self._MBB_GAUSS_NODES, self._MBB_GAUSS_WEIGHTS
-        )
+        phtspec = self._func_nb(E, redshift, kTmin, kTmax, m, Amp, self._MBB_GAUSS_NODES, self._MBB_GAUSS_WEIGHTS)
 
         return phtspec[0] if scalar else phtspec
 
@@ -1417,7 +1461,7 @@ class hlecpl(Additive):
             raise ValueError('E and T must both be scalars or both be arrays')
 
         if tc <= t0 or tc > np.min(T):
-            return np.nan if scalar else np.ones_like(E) * np.nan
+            return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
         zi = 1 + redshift
         E = E * zi
@@ -1485,7 +1529,7 @@ class hleband(Additive):
             raise ValueError('E and T must both be scalars or both be arrays')
 
         if tc <= t0 or tc > np.min(T):
-            return np.nan if scalar else np.ones_like(E) * np.nan
+            return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
         zi = 1 + redshift
         E = E * zi
@@ -1498,12 +1542,7 @@ class hleband(Additive):
         i1 = Ebt > E
         i2 = Ebt <= E
         phtspec[i1] = At[i1] * (E[i1] / epiv) ** alpha * np.exp(-(2 + alpha) * E[i1] / Ept[i1])
-        phtspec[i2] = (
-            At[i2]
-            * (Ebt[i2] / epiv) ** (alpha - beta)
-            * np.exp(beta - alpha)
-            * (E[i2] / epiv) ** beta
-        )
+        phtspec[i2] = At[i2] * (Ebt[i2] / epiv) ** (alpha - beta) * np.exp(beta - alpha) * (E[i2] / epiv) ** beta
 
         return phtspec[0] if scalar else phtspec
 
@@ -1654,9 +1693,7 @@ class zxhsync(Additive):
                 + E_str
             )
 
-            process = sp.Popen(
-                cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True
-            )
+            process = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
             (out, err) = process.communicate()
             Fd_str = out.split()
             if out == '' or len(Fd_str) != len(E[idx]):
@@ -1667,9 +1704,7 @@ class zxhsync(Additive):
                 print('+++++ +++++++++++++ +++++')
                 raise RuntimeError('ZXHSYNC model execution failed')
             Fd = np.array([float(Fdi) for Fdi in Fd_str])  # in unit of mJy
-            Fv = (
-                Fd / (E[idx] * 1.6022e-9) / (6.62607e-34 * 6.2415e15) / 1.0e26
-            )  # in unit of photons/s/cm^2/keV
+            Fv = Fd / (E[idx] * 1.6022e-9) / (6.62607e-34 * 6.2415e15) / 1.0e26  # in unit of photons/s/cm^2/keV
             phtspec[idx] = Fv
 
         return phtspec[0] if scalar else phtspec
@@ -1789,9 +1824,7 @@ class zxhsync(Additive):
                 + temp_prec_str
             )
 
-            process = sp.Popen(
-                cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True
-            )
+            process = sp.Popen(cmd, shell=True, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
             (out, err) = process.communicate()
             ge_str = out.split()[::2]
             Ne_str = out.split()[1::2]
@@ -1920,9 +1953,7 @@ class katu(Additive):
         sed_split_list = []
         for E_split, T_split in zip(E_split_list, T_split_list, strict=False):
             cmd = [self.mo_dir, 'prompt.toml', '--energy', *E_split, '--time', *T_split]
-            process = sp.Popen(
-                cmd, shell=False, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True
-            )
+            process = sp.Popen(cmd, shell=False, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
             (out, err) = process.communicate()
             if out == '':
                 print('+++++ Error Message +++++')
