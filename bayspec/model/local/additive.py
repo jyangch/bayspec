@@ -18,6 +18,7 @@ from astropy.cosmology import Planck18
 import astropy.units as u
 import numba as nb
 import numpy as np
+from scipy.optimize import brentq
 import toml
 
 from ...util.param import Cfg, Par
@@ -184,6 +185,7 @@ class sbpl(Additive):
 
     @staticmethod
     def _log_cosh(q):
+        """Return log(cosh(q)) without overflow."""
 
         return np.logaddexp(q, -q) - np.log(2.0)
 
@@ -222,14 +224,14 @@ class sbpl(Additive):
             logEb = self.params[r'log$E_b$'].value
             Eb = 10**logEb
 
-        b = (alpha1 + alpha2) / 2
-        m = (alpha2 - alpha1) / 2
-
         logA = self.params[r'log$A$'].value
         Amp = 10**logA
 
         zi = 1 + redshift
         E = E * zi
+
+        b = (alpha1 + alpha2) / 2
+        m = (alpha2 - alpha1) / 2
 
         q = np.log10(E / Eb) / delta
         qpiv = np.log10(epiv / Eb) / delta
@@ -237,7 +239,8 @@ class sbpl(Additive):
         a = m * delta * self._log_cosh(q)
         apiv = m * delta * self._log_cosh(qpiv)
 
-        phtspec = Amp * (E / epiv) ** b * 10 ** (a - apiv)
+        shape_term = a - apiv
+        phtspec = Amp * (E / epiv) ** b * 10**shape_term
 
         return phtspec[0] if scalar else phtspec
 
@@ -275,11 +278,11 @@ class sbpl(Additive):
             logEb = self.params[r'log$E_b$'].value
             Eb = 10**logEb
 
-        b = (alpha1 + alpha2) / 2
-        m = (alpha2 - alpha1) / 2
-
         zi = 1 + redshift
         E = E * zi
+
+        b = (alpha1 + alpha2) / 2
+        m = (alpha2 - alpha1) / 2
 
         q = np.log10(E / Eb) / delta
 
@@ -289,10 +292,18 @@ class sbpl(Additive):
 
 
 class csbpl(Additive):
-    """Smoothly broken power law with an added exponential cutoff."""
+    """Smoothly broken power law with an added exponential cutoff.
+
+    In peak mode, ``Ep`` is the highest-energy strict maximum of the full
+    rest-frame ``E**2 N(E)`` spectrum, observed at ``Ep / (1 + z)``.
+    Both index orders are allowed; a lower-energy peak may be taller.
+    Degenerate stationary points with zero curvature are rejected.
+    ``Eb`` is the transition center of the underlying SBPL component.
+    Cutoff mode parameterizes ``Ec`` directly without peak restrictions.
+    """
 
     def __init__(self):
-        """Initialise sbpl with exponential cutoff; uses ``vfv_peak`` config."""
+        """Initialise csbpl; params switch on ``vfv_peak`` config."""
 
         self.expr = 'csbpl'
         self.comment = 'smoothly broken power-law model with high-energy cutoff'
@@ -330,22 +341,54 @@ class csbpl(Additive):
 
     @staticmethod
     def _log_cosh(q):
+        """Return log(cosh(q)) without overflow."""
 
         return np.logaddexp(q, -q) - np.log(2.0)
 
+    @staticmethod
+    def _is_high_energy_peak(alpha1, alpha2, qp, delta, cutoff_factor):
+        """Require a local maximum at Ep and exclude higher-energy maxima.
+
+        The cutoff model reduces the remaining-extrema condition to a
+        quadratic in tanh(q), so the check uses an analytic solution.
+        """
+
+        if alpha1 >= alpha2:
+            return True
+
+        # Check that Ep is a local maximum.
+        m = (alpha2 - alpha1) / 2
+        width = delta * np.log(10.0)
+        peak_curvature = m / width * np.exp(-2 * csbpl._log_cosh(qp)) - cutoff_factor
+        if peak_curvature >= 0:
+            return False
+
+        # Check that no higher-energy maximum exists.
+        # Stationary points satisfy K(q) = K(qp), where
+        # K(q) = (2 + b + m*tanh(q))*exp(-width*q).
+        # Its only possible local maximum is the larger root of
+        # t**2 + width*t + width*(2 + b)/m - 1 = 0, t = tanh(q).
+        b = (alpha1 + alpha2) / 2
+        discriminant = width**2 + 4 * (1 - width * (2 + b) / m)
+        if discriminant > 0:
+            tmax = (np.sqrt(discriminant) - width) / 2
+            if -1 < tmax < 1 and tmax > np.tanh(qp):
+                qmax = np.arctanh(tmax)
+                cutoff_factor_max = 2 + b + m * tmax
+                if cutoff_factor_max > 0:
+                    log_ratio = np.log(cutoff_factor_max / cutoff_factor) - width * (qmax - qp)
+                    if log_ratio > 0:
+                        return False
+
+        return True
+
     def func(self, E, T=None, O=None):  # noqa: E741
-        """Return the sbpl photon spectrum with exponential cutoff."""
+        """Return the csbpl photon spectrum with exponential cutoff."""
 
         redshift = self.config['redshift'].value
         epiv = self.config['pivot_energy'].value
         peak = self.config['vfv_peak'].value
         delta = self.config['smoothness'].value
-
-        alpha1 = self.params[r'$\alpha_1$'].value
-        alpha2 = self.params[r'$\alpha_2$'].value
-
-        logEb = self.params[r'log$E_b$'].value
-        Eb = 10**logEb
 
         E = np.asarray(E)
         scalar = E.ndim == 0
@@ -355,6 +398,12 @@ class csbpl(Additive):
         if not (delta > 0):
             return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
+        alpha1 = self.params[r'$\alpha_1$'].value
+        alpha2 = self.params[r'$\alpha_2$'].value
+
+        logEb = self.params[r'log$E_b$'].value
+        Eb = 10**logEb
+
         if peak:
             logEp = self.params[r'log$E_p$'].value
             Ep = 10**logEp
@@ -363,11 +412,15 @@ class csbpl(Additive):
                 return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
             qp = (logEp - logEb) / delta
-            peak_slope = 2 + alpha2 + (alpha1 - alpha2) * np.exp(-np.logaddexp(0.0, 2 * qp))
-            if peak_slope <= 0:
+            cutoff_factor = 2 + alpha2 + (alpha1 - alpha2) * np.exp(-np.logaddexp(0.0, 2 * qp))
+
+            if cutoff_factor <= 0:
                 return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
-            Ec = Ep / peak_slope
+            if not self._is_high_energy_peak(alpha1, alpha2, qp, delta, cutoff_factor):
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
+
+            Ec = Ep / cutoff_factor
 
         else:
             logEc = self.params[r'log$E_c$'].value
@@ -388,23 +441,81 @@ class csbpl(Additive):
         a = m * delta * self._log_cosh(q)
         apiv = m * delta * self._log_cosh(qpiv)
 
-        phtspec = Amp * (E / epiv) ** b * 10 ** (a - apiv) * np.exp(-E / Ec)
+        shape_term = a - apiv
+        phtspec = Amp * (E / epiv) ** b * 10**shape_term * np.exp(-E / Ec)
 
         return phtspec[0] if scalar else phtspec
+
+    def slope_func(self, E, T=None, O=None):  # noqa: E741
+        """Return the local spectral slope of the csbpl model at ``E``."""
+
+        redshift = self.config['redshift'].value
+        peak = self.config['vfv_peak'].value
+        delta = self.config['smoothness'].value
+
+        E = np.asarray(E)
+        scalar = E.ndim == 0
+        if scalar:
+            E = E[np.newaxis]
+
+        if not (delta > 0):
+            return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
+
+        alpha1 = self.params[r'$\alpha_1$'].value
+        alpha2 = self.params[r'$\alpha_2$'].value
+
+        logEb = self.params[r'log$E_b$'].value
+        Eb = 10**logEb
+
+        if peak:
+            logEp = self.params[r'log$E_p$'].value
+            Ep = 10**logEp
+
+            if not alpha2 > -2:
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
+
+            qp = (logEp - logEb) / delta
+            cutoff_factor = 2 + alpha2 + (alpha1 - alpha2) * np.exp(-np.logaddexp(0.0, 2 * qp))
+
+            if cutoff_factor <= 0:
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
+
+            if not self._is_high_energy_peak(alpha1, alpha2, qp, delta, cutoff_factor):
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
+
+            Ec = Ep / cutoff_factor
+
+        else:
+            logEc = self.params[r'log$E_c$'].value
+            Ec = 10**logEc
+
+        zi = 1 + redshift
+        E = E * zi
+
+        b = (alpha1 + alpha2) / 2
+        m = (alpha2 - alpha1) / 2
+
+        q = np.log10(E / Eb) / delta
+
+        slope = b + m * np.tanh(q) - E / Ec
+
+        return slope[0] if scalar else slope
 
 
 class dsbpl(Additive):
     """Double smoothly broken power law (three segments, two smooth breaks).
 
-    With ``vfv_peak=True`` (default), ``Ep`` is the exact peak of the full
+    With ``vfv_peak=True`` (default), ``Ep`` is the highest-energy peak of the full
     rest-frame ``E**2 N(E)`` spectrum; the observed peak is ``Ep / (1 + z)``.
-    This mode requires ``alpha1 >= alpha2 > -2 > beta``, positive
+    Both index orders are allowed, and a lower-energy peak may be taller.
+    This mode requires ``alpha1 > -2``, ``alpha2 > -2 > beta``, positive
     smoothness values, and a finite second break satisfying the peak condition.
+    Valleys and degenerate stationary points with zero curvature are rejected.
     Set ``vfv_peak=False`` to use the original two-break parameterization.
     """
 
     def __init__(self):
-        """Initialise double sbpl; params switch on ``vfv_peak`` config."""
+        """Initialise dsbpl; params switch on ``vfv_peak`` config."""
 
         self.expr = 'dsbpl'
         self.comment = 'double smoothly broken power-law model'
@@ -445,8 +556,64 @@ class dsbpl(Additive):
 
     @staticmethod
     def _log_cosh(q):
+        """Return log(cosh(q)) without overflow."""
 
         return np.logaddexp(q, -q) - np.log(2.0)
+
+    @staticmethod
+    def _is_high_energy_peak(alpha1, alpha2, alpha3, qp1, qp2, delta1, delta2):
+        """Require a local maximum at Ep and exclude higher-energy maxima.
+
+        Independent transition widths give different powers of E/Ep.
+        Use analytic exclusions first, then a bounded derivative-root solve
+        only when a higher-energy maximum remains possible.
+        """
+
+        if alpha1 >= alpha2:
+            return True
+
+        # Check that Ep is a local maximum.
+        width1, width2 = delta1 * np.log(10.0), delta2 * np.log(10.0)
+        log_hardening = np.log((alpha2 - alpha1) / (2 * width1)) - 2 * dsbpl._log_cosh(qp1)
+        log_softening = np.log((alpha2 - alpha3) / (2 * width2)) - 2 * dsbpl._log_cosh(qp2)
+        if log_hardening >= log_softening:
+            return False
+
+        # Check that no higher-energy maximum exists.
+        p, r = 2 / width1, 2 / width2
+        if p <= r:
+            return True
+
+        # With x = E/Ep, multiplying the slope+2 by its positive denominators
+        # gives G(x) = C0 + C1*x**p - C2*x**r - C3*x**(p+r).
+        # H = G/x**r has derivative sign -r*C0*x**(-p) + (p-r)*C1
+        # - p*C3*x**r. The sum of the two negative terms has one minimum.
+        log_c0 = np.log(alpha1 + 2)
+        log_c1 = np.log(alpha2 + 2) + 2 * qp1
+        log_c2 = np.log(alpha2 - alpha1 - alpha3 - 2) + 2 * qp2
+        log_c3 = np.log(-alpha3 - 2) + 2 * (qp1 + qp2)
+        logx_turn = (log_c0 - log_c3) / (p + r)
+        if logx_turn <= 0:
+            return True
+
+        log_left = np.log(r) + log_c0
+        log_middle = np.log(p - r) + log_c1
+        log_right = np.log(p) + log_c3
+
+        def derivative_balance(logx):
+            return np.logaddexp(log_left - p * logx, log_right + r * logx) - log_middle
+
+        if derivative_balance(logx_turn) >= 0:
+            return True
+
+        # Only a possible low-energy peak needs this bounded scalar solve.
+        # The larger derivative root is the only possible future maximum of H.
+        logx_upper = (log_middle - log_right + 1) / r
+        logx = brentq(derivative_balance, logx_turn, logx_upper, xtol=1e-12, rtol=1e-14)
+        log_positive = np.logaddexp(log_c0 - r * logx, log_c1 + (p - r) * logx)
+        log_negative = np.logaddexp(log_c2, log_c3 + p * logx)
+
+        return log_positive <= log_negative
 
     def func(self, E, T=None, O=None):  # noqa: E741
         """Return the dsbpl photon spectrum, joining three power laws."""
@@ -457,9 +624,6 @@ class dsbpl(Additive):
         delta1 = self.config['smoothness1'].value
         delta2 = self.config['smoothness2'].value
 
-        alpha1 = self.params[r'$\alpha_1$'].value
-        alpha2 = self.params[r'$\alpha_2$'].value
-
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar:
@@ -468,40 +632,53 @@ class dsbpl(Additive):
         if not (delta1 > 0 and delta2 > 0):
             return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
+        alpha1 = self.params[r'$\alpha_1$'].value
+        alpha2 = self.params[r'$\alpha_2$'].value
+
         if peak:
             alpha3 = self.params[r'$\beta$'].value
+
             logEb1 = self.params[r'log$E_b$'].value
             logEp = self.params[r'log$E_p$'].value
 
-            if not (alpha1 >= alpha2 > -2 > alpha3):
+            if not (alpha1 > -2 and alpha2 > -2 > alpha3):
                 return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
-            q1 = (logEp - logEb1) / delta1
-            c = (alpha1 - alpha2) * np.exp(-np.logaddexp(0.0, 2.0 * q1))
+            qp1 = (logEp - logEb1) / delta1
+            c = (alpha1 - alpha2) * np.exp(-np.logaddexp(0.0, 2.0 * qp1))
             numerator = alpha2 + 2.0 + c
+            if alpha1 < alpha2:
+                numerator = (
+                    alpha1 + 2.0 + (alpha2 - alpha1) * np.exp(-np.logaddexp(0.0, -2.0 * qp1))
+                )
             denominator = -alpha3 - 2.0 - c
-            if denominator <= 0:
+
+            if numerator <= 0 or denominator <= 0:
                 return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
             logEb2 = logEp - 0.5 * delta2 * (np.log(numerator) - np.log(denominator))
+            qp2 = 0.5 * (np.log(numerator) - np.log(denominator))
+
+            if not self._is_high_energy_peak(alpha1, alpha2, alpha3, qp1, qp2, delta1, delta2):
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
         else:
             alpha3 = self.params[r'$\alpha_3$'].value
             logEb1 = self.params[r'log$E_{b1}$'].value
             logEb2 = self.params[r'log$E_{b2}$'].value
 
-        Eb1 = 10.0**logEb1
-        Eb2 = 10.0**logEb2
+        Eb1 = 10**logEb1
+        Eb2 = 10**logEb2
 
         logA = self.params[r'log$A$'].value
-        Amp = 10.0**logA
+        Amp = 10**logA
 
-        zi = 1.0 + redshift
+        zi = 1 + redshift
         E = E * zi
 
-        b = 0.5 * (alpha1 + alpha3)
-        m1 = 0.5 * (alpha2 - alpha1)
-        m2 = 0.5 * (alpha3 - alpha2)
+        b = (alpha1 + alpha3) / 2
+        m1 = (alpha2 - alpha1) / 2
+        m2 = (alpha3 - alpha2) / 2
 
         q1 = np.log10(E / Eb1) / delta1
         q2 = np.log10(E / Eb2) / delta2
@@ -515,7 +692,8 @@ class dsbpl(Additive):
         apiv1 = m1 * delta1 * self._log_cosh(qpiv1)
         apiv2 = m2 * delta2 * self._log_cosh(qpiv2)
 
-        phtspec = Amp * (E / epiv) ** b * 10.0 ** ((a1 + a2) - (apiv1 + apiv2))
+        shape_term = (a1 + a2) - (apiv1 + apiv2)
+        phtspec = Amp * (E / epiv) ** b * 10**shape_term
 
         return phtspec[0] if scalar else phtspec
 
@@ -527,9 +705,6 @@ class dsbpl(Additive):
         delta1 = self.config['smoothness1'].value
         delta2 = self.config['smoothness2'].value
 
-        alpha1 = self.params[r'$\alpha_1$'].value
-        alpha2 = self.params[r'$\alpha_2$'].value
-
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar:
@@ -538,22 +713,35 @@ class dsbpl(Additive):
         if not (delta1 > 0 and delta2 > 0):
             return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
+        alpha1 = self.params[r'$\alpha_1$'].value
+        alpha2 = self.params[r'$\alpha_2$'].value
+
         if peak:
             alpha3 = self.params[r'$\beta$'].value
+
             logEb1 = self.params[r'log$E_b$'].value
             logEp = self.params[r'log$E_p$'].value
 
-            if not (alpha1 >= alpha2 > -2 > alpha3):
+            if not (alpha1 > -2 and alpha2 > -2 > alpha3):
                 return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
-            q1 = (logEp - logEb1) / delta1
-            c = (alpha1 - alpha2) * np.exp(-np.logaddexp(0.0, 2.0 * q1))
+            qp1 = (logEp - logEb1) / delta1
+            c = (alpha1 - alpha2) * np.exp(-np.logaddexp(0.0, 2.0 * qp1))
             numerator = alpha2 + 2.0 + c
+            if alpha1 < alpha2:
+                numerator = (
+                    alpha1 + 2.0 + (alpha2 - alpha1) * np.exp(-np.logaddexp(0.0, -2.0 * qp1))
+                )
             denominator = -alpha3 - 2.0 - c
-            if denominator <= 0:
+
+            if numerator <= 0 or denominator <= 0:
                 return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
             logEb2 = logEp - 0.5 * delta2 * (np.log(numerator) - np.log(denominator))
+            qp2 = 0.5 * (np.log(numerator) - np.log(denominator))
+
+            if not self._is_high_energy_peak(alpha1, alpha2, alpha3, qp1, qp2, delta1, delta2):
+                return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
         else:
             alpha3 = self.params[r'$\alpha_3$'].value
@@ -566,9 +754,9 @@ class dsbpl(Additive):
         zi = 1 + redshift
         E = E * zi
 
-        b = 0.5 * (alpha1 + alpha3)
-        m1 = 0.5 * (alpha2 - alpha1)
-        m2 = 0.5 * (alpha3 - alpha2)
+        b = (alpha1 + alpha3) / 2
+        m1 = (alpha2 - alpha1) / 2
+        m2 = (alpha3 - alpha2) / 2
 
         q1 = np.log10(E / Eb1) / delta1
         q2 = np.log10(E / Eb2) / delta2
@@ -582,7 +770,7 @@ class tsbpl(Additive):
     """Triple smoothly broken power law (four segments, three smooth breaks)."""
 
     def __init__(self):
-        """Initialise triple sbpl with four indices and three breaks."""
+        """Initialise tsbpl with four indices and three breaks."""
 
         self.expr = 'tsbpl'
         self.comment = 'triple smoothly broken power-law model'
@@ -606,6 +794,7 @@ class tsbpl(Additive):
 
     @staticmethod
     def _log_cosh(q):
+        """Return log(cosh(q)) without overflow."""
 
         return np.logaddexp(q, -q) - np.log(2.0)
 
@@ -618,32 +807,37 @@ class tsbpl(Additive):
         delta2 = self.config['smoothness2'].value
         delta3 = self.config['smoothness3'].value
 
-        alpha1 = self.params[r'$\alpha_1$'].value
-        alpha2 = self.params[r'$\alpha_2$'].value
-        alpha3 = self.params[r'$\alpha_3$'].value
-        alpha4 = self.params[r'$\alpha_4$'].value
-        logEb1 = self.params[r'log$E_{b1}$'].value
-        logEb2 = self.params[r'log$E_{b2}$'].value
-        logEb3 = self.params[r'log$E_{b3}$'].value
-        logA = self.params[r'log$A$'].value
-
-        Eb1 = 10.0**logEb1
-        Eb2 = 10.0**logEb2
-        Eb3 = 10.0**logEb3
-        Amp = 10.0**logA
-
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar:
             E = E[np.newaxis]
 
-        zi = 1.0 + redshift
+        if not (delta1 > 0 and delta2 > 0 and delta3 > 0):
+            return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
+
+        alpha1 = self.params[r'$\alpha_1$'].value
+        alpha2 = self.params[r'$\alpha_2$'].value
+        alpha3 = self.params[r'$\alpha_3$'].value
+        alpha4 = self.params[r'$\alpha_4$'].value
+
+        logEb1 = self.params[r'log$E_{b1}$'].value
+        logEb2 = self.params[r'log$E_{b2}$'].value
+        logEb3 = self.params[r'log$E_{b3}$'].value
+
+        Eb1 = 10**logEb1
+        Eb2 = 10**logEb2
+        Eb3 = 10**logEb3
+
+        logA = self.params[r'log$A$'].value
+        Amp = 10**logA
+
+        zi = 1 + redshift
         E = E * zi
 
-        b = 0.5 * (alpha1 + alpha4)
-        m1 = 0.5 * (alpha2 - alpha1)
-        m2 = 0.5 * (alpha3 - alpha2)
-        m3 = 0.5 * (alpha4 - alpha3)
+        b = (alpha1 + alpha4) / 2
+        m1 = (alpha2 - alpha1) / 2
+        m2 = (alpha3 - alpha2) / 2
+        m3 = (alpha4 - alpha3) / 2
 
         q1 = np.log10(E / Eb1) / delta1
         q2 = np.log10(E / Eb2) / delta2
@@ -662,42 +856,46 @@ class tsbpl(Additive):
         apiv3 = m3 * delta3 * self._log_cosh(qpiv3)
 
         shape_term = (a1 + a2 + a3) - (apiv1 + apiv2 + apiv3)
-        phtspec = Amp * (E / epiv) ** b * 10.0**shape_term
+        phtspec = Amp * (E / epiv) ** b * 10**shape_term
 
         return phtspec[0] if scalar else phtspec
 
     def slope_func(self, E, T=None, O=None):  # noqa: E741
-        """Return the local spectral index of the tsbpl model at ``E``."""
+        """Return the local spectral slope of the tsbpl model at ``E``."""
 
         redshift = self.config['redshift'].value
         delta1 = self.config['smoothness1'].value
         delta2 = self.config['smoothness2'].value
         delta3 = self.config['smoothness3'].value
 
-        alpha1 = self.params[r'$\alpha_1$'].value
-        alpha2 = self.params[r'$\alpha_2$'].value
-        alpha3 = self.params[r'$\alpha_3$'].value
-        alpha4 = self.params[r'$\alpha_4$'].value
-        logEb1 = self.params[r'log$E_{b1}$'].value
-        logEb2 = self.params[r'log$E_{b2}$'].value
-        logEb3 = self.params[r'log$E_{b3}$'].value
-
-        Eb1 = 10.0**logEb1
-        Eb2 = 10.0**logEb2
-        Eb3 = 10.0**logEb3
-
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar:
             E = E[np.newaxis]
 
+        if not (delta1 > 0 and delta2 > 0 and delta3 > 0):
+            return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
+
+        alpha1 = self.params[r'$\alpha_1$'].value
+        alpha2 = self.params[r'$\alpha_2$'].value
+        alpha3 = self.params[r'$\alpha_3$'].value
+        alpha4 = self.params[r'$\alpha_4$'].value
+
+        logEb1 = self.params[r'log$E_{b1}$'].value
+        logEb2 = self.params[r'log$E_{b2}$'].value
+        logEb3 = self.params[r'log$E_{b3}$'].value
+
+        Eb1 = 10**logEb1
+        Eb2 = 10**logEb2
+        Eb3 = 10**logEb3
+
         zi = 1 + redshift
         E = E * zi
 
-        b = 0.5 * (alpha1 + alpha4)
-        m1 = 0.5 * (alpha2 - alpha1)
-        m2 = 0.5 * (alpha3 - alpha2)
-        m3 = 0.5 * (alpha4 - alpha3)
+        b = (alpha1 + alpha4) / 2
+        m1 = (alpha2 - alpha1) / 2
+        m2 = (alpha3 - alpha2) / 2
+        m3 = (alpha4 - alpha3) / 2
 
         q1 = np.log10(E / Eb1) / delta1
         q2 = np.log10(E / Eb2) / delta2
