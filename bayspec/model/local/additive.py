@@ -144,7 +144,7 @@ class cpl(Additive):
 
 
 class sbpl(Additive):
-    """Smoothly broken power law (Kaneko et al. 2006, ``10.1086/505911``)."""
+    """Smoothly broken power law (10.1086/505911)."""
 
     def __init__(self):
         """Initialise sbpl; params switch on ``vfv_peak`` config."""
@@ -905,7 +905,7 @@ class tsbpl(Additive):
 
 
 class sb2pl(Additive):
-    """Smoothly broken power law variant (Ravasio et al. 2018, ``10.1051/0004-6361/201732245``)."""
+    """Smoothly broken power law variant (10.1051/0004-6361/201732245)."""
 
     def __init__(self):
         """Initialise convex two-segment sbpl; uses ``vfv_peak`` config."""
@@ -955,16 +955,19 @@ class sb2pl(Additive):
         if scalar:
             E = E[np.newaxis]
 
+        if not (omega > 0):
+            return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
+
         if peak:
             alpha1 = self.params[r'$\alpha$'].value
             alpha2 = self.params[r'$\beta$'].value
 
             logEp = self.params[r'log$E_p$'].value
-            Ep = 10**logEp
 
             if not (alpha1 > -2 and alpha2 < -2):
                 return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
+            Ep = 10**logEp
             Eb = Ep * (-(alpha1 + 2) / (alpha2 + 2)) ** (1 / ((alpha2 - alpha1) * omega))
 
         else:
@@ -978,21 +981,28 @@ class sb2pl(Additive):
                 return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
         logA = self.params[r'log$A$'].value
-        Amp = 10**logA
 
         zi = 1 + redshift
         E = E * zi
 
-        f = ((E / Eb) ** (-alpha1 * omega) + (E / Eb) ** (-alpha2 * omega)) ** (-1 / omega)
-        fpiv = ((epiv / Eb) ** (-alpha1 * omega) + (epiv / Eb) ** (-alpha2 * omega)) ** (-1 / omega)
+        logx = np.log(E) - np.log(Eb)
+        logxpiv = np.log(epiv) - np.log(Eb)
 
-        phtspec = Amp * (f / fpiv)
+        logf = -np.logaddexp(-alpha1 * omega * logx, -alpha2 * omega * logx) / omega
+        logfpiv = -np.logaddexp(-alpha1 * omega * logxpiv, -alpha2 * omega * logxpiv) / omega
+
+        phtspec = np.exp(logA * np.log(10.0) + (logf - logfpiv))
 
         return phtspec[0] if scalar else phtspec
 
 
 class csb2pl(Additive):
-    """Convex 2-segment smoothly broken power law with an exponential cutoff."""
+    """Convex 2-segment smoothly broken power law with an exponential cutoff.
+
+    Positive smoothness preserves the convex shape. In peak mode, ``Ep`` is
+    the exact peak of the full rest-frame ``E**2 N(E)`` spectrum, observed at
+    ``Ep / (1 + z)``. ``Eb`` is the underlying two-component crossing energy.
+    """
 
     def __init__(self):
         """Initialise convex two-segment sbpl with cutoff; uses ``vfv_peak``."""
@@ -1052,6 +1062,9 @@ class csb2pl(Additive):
         if scalar:
             E = E[np.newaxis]
 
+        if not (omega > 0):
+            return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
+
         if not alpha1 > alpha2:
             return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
@@ -1062,23 +1075,26 @@ class csb2pl(Additive):
             if not alpha2 > -2:
                 return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
-            Ec = Ep / (2 + alpha2)
+            qp = (alpha1 - alpha2) * omega * (logEp - logEb) * np.log(10.0)
+            cutoff_factor = alpha2 + 2 + (alpha1 - alpha2) * np.exp(-np.logaddexp(0.0, qp))
+            Ec = Ep / cutoff_factor
 
         else:
             logEc = self.params[r'log$E_c$'].value
             Ec = 10**logEc
 
         logA = self.params[r'log$A$'].value
-        Amp = 10**logA
 
         zi = 1 + redshift
         E = E * zi
 
-        f = ((E / Eb) ** (-alpha1 * omega) + (E / Eb) ** (-alpha2 * omega)) ** (
-            -1 / omega
-        ) * np.exp(-E / Ec)
-        fpiv = ((epiv / Eb) ** (-alpha1 * omega) + (epiv / Eb) ** (-alpha2 * omega)) ** (-1 / omega)
-        phtspec = Amp * (f / fpiv)
+        logx = np.log(E) - np.log(Eb)
+        logxpiv = np.log(epiv) - np.log(Eb)
+
+        logf = -np.logaddexp(-alpha1 * omega * logx, -alpha2 * omega * logx) / omega - E / Ec
+        logfpiv = -np.logaddexp(-alpha1 * omega * logxpiv, -alpha2 * omega * logxpiv) / omega
+
+        phtspec = np.exp(logA * np.log(10.0) + (logf - logfpiv))
 
         return phtspec[0] if scalar else phtspec
 
@@ -1123,12 +1139,14 @@ class sb3pl(Additive):
 
         Eb1 = 10**logEb1
         Eb2 = 10**logEb2
-        Amp = 10**logA
 
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar:
             E = E[np.newaxis]
+
+        if not (omega1 > 0 and omega2 > 0):
+            return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
         if not alpha1 > alpha2 > alpha3:
             return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
@@ -1136,48 +1154,50 @@ class sb3pl(Additive):
         zi = 1 + redshift
         E = E * zi
 
-        f = self._sb3pl(E, [alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2])
-        fpiv = self._sb3pl(epiv, [alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2])
+        logf = self._log_sb3pl(E, [alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2])
+        logfpiv = self._log_sb3pl(epiv, [alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2])
 
-        phtspec = Amp * (f / fpiv)
+        phtspec = np.exp(logA * np.log(10.0) + (logf - logfpiv))
 
         return phtspec[0] if scalar else phtspec
 
     def _pl(self, E, P):
 
-        alpha = P[0]
-        Eb = P[1]
-
-        return (E / Eb) ** alpha
+        return np.exp(self._log_pl(E, P))
 
     def _sb2pl(self, E, P):
 
-        alpha1 = P[0]
-        alpha2 = P[1]
-        Eb = P[2]
-        omega = P[3]
-
-        F1 = self._pl(E, [alpha1, Eb])
-        F2 = self._pl(E, [alpha2, Eb])
-        F12 = (F1 ** (-omega) + F2 ** (-omega)) ** (-1 / omega)
-
-        return F12
+        return np.exp(self._log_sb2pl(E, P))
 
     def _sb3pl(self, E, P):
 
-        alpha1 = P[0]
-        alpha2 = P[1]
-        alpha3 = P[2]
-        Eb1 = P[3]
-        Eb2 = P[4]
-        omega1 = P[5]
-        omega2 = P[6]
+        return np.exp(self._log_sb3pl(E, P))
 
-        F12 = self._sb2pl(E, [alpha1, alpha2, Eb1, omega1])
-        F3 = self._pl(E, [alpha3, Eb2]) * self._sb2pl(Eb2, [alpha1, alpha2, Eb1, omega1])
-        F123 = (F12 ** (-omega2) + F3 ** (-omega2)) ** (-1 / omega2)
+    def _log_pl(self, E, P):
+        """Return the logarithm of a power-law component."""
 
-        return F123
+        alpha, Eb = P
+
+        return alpha * (np.log(E) - np.log(Eb))
+
+    def _log_sb2pl(self, E, P):
+        """Join two components in log space, preserving the original formula."""
+
+        alpha1, alpha2, Eb, omega = P
+        logF1 = self._log_pl(E, [alpha1, Eb])
+        logF2 = self._log_pl(E, [alpha2, Eb])
+
+        return -np.logaddexp(-omega * logF1, -omega * logF2) / omega
+
+    def _log_sb3pl(self, E, P):
+        """Join the two-segment spectrum to the third power law."""
+
+        alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2 = P
+        logF12 = self._log_sb2pl(E, [alpha1, alpha2, Eb1, omega1])
+        logF3 = self._log_pl(E, [alpha3, Eb2])
+        logF3 += self._log_sb2pl(Eb2, [alpha1, alpha2, Eb1, omega1])
+
+        return -np.logaddexp(-omega2 * logF12, -omega2 * logF3) / omega2
 
 
 class sb4pl(Additive):
@@ -1227,12 +1247,14 @@ class sb4pl(Additive):
         Eb1 = 10**logEb1
         Eb2 = 10**logEb2
         Eb3 = 10**logEb3
-        Amp = 10**logA
 
         E = np.asarray(E)
         scalar = E.ndim == 0
         if scalar:
             E = E[np.newaxis]
+
+        if not (omega1 > 0 and omega2 > 0 and omega3 > 0):
+            return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
         zi = 1 + redshift
         E = E * zi
@@ -1240,74 +1262,71 @@ class sb4pl(Additive):
         if not alpha1 > alpha2 > alpha3 > alpha4:
             return np.nan if scalar else np.full_like(E, np.nan, dtype=float)
 
-        f = self._sb4pl(E, [alpha1, alpha2, alpha3, alpha4, Eb1, Eb2, Eb3, omega1, omega2, omega3])
-        fpiv = self._sb4pl(
+        logf = self._log_sb4pl(
+            E, [alpha1, alpha2, alpha3, alpha4, Eb1, Eb2, Eb3, omega1, omega2, omega3]
+        )
+        logfpiv = self._log_sb4pl(
             epiv, [alpha1, alpha2, alpha3, alpha4, Eb1, Eb2, Eb3, omega1, omega2, omega3]
         )
-        phtspec = Amp * (f / fpiv)
+        phtspec = np.exp(logA * np.log(10.0) + (logf - logfpiv))
 
         return phtspec[0] if scalar else phtspec
 
     def _pl(self, E, P):
 
-        alpha = P[0]
-        Eb = P[1]
-
-        return (E / Eb) ** alpha
+        return np.exp(self._log_pl(E, P))
 
     def _sb2pl(self, E, P):
 
-        alpha1 = P[0]
-        alpha2 = P[1]
-        Eb = P[2]
-        omega = P[3]
-
-        F1 = self._pl(E, [alpha1, Eb])
-        F2 = self._pl(E, [alpha2, Eb])
-        F12 = (F1 ** (-omega) + F2 ** (-omega)) ** (-1 / omega)
-
-        return F12
+        return np.exp(self._log_sb2pl(E, P))
 
     def _sb3pl(self, E, P):
 
-        alpha1 = P[0]
-        alpha2 = P[1]
-        alpha3 = P[2]
-        Eb1 = P[3]
-        Eb2 = P[4]
-        omega1 = P[5]
-        omega2 = P[6]
-
-        F12 = self._sb2pl(E, [alpha1, alpha2, Eb1, omega1])
-        F3 = self._pl(E, [alpha3, Eb2]) * self._sb2pl(Eb2, [alpha1, alpha2, Eb1, omega1])
-        F123 = (F12 ** (-omega2) + F3 ** (-omega2)) ** (-1 / omega2)
-
-        return F123
+        return np.exp(self._log_sb3pl(E, P))
 
     def _sb4pl(self, E, P):
 
-        alpha1 = P[0]
-        alpha2 = P[1]
-        alpha3 = P[2]
-        alpha4 = P[3]
-        Eb1 = P[4]
-        Eb2 = P[5]
-        Eb3 = P[6]
-        omega1 = P[7]
-        omega2 = P[8]
-        omega3 = P[9]
+        return np.exp(self._log_sb4pl(E, P))
 
-        F123 = self._sb3pl(E, [alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2])
-        F4 = self._pl(E, [alpha4, Eb3]) * self._sb3pl(
-            Eb3, [alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2]
-        )
-        F1234 = (F123 ** (-omega3) + F4 ** (-omega3)) ** (-1 / omega3)
+    def _log_pl(self, E, P):
+        """Return the logarithm of a power-law component."""
 
-        return F1234
+        alpha, Eb = P
+
+        return alpha * (np.log(E) - np.log(Eb))
+
+    def _log_sb2pl(self, E, P):
+        """Join two components in log space, preserving the original formula."""
+
+        alpha1, alpha2, Eb, omega = P
+        logF1 = self._log_pl(E, [alpha1, Eb])
+        logF2 = self._log_pl(E, [alpha2, Eb])
+
+        return -np.logaddexp(-omega * logF1, -omega * logF2) / omega
+
+    def _log_sb3pl(self, E, P):
+        """Join the two-segment spectrum to the third power law."""
+
+        alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2 = P
+        logF12 = self._log_sb2pl(E, [alpha1, alpha2, Eb1, omega1])
+        logF3 = self._log_pl(E, [alpha3, Eb2])
+        logF3 += self._log_sb2pl(Eb2, [alpha1, alpha2, Eb1, omega1])
+
+        return -np.logaddexp(-omega2 * logF12, -omega2 * logF3) / omega2
+
+    def _log_sb4pl(self, E, P):
+        """Join the three-segment spectrum to the fourth power law."""
+
+        alpha1, alpha2, alpha3, alpha4, Eb1, Eb2, Eb3, omega1, omega2, omega3 = P
+        logF123 = self._log_sb3pl(E, [alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2])
+        logF4 = self._log_pl(E, [alpha4, Eb3])
+        logF4 += self._log_sb3pl(Eb3, [alpha1, alpha2, alpha3, Eb1, Eb2, omega1, omega2])
+
+        return -np.logaddexp(-omega3 * logF123, -omega3 * logF4) / omega3
 
 
 class band(Additive):
-    """Band function (Band et al. 1993, ``10.1086/172995``)."""
+    """Band function (10.1086/172995)."""
 
     def __init__(self):
         """Initialise Band function with low/high indices, log-Ep, log-A."""
@@ -1362,7 +1381,7 @@ class band(Additive):
 
 
 class cband(Additive):
-    """Band function augmented with an exponential high-energy cutoff (10.1088/0004-637X/751/2/90)."""
+    """Band function with an exponential high-energy cutoff (10.1088/0004-637X/751/2/90)."""
 
     def __init__(self):
         """Initialise Band function with high-energy exponential cutoff."""
@@ -1544,7 +1563,7 @@ class bb(Additive):
 
 
 class mbb(Additive):
-    """Multi-color (multi-temperature) blackbody (10.3847/1538-4357/aadc07)."""
+    """Multi-color blackbody (10.3847/1538-4357/aadc07)."""
 
     _MBB_GAUSS_NODES, _MBB_GAUSS_WEIGHTS = np.polynomial.legendre.leggauss(64)
     _MBB_GAUSS_NODES = _MBB_GAUSS_NODES.astype(np.float64)
