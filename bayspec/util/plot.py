@@ -1529,7 +1529,7 @@ class ModelPlot:
             post = self.post
 
         if post and at_par is None:
-            at_par = 'best' if None in model.par_truth else 'truth'
+            at_par = 'median'
 
         self.model_index += 1
 
