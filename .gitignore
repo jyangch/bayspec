@@ -60,6 +60,9 @@ dist/
 # test files
 tests/
 
+# Experimental inference module
+/bayspec/infer/pgstat_marginal.py
+
 # private models
 bayspec/docs/katu/
 bayspec/docs/zxhsync/
