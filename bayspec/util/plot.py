@@ -632,7 +632,9 @@ class Plot:
                 ``'EENE'`` for additive models, ``'NoU'`` for
                 multiplicative/mathematical models.
             post: If ``True``, also draw the posterior credible band.
-            yrange: Optional ``(ymin, ymax)`` tuple for the y-axis.
+            yrange: Optional ``(ymin, ymax)`` tuple for the y-axis. If
+                omitted, show six decades below the largest positive finite
+                spectrum/credible-upper-bound value, with a factor-two headroom.
 
         Returns:
             A fresh :class:`ModelPlot` ready for ``add_model`` calls.
@@ -1433,7 +1435,9 @@ class ModelPlot:
                 ``'EENE'`` for additive models, ``'NoU'`` for
                 multiplicative/mathematical models.
             post: If ``True``, draw posterior credible bands.
-            yrange: Optional ``(ymin, ymax)`` tuple.
+            yrange: Optional ``(ymin, ymax)`` tuple. If omitted, automatically
+                show six decades below the spectrum/credible-upper-bound peak,
+                with a factor-two headroom.
 
         Raises:
             ValueError: If ``style`` is not recognized.
@@ -1443,6 +1447,7 @@ class ModelPlot:
         self.style = style
         self.post = post
         self.yrange = yrange
+        self.ypeak = None
 
         if self.style == 'NE':
             ylabel = 'Photons/cm2/s/keV'
@@ -1690,6 +1695,24 @@ class ModelPlot:
             self.fig_data[model.expr] = {'x': x, 'y': y, 'y_ci': y_ci}
         else:
             self.fig_data[model.expr] = {'x': x, 'y': y}
+
+        if self.yrange is None:
+            arrays = (y, y_ci[1]) if post else (y,)
+            for values in arrays:
+                positive = values[np.isfinite(values) & (values > 0)]
+                if positive.size:
+                    peak = float(np.max(positive))
+                    self.ypeak = peak if self.ypeak is None else max(self.ypeak, peak)
+
+            if self.ypeak is not None:
+                ymin = max(self.ypeak * 1e-6, np.nextafter(0.0, 1.0))
+                ymax = (
+                    self.ypeak * 2 if self.ypeak <= np.finfo(float).max / 2 else np.finfo(float).max
+                )
+                if self.ploter == 'plotly':
+                    self.fig.update_yaxes(range=[np.log10(ymin), np.log10(ymax)], autorange=False)
+                elif self.ploter == 'matplotlib':
+                    self.ax.set_ylim(ymin, ymax)
 
     def get_fig(self):
         """Wrap the accumulated plot in a :class:`Figure` for display or saving."""
