@@ -146,8 +146,6 @@ class cpl(Additive):
 class sbpl(Additive):
     """Smoothly broken power law (Kaneko et al. 2006, ``10.1086/505911``)."""
 
-    # 10.1086/505911
-
     def __init__(self):
         """Initialise sbpl; params switch on ``vfv_peak`` config."""
 
@@ -909,8 +907,6 @@ class tsbpl(Additive):
 class sb2pl(Additive):
     """Smoothly broken power law variant (Ravasio et al. 2018, ``10.1051/0004-6361/201732245``)."""
 
-    # 10.1051/0004-6361/201732245
-
     def __init__(self):
         """Initialise convex two-segment sbpl; uses ``vfv_peak`` config."""
 
@@ -1313,8 +1309,6 @@ class sb4pl(Additive):
 class band(Additive):
     """Band function (Band et al. 1993, ``10.1086/172995``)."""
 
-    # 10.1086/172995
-
     def __init__(self):
         """Initialise Band function with low/high indices, log-Ep, log-A."""
 
@@ -1368,9 +1362,7 @@ class band(Additive):
 
 
 class cband(Additive):
-    """Band function augmented with an exponential high-energy cutoff."""
-
-    # 10.1088/0004-637X/751/2/90
+    """Band function augmented with an exponential high-energy cutoff (10.1088/0004-637X/751/2/90)."""
 
     def __init__(self):
         """Initialise Band function with high-energy exponential cutoff."""
@@ -1432,9 +1424,7 @@ class cband(Additive):
 
 
 class dband(Additive):
-    """Double Band function (two adjoining Band segments)."""
-
-    # 10.1088/0004-637X/751/2/90
+    """Double Band function (two adjoining Band segments) (10.1088/0004-637X/751/2/90)."""
 
     def __init__(self):
         """Initialise double Band: two low indices, high index, two breaks."""
@@ -1554,9 +1544,7 @@ class bb(Additive):
 
 
 class mbb(Additive):
-    """Multi-color (multi-temperature) blackbody (Hou et al. 2018, ``10.3847/1538-4357/aadc07``)."""
-
-    # 10.3847/1538-4357/aadc07
+    """Multi-color (multi-temperature) blackbody (10.3847/1538-4357/aadc07)."""
 
     _MBB_GAUSS_NODES, _MBB_GAUSS_WEIGHTS = np.polynomial.legendre.leggauss(64)
     _MBB_GAUSS_NODES = _MBB_GAUSS_NODES.astype(np.float64)
@@ -1649,8 +1637,6 @@ class mbb(Additive):
 
 class hlecpl(Additive):
     """High-latitude-emission curvature model for a cutoff power law (time-dependent)."""
-
-    # 10.1088/0004-637X/690/1/L10
 
     def __init__(self):
         """Initialise HLE cutoff power-law: alpha, log-Ep/c, log-Ac, t0, tc."""
