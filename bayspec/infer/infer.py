@@ -1384,7 +1384,9 @@ class MaxLikeFit(Infer):
         scale = np.max(np.abs(eigval)) if eigval.size else 1.0
         floor = np.finfo(float).eps * (scale if scale > 0 else 1.0)
         eigval = np.clip(eigval, floor, None)
-        covar = eigvec @ np.diag(eigval) @ eigvec.T
+        covar = np.einsum('ik,k,jk->ij', eigvec, eigval, eigvec)
+        u, s, _ = np.linalg.svd(covar)
+        factor = u * np.sqrt(s)
 
         lower = np.array([pr[0] for pr in self.free_pranges], dtype=float)
         upper = np.array([pr[1] for pr in self.free_pranges], dtype=float)
@@ -1395,7 +1397,8 @@ class MaxLikeFit(Infer):
         tries = 0
         while len(param_sample) < nsample and tries < 10:
             batch_size = max(4 * (nsample - len(param_sample)), 128)
-            draw = rng.multivariate_normal(values, covar, size=batch_size, check_valid='ignore')
+            z = rng.standard_normal((batch_size, ndim))
+            draw = np.einsum('ij,kj->ik', z, factor) + values
             draw = np.atleast_2d(draw)
 
             inside = np.all((draw >= lower) & (draw <= upper), axis=1)
