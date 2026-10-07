@@ -1504,12 +1504,14 @@ class MaxLikeFit(Infer):
         else:
             return 1e100
 
-    def iminuit(self, savepath=None):
+    def iminuit(self, savepath=None, ncall=10000):
         """Run iminuit's ``migrad`` + ``hesse`` + ``minos`` and bootstrap the result.
 
         Args:
             savepath: Optional directory for persisted bootstrap samples
                 and summary JSON.
+            ncall: Approximate function-call budget for Migrad. Pass ``None``
+                to use iminuit's automatic budget.
 
         Returns:
             A :class:`~bayspec.infer.analyzer.Bootstrap`.
@@ -1530,8 +1532,16 @@ class MaxLikeFit(Infer):
         for pl, pr in zip(self.clean_free_indexed_plabels, self.free_pranges, strict=False):
             minuit.limits[pl] = pr
 
-        minuit.migrad()
+        minuit.migrad(ncall=ncall)
+        if not minuit.valid:
+            self._display_results(minuit)
+            raise RuntimeError(f'Migrad did not converge: {minuit.fmin!r}')
+
         minuit.hesse()
+        if not minuit.valid:
+            self._display_results(minuit)
+            raise RuntimeError(f'Fit is invalid after Hesse: {minuit.fmin!r}')
+
         minuit.minos()
 
         self._display_results(minuit)
