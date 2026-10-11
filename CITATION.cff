@@ -10,6 +10,7 @@ authors:
     orcid: 'https://orcid.org/0000-0002-5485-5042'
 version: 0.4.5
 date-released: '2026-10-11'
+doi: '10.5281/zenodo.23291373'
 repository-code: 'https://github.com/jyangch/bayspec'
 url: 'https://bayspec.readthedocs.io/'
 license: GPL-3.0-only

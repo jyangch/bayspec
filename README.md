@@ -15,6 +15,7 @@
   <a href="https://pypi.org/project/bayspec/"><img alt="PyPI" src="https://img.shields.io/pypi/v/bayspec?color=4F46E5&labelColor=1f2937&logo=pypi&logoColor=white"></a>
   <a href="https://bayspec.readthedocs.io/"><img alt="Documentation" src="https://img.shields.io/badge/docs-readthedocs-06B6D4?labelColor=1f2937"></a>
   <a href="https://huggingface.co/spaces/jyangch/bayspec"><img alt="BaySpec App on Hugging Face Spaces" src="https://img.shields.io/badge/web%20UI-BaySpec%20App-FFD21E?labelColor=1f2937"></a>
+  <a href="https://doi.org/10.5281/zenodo.23291372"><img alt="DOI" src="https://zenodo.org/badge/DOI/10.5281/zenodo.23291372.svg"></a>
   <a href="https://www.gnu.org/licenses/gpl-3.0"><img alt="License GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-9CA3AF?labelColor=1f2937"></a>
 </p>
 
@@ -116,7 +117,7 @@ used in your analysis. Citation metadata are provided in
 
 > Yang, J. (2026). *BaySpec: Bayesian inference for high-energy astrophysical
 > spectra* (Version 0.4.5) [Computer software].
-> https://github.com/jyangch/bayspec/releases/tag/v0.4.5
+> Zenodo. https://doi.org/10.5281/zenodo.23291373
 
 ```bibtex
 @software{bayspec,
@@ -126,14 +127,15 @@ used in your analysis. Citation metadata are provided in
   year    = {2026},
   month   = oct,
   date    = {2026-10-11},
-  url     = {https://github.com/jyangch/bayspec/releases/tag/v0.4.5}
+  publisher = {Zenodo},
+  doi     = {10.5281/zenodo.23291373},
+  url     = {https://doi.org/10.5281/zenodo.23291373}
 }
 ```
 
-Zenodo automatic archiving is enabled for this repository. A DOI for the
-first archive is pending; until it is available, use the version-specific
-release URL above. Once archived, cite the DOI for the version used in
-your analysis.
+Cite the version-specific DOI for the version used in your analysis.
+The [all-versions DOI](https://doi.org/10.5281/zenodo.23291372) identifies
+BaySpec across releases and links to the latest archived version.
 
 
 ## License
