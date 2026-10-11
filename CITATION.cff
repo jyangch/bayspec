@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: >-
+  If you use BaySpec in your research, please cite the software version
+  used in your analysis using the metadata in this file.
+type: software
+title: 'BaySpec: Bayesian inference for high-energy astrophysical spectra'
+authors:
+  - family-names: Yang
+    given-names: Jun
+    orcid: 'https://orcid.org/0000-0002-5485-5042'
+version: 0.4.5
+date-released: '2026-10-11'
+repository-code: 'https://github.com/jyangch/bayspec'
+url: 'https://bayspec.readthedocs.io/'
+license: GPL-3.0-only
+abstract: >-
+  BaySpec is a Python library for Bayesian inference on high-energy
+  astrophysical spectra. It supports MCMC and nested sampling, joint
+  fitting of multiple spectra and models, OGIP FITS spectra and responses,
+  time-dependent spectral models, and local, astromodels, and XSPEC model
+  libraries.
+keywords:
+  - astrophysics
+  - spectral fitting
+  - Bayesian inference
+  - X-ray astronomy
+  - gamma-ray astronomy

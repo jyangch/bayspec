@@ -107,6 +107,35 @@ the [examples](https://github.com/jyangch/bayspec/tree/main/examples)
 for typical workflows end to end.
 
 
+## Citation
+
+If you use `BaySpec` in your research, please cite the software version
+used in your analysis. Citation metadata are provided in
+[`CITATION.cff`](CITATION.cff), and a reusable BibTeX entry is available in
+[`CITATION.bib`](CITATION.bib). For version 0.4.5:
+
+> Yang, J. (2026). *BaySpec: Bayesian inference for high-energy astrophysical
+> spectra* (Version 0.4.5) [Computer software].
+> https://github.com/jyangch/bayspec/releases/tag/v0.4.5
+
+```bibtex
+@software{bayspec,
+  author  = {Yang, Jun},
+  title   = {{BaySpec}: Bayesian inference for high-energy astrophysical spectra},
+  version = {0.4.5},
+  year    = {2026},
+  month   = oct,
+  date    = {2026-10-11},
+  url     = {https://github.com/jyangch/bayspec/releases/tag/v0.4.5}
+}
+```
+
+Zenodo automatic archiving is enabled for this repository. A DOI for the
+first archive is pending; until it is available, use the version-specific
+release URL above. Once archived, cite the DOI for the version used in
+your analysis.
+
+
 ## License
 
 `BaySpec` is distributed under the

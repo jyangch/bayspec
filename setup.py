@@ -48,6 +48,7 @@ setup(
         'iminuit>=2.0.0',
     ],
     packages=find_packages(exclude=['examples*', 'docs*']),
+    package_data={'bayspec': ['docs/xsect/*.npz', 'docs/xsect/*.fits']},
     include_package_data=True,
     project_urls={
         'Source Code': 'https://github.com/jyangch/bayspec',

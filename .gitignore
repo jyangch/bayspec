@@ -67,12 +67,11 @@ tests/
 bayspec/docs/katu/
 bayspec/docs/zxhsync/
 
-# Generated documentation
+# Local documentation
 /docs/build/
 /docs/_build/
 /docs/**/.doctrees/
-
-# Local documentation notes and plans
 /docs/design/
 /docs/docstring-standard.md
+/docs/zenodo-archive.md
 /docs/superpowers/
