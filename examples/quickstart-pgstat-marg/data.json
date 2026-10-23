@@ -1,0 +1,26 @@
+[
+    {
+        "Name": "nai",
+        "Noticing": [
+            [
+                8,
+                900
+            ]
+        ],
+        "Statistic": "pgstat_marg",
+        "Grouping": null,
+        "Time": null
+    },
+    {
+        "Name": "bgo",
+        "Noticing": [
+            [
+                300,
+                38000
+            ]
+        ],
+        "Statistic": "pgstat_marg",
+        "Grouping": null,
+        "Time": null
+    }
+]

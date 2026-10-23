@@ -1,0 +1,23 @@
+[
+    {
+        "par#": "1",
+        "Component": "cpl",
+        "Parameter": "$\\alpha$",
+        "Value": -1,
+        "Prior": "unif(-2, 2)"
+    },
+    {
+        "par#": "2",
+        "Component": "cpl",
+        "Parameter": "log$E_p$",
+        "Value": 2,
+        "Prior": "unif(0, 4)"
+    },
+    {
+        "par#": "3",
+        "Component": "cpl",
+        "Parameter": "log$A$",
+        "Value": 0,
+        "Prior": "unif(-10, 10)"
+    }
+]
