@@ -62,6 +62,8 @@ tests/
 
 # Experimental inference module
 /bayspec/infer/pgstat_marginal.py
+/docs/pgstat_marginal_zh.md
+/docs/pgstat_marginal_zh.tex
 
 # private models
 bayspec/docs/katu/
