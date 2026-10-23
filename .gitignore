@@ -75,3 +75,9 @@ bayspec/docs/zxhsync/
 /docs/docstring-standard.md
 /docs/zenodo-archive.md
 /docs/superpowers/
+
+# AI agent collaboration files
+/AGENTS.md
+/AGENT_LOG.md
+/CLAUDE.md
+/read_peer_chat.py
