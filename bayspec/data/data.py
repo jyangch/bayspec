@@ -27,6 +27,7 @@ from scipy import special
 
 from ..util.group import build_grouping
 from ..util.info import Info
+from ..util.pgstat_marg import pgstat_marg_saturation
 from ..util.significance import pgsig_inv, ppsig_inv
 from ..util.tools import SuperDict, cached_property, clear_cached_property, json_dump
 from .response import Auxiliary, BalrogResponse, Redistribution, Response
@@ -514,6 +515,11 @@ class Data:
 
         return [unit.corr_bkg_efficiency for unit in self.data.values()]
 
+    @property
+    def pgstat_marg_saturation(self):
+
+        return [unit.pgstat_marg_saturation for unit in self.data.values()]
+
     @cached_property(lambda self: self.pvalues)
     def corr_bkg_efficiency_f64(self):
 
@@ -933,8 +939,8 @@ class DataUnit:
             arf: Optional auxiliary response.
             rsp: Optional full response; synthesized from ``rmf * arf`` if
                 missing and both are available.
-            stat: Statistic name -- ``'pgstat'``, ``'pstat'``, ``'cstat'``,
-                ``'gstat'``, ``'chi2'``, or a variant thereof.
+            stat: Statistic name -- ``'pgstat'``, ``'pgstat_marg'``, ``'pstat'``,
+                ``'cstat'``, ``'gstat'``, ``'chi2'``, or a variant thereof.
             notc: Optional noticing windows in channel energy.
             grpg: Optional grouping rule dict. The default threshold method
                 accepts ``min_evt``/``min_nevt``/``min_sigma``/``max_bin``.
@@ -1778,6 +1784,31 @@ class DataUnit:
 
         return self.bkg_efficiency * self.bkg_ins.factor.value
 
+    @cached_property(
+        lambda self: tuple(
+            factor.value if factor.frozen else None
+            for factor in (self.src_ins.factor, self.bkg_ins.factor)
+        )
+    )
+    def pgstat_marg_saturation(self):
+        """Saturated offset for ``stat='pgstat_marg'``; ``None`` for other statistics.
+
+        Computed once from the current exposures and kept while sf/bf keep their frozen
+        values. A free factor keeps its first value; the statistic then rejects exposures
+        that differ from those used here.
+        """
+
+        if self.stat != 'pgstat_marg':
+            return None
+
+        return pgstat_marg_saturation(
+            self.src_counts,
+            self.bkg_counts,
+            self.corr_src_efficiency,
+            self.corr_bkg_efficiency,
+            self.bkg_errors,
+        )
+
     @cached_property(lambda self: self.pvalues[0])
     def src_ctsrate(self):
 
@@ -1952,6 +1983,7 @@ class DataUnit:
                 'ppstat': self._pp_net_counts_significance_limit,
                 'cstat': self._pp_net_counts_significance_limit,
                 'pgstat': self._pg_net_counts_significance_limit,
+                'pgstat_marg': self._pg_net_counts_significance_limit,
             }
         )
 
@@ -1994,7 +2026,8 @@ class DataUnit:
         except KeyError as exc:
             raise ValueError(
                 'net-count significance limits require a Poisson source statistic '
-                "with a background significance model ('ppstat', 'cstat', or 'pgstat')"
+                "with a background significance model ('ppstat', 'cstat', 'pgstat' or "
+                "'pgstat_marg')"
             ) from exc
 
         return calculator(sig)

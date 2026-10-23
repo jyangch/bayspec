@@ -179,7 +179,7 @@ def _grouping_significance(src, bkg, bkg_err, alpha, stat):
             return 0
         return ppsig(src, bkg, alpha)
 
-    if stat in ['gstat', 'chi2', 'pgstat']:
+    if stat in ['gstat', 'chi2', 'pgstat', 'pgstat_marg']:
         if src <= 0 or bkg_err == 0:
             return 0
         return pgsig(src, bkg * alpha, bkg_err * alpha)

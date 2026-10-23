@@ -1,8 +1,9 @@
 """Likelihood-statistic kernels for spectral fitting.
 
 Implements the Gaussian (``Gstat``), Poisson (``Pstat``), Poisson-source
-plus Poisson-background (``PPstat``/``cstat``), and Poisson-source plus
-Gaussian-background (``PGstat``) statistics. ``Statistic`` exposes the
+plus Poisson-background (``PPstat``/``cstat``), Poisson-source plus
+Gaussian-background (``PGstat``) statistics, and the background-marginalized
+variant of the last (``PGstatMarg``). ``Statistic`` exposes the
 Numba-accelerated implementation; ``StatisticNB`` remains as a compatibility
 alias.
 
@@ -17,6 +18,8 @@ from functools import wraps
 
 import numba as nb
 import numpy as np
+
+from ..util.pgstat_marg import pgstat_marg_relative
 
 
 @dataclass
@@ -386,6 +389,24 @@ class Statistic:
             kwargs['ts'],
             kwargs['tb'],
             kwargs['sigma_B'],
+        )
+
+        return StatisticResult(pointwise_loglike, pointwise_sign)
+
+    @staticmethod
+    @guard_statistic
+    def PGstatMarg(**kwargs):
+        """Return the pointwise background-marginalized Poisson-Gaussian result.
+
+        Needs ``saturation``, the per-unit offset from ``pgstat_marg_saturation``.
+        """
+
+        pointwise_loglike, pointwise_sign = pgstat_marg_relative(
+            kwargs['S'],
+            kwargs['m'],
+            kwargs['ts'],
+            kwargs['tb'],
+            kwargs['saturation'],
         )
 
         return StatisticResult(pointwise_loglike, pointwise_sign)

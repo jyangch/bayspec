@@ -20,7 +20,7 @@ class Pair:
     """Binds one ``Data`` and one ``Model`` and evaluates their joint statistic.
 
     The class dispatches on each unit's statistic tag (``pgstat``,
-    ``pstat``, ``cstat``, ``chi2``, etc.) via :attr:`_allowed_stats` and
+    ``pgstat_marg``, ``pstat``, ``cstat``, ``chi2``, etc.) via :attr:`_allowed_stats` and
     publishes convolved spectra, residuals, and the total log-likelihood.
 
     Most list-valued properties (``conv_ctsrate``, ``phtspec_at_rsp``,
@@ -41,6 +41,7 @@ class Pair:
             'ppstat': Statistic.PPstat,
             'cstat': Statistic.PPstat,
             'pgstat': Statistic.PGstat,
+            'pgstat_marg': Statistic.PGstatMarg,
         }
     )
 
@@ -506,9 +507,9 @@ class Pair:
     def statistic_func(self):
         """Closure returning the selected statistic's result object."""
 
-        return lambda S, B, m, ts, tb, sigma_S, sigma_B, stat: self._allowed_stats[stat](
-            S=S, B=B, m=m, ts=ts, tb=tb, sigma_S=sigma_S, sigma_B=sigma_B
-        )
+        return lambda S, B, m, ts, tb, sigma_S, sigma_B, stat, saturation: self._allowed_stats[
+            stat
+        ](S=S, B=B, m=m, ts=ts, tb=tb, sigma_S=sigma_S, sigma_B=sigma_B, saturation=saturation)
 
     def _statistic_calculate(self):
         """Evaluate every data unit through the shared result interface."""
@@ -523,6 +524,7 @@ class Pair:
             self.data.src_errors_f64,
             self.data.bkg_errors_f64,
             self.data.stats,
+            self.data.pgstat_marg_saturation,
             strict=False,
         ):
             results.append(self.statistic_func(*args))

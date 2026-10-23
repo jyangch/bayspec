@@ -60,8 +60,7 @@ dist/
 # test files
 tests/
 
-# Experimental inference module
-/bayspec/infer/pgstat_marginal.py
+# Local pgstat_marg documentation
 /docs/pgstat_marginal_zh.md
 /docs/pgstat_marginal_zh.tex
 
