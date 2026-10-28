@@ -1382,7 +1382,7 @@ class MaxLikeFit(Infer):
 
         return -2 * np.sum([par.prior.logpdf(par.val) for par in self.free_par.values()])
 
-    def _fit_ranges(self):
+    def _get_fit_ranges(self):
         """Per-parameter ``(low, high)`` bounds for the minimisers and the bootstrap.
 
         Without :attr:`prior_penalty` these are :attr:`free_pranges` (the full
@@ -1397,7 +1397,7 @@ class MaxLikeFit(Infer):
 
         return [tuple(par.prior.interval(1.0)) for par in self.free_par.values()]
 
-    def _start_values(self, ranges, margin=1e-3):
+    def _clip_start_values(self, ranges, margin=1e-3):
         """Free-parameter start values, moved inside ``ranges`` with a warning.
 
         A start on or outside a bound stalls lmfit (its bound transform has a
@@ -1405,7 +1405,7 @@ class MaxLikeFit(Infer):
         times the range width (``margin`` itself for a half-open range).
         """
 
-        start = []
+        starts = []
         for pl, pv, (low, high) in zip(
             self.clean_free_plabels, self.free_pvalues, ranges, strict=False
         ):
@@ -1415,9 +1415,9 @@ class MaxLikeFit(Infer):
             if new_pv != pv:
                 msg = f'start value {pv} of {pl} moved inside its fit range to {new_pv}'
                 warnings.warn(msg, UserWarning, stacklevel=3)
-            start.append(new_pv)
+            starts.append(new_pv)
 
-        return start
+        return starts
 
     def _make_bootstrap_sample(
         self, values, covar=None, errors=None, nsample=1000, random_seed=450001
@@ -1464,7 +1464,7 @@ class MaxLikeFit(Infer):
         u, s, _ = np.linalg.svd(covar)
         factor = u * np.sqrt(s)
 
-        ranges = self._fit_ranges()
+        ranges = self._get_fit_ranges()
         lower = np.array([pr[0] for pr in ranges], dtype=float)
         upper = np.array([pr[1] for pr in ranges], dtype=float)
 
@@ -1559,12 +1559,12 @@ class MaxLikeFit(Infer):
                         f'got {par.prior.expr} for {pl}'
                     )
 
-        ranges = self._fit_ranges()
-        start = self._start_values(ranges)
+        ranges = self._get_fit_ranges()
+        starts = self._clip_start_values(ranges)
 
         lmfit_params = lmfit.Parameters()
 
-        for pl, pv, pr in zip(self.clean_free_plabels, start, ranges, strict=False):
+        for pl, pv, pr in zip(self.clean_free_plabels, starts, ranges, strict=False):
             lmfit_params.add(pl, value=pv, min=pr[0], max=pr[1], vary=True)
 
         lmfit_result = lmfit.minimize(self.lmfit_residual, lmfit_params)
@@ -1633,10 +1633,10 @@ class MaxLikeFit(Infer):
 
         self._you_free()
 
-        ranges = self._fit_ranges()
-        start = self._start_values(ranges)
+        ranges = self._get_fit_ranges()
+        starts = self._clip_start_values(ranges)
 
-        minuit = iminuit.Minuit(self.iminuit_cost, *start, name=self.clean_free_indexed_plabels)
+        minuit = iminuit.Minuit(self.iminuit_cost, *starts, name=self.clean_free_indexed_plabels)
         minuit.errordef = 2 * iminuit.Minuit.LIKELIHOOD
         minuit.print_level = 0
 
@@ -1684,3 +1684,70 @@ class MaxLikeFit(Infer):
                 )
 
         return Bootstrap(self)
+
+    def profile(self, label, values, ncall=10000):
+        """Profile the fit cost along one free parameter.
+
+        The parameter ``label`` is fixed at each entry of ``values`` in turn
+        and the other free parameters are re-fitted with iminuit's migrad.
+        Each fit starts from the previous one, so the order of ``values`` is
+        the scan direction (start where the data are well described, e.g. at
+        the best fit). The other parameters are bounded and started as in
+        :meth:`iminuit`; the profiled parameter is not bounded, but with
+        :attr:`prior_penalty` its own prior is in the cost, so values outside
+        that prior's support cost ``1e100``. The free parameters are restored
+        to their values before the scan.
+
+        Args:
+            label: Free-parameter label, as in :attr:`free_plabels`.
+            values: Values of that parameter, in scan order.
+            ncall: Approximate migrad call budget per point.
+
+        Returns:
+            Array with the minimum cost at each value: ``-2 ln L``, or
+            ``-2 ln L - 2 ln prior`` with :attr:`prior_penalty`.
+
+        Raises:
+            ValueError: If ``label`` is not a free parameter.
+        """
+
+        import iminuit
+
+        self._you_free()
+
+        if label not in self.free_plabels:
+            raise ValueError(f'{label} is not a free parameter')
+
+        theta_before = list(self.free_pvalues)
+        profile_idx = self.free_plabels.index(label)
+        names = self.clean_free_indexed_plabels
+        profile_name = names[profile_idx]
+
+        ranges = self._get_fit_ranges()
+        ranges[profile_idx] = (-np.inf, np.inf)
+        starts = self._clip_start_values(ranges)
+
+        minuit = iminuit.Minuit(self.iminuit_cost, *starts, name=names)
+        minuit.errordef = 2 * iminuit.Minuit.LIKELIHOOD
+        minuit.print_level = 0
+        for name, pr in zip(names, ranges, strict=False):
+            if name != profile_name:
+                minuit.limits[name] = pr
+        minuit.fixed[profile_name] = True
+
+        cost = []
+        invalid = []
+        for value in values:
+            minuit.values[profile_name] = value
+            minuit.migrad(ncall=ncall)
+            cost.append(minuit.fval)
+            if not minuit.valid:
+                invalid.append(value)
+
+        if invalid:
+            msg = f'migrad not valid at {len(invalid)} of {len(cost)} values of {label}'
+            warnings.warn(msg, UserWarning, stacklevel=2)
+
+        self.at_par(theta_before)
+
+        return np.array(cost)
