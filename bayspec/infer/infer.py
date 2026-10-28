@@ -1334,14 +1334,90 @@ class MaxLikeFit(Infer):
     Provides :meth:`lmfit` and :meth:`iminuit` drivers. Both run the
     minimiser, cache the best fit, build a covariance-driven bootstrap
     sample respecting the free-parameter ranges, and return a
-    :class:`Bootstrap` for downstream analysis.
+    :class:`Bootstrap` for downstream analysis. With ``prior_penalty=True``
+    the minimisers add ``-2 ln prior`` of every free parameter to the fit
+    statistic, i.e. a maximum a posteriori fit.
     """
 
-    def __init__(self, pairs=None):
-        """Initialise like :class:`Infer` and tag the inference type."""
+    def __init__(self, pairs=None, prior_penalty=False):
+        """Initialise like :class:`Infer` and tag the inference type.
+
+        Args:
+            pairs: As for :class:`Infer`.
+            prior_penalty: If ``True``, minimise ``-2 ln L - 2 ln prior``
+                (maximum a posteriori) instead of ``-2 ln L``; uniform
+                priors only add a constant.
+        """
         super().__init__(pairs=pairs)
 
-        self.inference_type = 'Maximum Likelihood Estimation'
+        self.prior_penalty = prior_penalty
+
+    @property
+    def prior_penalty(self):
+        """Whether the minimisers add ``-2 ln prior`` to the fit statistic."""
+
+        return self._prior_penalty
+
+    @prior_penalty.setter
+    def prior_penalty(self, new_prior_penalty):
+
+        if not isinstance(new_prior_penalty, bool):
+            raise ValueError('prior_penalty is expected to be bool')
+
+        self._prior_penalty = new_prior_penalty
+
+        if new_prior_penalty:
+            self.inference_type = 'Maximum A Posteriori Estimation'
+        else:
+            self.inference_type = 'Maximum Likelihood Estimation'
+
+    def calc_prior_penalty(self, theta):
+        """Apply ``theta`` and return ``-2 ln prior`` summed over the free parameters.
+
+        The log densities are summed directly (no product of densities), so
+        many parameters do not underflow; ``inf`` outside a prior's support.
+        """
+
+        self.at_par(theta)
+
+        return -2 * np.sum([par.prior.logpdf(par.val) for par in self.free_par.values()])
+
+    def _fit_ranges(self):
+        """Per-parameter ``(low, high)`` bounds for the minimisers and the bootstrap.
+
+        Without :attr:`prior_penalty` these are :attr:`free_pranges` (the full
+        support of uniform priors, the central 95% of the others), which turn a
+        non-uniform prior into a hard range. With it the prior is already in the
+        cost, so each parameter gets its prior's full support (unbounded for a
+        normal prior) and the fit is not cut at the 95% edges.
+        """
+
+        if not self.prior_penalty:
+            return list(self.free_pranges)
+
+        return [tuple(par.prior.interval(1.0)) for par in self.free_par.values()]
+
+    def _start_values(self, ranges, margin=1e-3):
+        """Free-parameter start values, moved inside ``ranges`` with a warning.
+
+        A start on or outside a bound stalls lmfit (its bound transform has a
+        zero gradient there), so such values are moved inside by ``margin``
+        times the range width (``margin`` itself for a half-open range).
+        """
+
+        start = []
+        for pl, pv, (low, high) in zip(
+            self.clean_free_plabels, self.free_pvalues, ranges, strict=False
+        ):
+            width = high - low
+            step = margin * width if np.isfinite(width) else margin
+            new_pv = min(max(pv, low + step), high - step)
+            if new_pv != pv:
+                msg = f'start value {pv} of {pl} moved inside its fit range to {new_pv}'
+                warnings.warn(msg, UserWarning, stacklevel=3)
+            start.append(new_pv)
+
+        return start
 
     def _make_bootstrap_sample(
         self, values, covar=None, errors=None, nsample=1000, random_seed=450001
@@ -1388,8 +1464,9 @@ class MaxLikeFit(Infer):
         u, s, _ = np.linalg.svd(covar)
         factor = u * np.sqrt(s)
 
-        lower = np.array([pr[0] for pr in self.free_pranges], dtype=float)
-        upper = np.array([pr[1] for pr in self.free_pranges], dtype=float)
+        ranges = self._fit_ranges()
+        lower = np.array([pr[0] for pr in ranges], dtype=float)
+        upper = np.array([pr[1] for pr in ranges], dtype=float)
 
         rng = np.random.default_rng(random_seed)
 
@@ -1433,11 +1510,25 @@ class MaxLikeFit(Infer):
             display(obj)
 
     def lmfit_residual(self, params):
-        """lmfit-facing residual callback; delegates to :meth:`calc_pseudo_residual`."""
+        """lmfit-facing residual callback; delegates to :meth:`calc_pseudo_residual`.
+
+        With :attr:`prior_penalty`, each normal prior adds the residual
+        ``(x - loc) / scale``, whose square is ``-2 ln prior`` up to a constant;
+        uniform priors add nothing (constant).
+        """
 
         theta = [params[pl] for pl in self.clean_free_plabels]
+        residual = self.calc_pseudo_residual(theta)
 
-        return self.calc_pseudo_residual(theta)
+        if self.prior_penalty:
+            prior_residual = []
+            for pl, par in zip(self.clean_free_plabels, self.free_par.values(), strict=False):
+                if par.prior.expr == 'norm':
+                    loc, scale = par.prior.args
+                    prior_residual.append((params[pl].value - loc) / scale)
+            residual = np.append(residual, prior_residual)
+
+        return residual
 
     def lmfit(self, savepath=None):
         """Run ``lmfit.minimize`` on the pseudo-residuals and bootstrap the result.
@@ -1448,6 +1539,10 @@ class MaxLikeFit(Infer):
 
         Returns:
             A :class:`~bayspec.infer.analyzer.Bootstrap`.
+
+        Raises:
+            ValueError: With :attr:`prior_penalty`, if a free parameter has a
+                prior other than ``unif`` or ``norm``.
         """
 
         import lmfit
@@ -1456,11 +1551,20 @@ class MaxLikeFit(Infer):
 
         self._you_free()
 
+        if self.prior_penalty:
+            for pl, par in zip(self.clean_free_plabels, self.free_par.values(), strict=False):
+                if par.prior.expr not in ('unif', 'norm'):
+                    raise ValueError(
+                        f'lmfit with prior_penalty supports only unif and norm priors, '
+                        f'got {par.prior.expr} for {pl}'
+                    )
+
+        ranges = self._fit_ranges()
+        start = self._start_values(ranges)
+
         lmfit_params = lmfit.Parameters()
 
-        for pl, pv, pr in zip(
-            self.clean_free_plabels, self.free_pvalues, self.free_pranges, strict=False
-        ):
+        for pl, pv, pr in zip(self.clean_free_plabels, start, ranges, strict=False):
             lmfit_params.add(pl, value=pv, min=pr[0], max=pr[1], vary=True)
 
         lmfit_result = lmfit.minimize(self.lmfit_residual, lmfit_params)
@@ -1495,9 +1599,15 @@ class MaxLikeFit(Infer):
         return Bootstrap(self)
 
     def iminuit_cost(self, *theta):
-        """iminuit-facing cost function; returns ``1e100`` when the stat is non-finite."""
+        """iminuit-facing cost function; returns ``1e100`` when the stat is non-finite.
+
+        The cost is ``-2 ln L``, plus ``-2 ln prior`` with :attr:`prior_penalty`.
+        """
 
         cost = self.calc_stat(theta)
+
+        if self.prior_penalty:
+            cost += self.calc_prior_penalty(theta)
 
         if np.isfinite(cost):
             return float(cost)
@@ -1523,13 +1633,14 @@ class MaxLikeFit(Infer):
 
         self._you_free()
 
-        minuit = iminuit.Minuit(
-            self.iminuit_cost, *self.free_pvalues, name=self.clean_free_indexed_plabels
-        )
+        ranges = self._fit_ranges()
+        start = self._start_values(ranges)
+
+        minuit = iminuit.Minuit(self.iminuit_cost, *start, name=self.clean_free_indexed_plabels)
         minuit.errordef = 2 * iminuit.Minuit.LIKELIHOOD
         minuit.print_level = 0
 
-        for pl, pr in zip(self.clean_free_indexed_plabels, self.free_pranges, strict=False):
+        for pl, pr in zip(self.clean_free_indexed_plabels, ranges, strict=False):
             minuit.limits[pl] = pr
 
         minuit.migrad(ncall=ncall)
